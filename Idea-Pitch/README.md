@@ -13,5 +13,5 @@ Trailblazers’ Vault offers a streamlined inventory system that lets users mana
 This project was born from our own experience as players and dungeon masters, seeking a simple way to organize and track game inventories.
 
 
-[![Watch the video](https://raw.githubusercontent.com/ptradic/korisnicka-sucelja-projekt/main/Idea-Pitch/thumbnail.jpg)](https://raw.githubusercontent.com/ptradic/korisnicka-sucelja-projekt/main/video.mp4)
+[![Watch the video](https://raw.githubusercontent.com/ptradic/korisnicka-sucelja-projekt/main/Idea-Pitch/thumbnail.jpg)](https://raw.githubusercontent.com/ptradic/korisnicka-sucelja-projekt/refs/heads/main/Idea-Pitch/video.mp4)
 

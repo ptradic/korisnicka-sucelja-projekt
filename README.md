@@ -1,13 +1,49 @@
-# Trailblazers' Vault
+# Semester Project <!-- omit in toc -->
 
-“Your party’s loot, safely stashed.”
+- [Project Structure](#project-structure)
+- [My Project Links](#my-project-links)
+  - [Semester Project](#semester-project)
+  - [Semester Assignments](#semester-assignments)
+- [Project Requirements](#project-requirements)
+  - [Web Application Requirements](#web-application-requirements)
+  - [Project Demonstration](#project-demonstration)
 
-### About the project
+## Project Structure
 
-Trailblazers’ Vault is built to solve the clutter and confusion that often come with managing items and loot in tabletop RPGs like D&D, especially when inventories are shared across multiple players or campaigns.
+- **`/`**: The source code of your main project
+- **`/assignments`**: Results of your semester assignments
+- **`/docs`**: If using GitHub for documentation (e.g., your final report in Markdown format)
 
-It’s designed for TTRPG players and game masters who want an easier, more organized way to track and share their party’s gear.
+## My Project Links
 
-Trailblazers’ Vault offers a streamlined inventory system that lets users manage, sort, and customize their loot through a simple interactive drag-and-drop interface.
+### Semester Project
 
-This project was born from our own experience as players and dungeon masters, seeking a simple way to organize and track game inventories.
+- Link to your production version: [**Production Version**](URL_TO_PRODUCTION_VERSION) <!-- Replace with actual URL -->
+- Link to your final report: [**Final Report**](URL_TO_FINAL_REPORT) <!-- Replace with actual URL -->
+<!-- Add more as necessary -->
+
+### Semester Assignments
+
+- Link to Assignment 1: [**Assignment 1**](https://github.com/ptradic/korisnicka-sucelja-projekt/tree/main/Idea-Pitch) <!-- Replace with actual URL -->
+- Link to Assignment 2: [**Assignment 2**](URL_TO_ASSIGNMENT_2) <!-- Replace with actual URL -->
+- Link to Assignment 3: [**Assignment 3**](URL_TO_ASSIGNMENT_3) <!-- Replace with actual URL -->
+<!-- Add more assignments as necessary -->
+
+## Project Requirements
+
+### Web Application Requirements
+
+- [ ] The application will be used from a web browser
+- [ ] It will be accessible on devices of different sizes
+- [ ] Users can search/filter products or services
+- [ ] The application will support user login for showing private content
+- [ ] One of the public pages will be a blog containing multiple posts with diverse content (images, videos, code snippets)
+- [ ] Part of the application's content will be stored in a remote headless CMS system
+
+### Project Demonstration
+
+- [ ] Show the production version of the project or produce a video demonstrating the above requirements
+- [ ] The production version will be deployed online (on an appropriate cloud platform [Vercel](https://vercel.com), [Netlify](https://www.netlify.com/) or personal VPS)
+- [ ] Conduct usablity evaluation of your web application
+- [ ] Analyze the application's performance ([PageSpeed Insights](https://pagespeed.web.dev/))
+- [ ] The analysis results will be part of the final report

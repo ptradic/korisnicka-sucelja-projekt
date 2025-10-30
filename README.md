@@ -25,7 +25,7 @@
 ### Semester Assignments
 
 - Link to Assignment 1: [**Assignment 1**](https://github.com/ptradic/korisnicka-sucelja-projekt/tree/main/Idea-Pitch) <!-- Replace with actual URL -->
-- Link to Assignment 2: [**Assignment 2**](URL_TO_ASSIGNMENT_2) <!-- Replace with actual URL -->
+- Link to Assignment 2: [**Assignment 2**](https://github.com/ptradic/korisnicka-sucelja-projekt/tree/main/User-Personas-and-Information-Architecture) <!-- Replace with actual URL -->
 - Link to Assignment 3: [**Assignment 3**](URL_TO_ASSIGNMENT_3) <!-- Replace with actual URL -->
 <!-- Add more assignments as necessary -->
 

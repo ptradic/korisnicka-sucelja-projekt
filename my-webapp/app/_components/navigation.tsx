@@ -22,24 +22,28 @@ const pages: Page[] = [
     path: "/about",
   },
   {
-    title: "Blog Posts",
-    path: "/posts",
-  },
-  {
-    title: "Guides",
-    path: "/guides",
-  },
-  {
     title: "Demos",
     path: "/demos",
   },
-  {
+    {
+    title: "DM Tools",
+    path: "/dm-tools",
+  },
+    {
+    title: "Guides",
+    path: "/guides",
+  },
+    {
     title: "Library",
     path: "/library",
   },
   {
-    title: "DM Tools",
-    path: "/dm-tools",
+    title: "Blog Posts",
+    path: "/posts",
+  },
+    {
+    title: "Showcase",
+    path: "/showcase",
   },
   {
     title: "Support",
@@ -54,17 +58,10 @@ const pages: Page[] = [
  * @returns JSX element for a list item
  */
 function processPage(page: Page, index: number, currentPath?: string) {
-  const isActive = currentPath === page.path;
+  const isActive = page.path === "/" ? currentPath === page.path : currentPath?.startsWith(page.path);
   return (
     <li key={index} className="w-full">
-      <Link
-        href={page.path}
-        className={`block w-full px-3 py-1.5 rounded-lg transition-colors duration-200 ${
-          isActive 
-            ? "bg-indigo-200 text-indigo-900 font-semibold" 
-            : "text-indigo-100 hover:bg-indigo-700 hover:text-white"
-        }`}
-      >
+      <Link href={page.path} className={`block w-full px-3 py-1.5 rounded-lg transition-colors duration-200 ${isActive ? "bg-indigo-200 text-indigo-900 font-semibold" : "text-indigo-100 hover:bg-indigo-700 hover:text-white"}`}>
         {page.title}
       </Link>
     </li>

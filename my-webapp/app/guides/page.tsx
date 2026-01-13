@@ -1,9 +1,6 @@
-import { Navigation } from "@components/navigation";
-
 export default function GuidesPage() {
   return (
     <main className="flex min-h-screen flex-col items-center p-10">
-      <Navigation />
       <div className="max-w-4xl w-full">
         <h1 className="text-4xl font-extrabold mb-4">Guides & Tutorials</h1>
         <p className="text-slate-600 mb-6">Step-by-step walkthroughs to get started with Trailblazers' Vault.</p>

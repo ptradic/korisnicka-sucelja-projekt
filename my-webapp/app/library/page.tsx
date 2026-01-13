@@ -1,5 +1,3 @@
-import { Navigation } from "@components/navigation";
-
 const sampleItems = [
   { id: "sword-01", name: "Longsword", type: "Weapon", rarity: "Common", weight: "3 lb" },
   { id: "potion-01", name: "Healing Potion", type: "Consumable", rarity: "Uncommon", weight: "0.5 lb" },
@@ -9,7 +7,6 @@ const sampleItems = [
 export default function LibraryPage() {
   return (
     <main className="flex min-h-screen flex-col items-center p-10">
-      <Navigation />
       <div className="max-w-5xl w-full">
         <h1 className="text-4xl font-extrabold mb-4">Vault Library</h1>
         <p className="text-slate-600 mb-6">Shared item templates and community catalog — import items into your vaults.</p>

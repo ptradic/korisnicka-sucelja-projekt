@@ -30,7 +30,12 @@ export default function RootLayout({
       >
         <Navigation />
         <div className="pt-16 md:pt-20">
-          {children}
+          <header className="fixed top-0 left-0 w-full bg-white border-b z-40 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center">
+             <Navigation />
+            </div>
+          </header>
+          <main className="pt-16 md:pt-20">{children}</main>
         </div>
       </body>
     </html>

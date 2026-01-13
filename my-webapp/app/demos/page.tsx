@@ -1,5 +1,3 @@
-import { Navigation } from "@components/navigation";
-
 const demos = [
   { id: "party-vault", title: "Party Vault", desc: "Typical party shared inventory with consumables and gear." },
   { id: "merchant-inventory", title: "Merchant Inventory", desc: "Shop stock with prices and bulk items." },
@@ -9,7 +7,6 @@ const demos = [
 export default function DemosPage() {
   return (
     <main className="flex min-h-screen flex-col items-center p-10">
-      <Navigation />
       <div className="max-w-5xl w-full">
         <h1 className="text-4xl font-extrabold mb-4">Demos & Example Vaults</h1>
         <p className="text-slate-600 mb-6">Explore example vaults to try features and clone templates into your account.</p>

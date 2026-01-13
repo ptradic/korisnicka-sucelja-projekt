@@ -1,5 +1,3 @@
-import { Navigation } from "@components/navigation";
-
 const tools = [
   { href: "/dm-tools/loot-generator", title: "Loot Generator", desc: "Generate random treasure by CR, rarity or table." },
   { href: "/dm-tools/random-table", title: "Random Tables", desc: "Customizable tables for encounters, loot and events." },
@@ -10,7 +8,6 @@ const tools = [
 export default function DMToolsPage() {
   return (
     <main className="flex min-h-screen flex-col items-center p-10">
-      <Navigation />
       <div className="max-w-4xl w-full">
         <h1 className="text-4xl font-extrabold mb-4">DM Tools</h1>
         <p className="text-slate-600 mb-6">Lightweight utilities to help Game Masters manage loot, shops and sessions.</p>

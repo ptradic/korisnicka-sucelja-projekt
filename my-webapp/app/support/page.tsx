@@ -1,9 +1,6 @@
-import { Navigation } from "@components/navigation";
-
 export default function SupportPage() {
   return (
     <main className="flex min-h-screen flex-col items-center p-10">
-      <Navigation />
       <div className="max-w-3xl w-full">
         <h1 className="text-4xl font-extrabold mb-4">Support & Feedback</h1>
         <p className="text-slate-600 mb-6">Report bugs, request features or find quick help resources.</p>

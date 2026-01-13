@@ -1,9 +1,6 @@
-import { Navigation } from "@components/navigation";
-
 export default function Page() {
   return (
     <main className="flex min-h-screen flex-col items-center p-10">
-      <Navigation />
       <div className="max-w-3xl">
         <h1 className="text-5xl font-extrabold tracking-tight mb-4">Trailblazers' Vault</h1>
         <p className="text-xl text-slate-600 mb-6">“Your party’s loot, safely stashed.”</p>

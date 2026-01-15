@@ -71,7 +71,7 @@ export function ItemCard({ item, ownerId, onClick }: ItemCardProps) {
 
   return (
     <div
-      ref={drag}
+      ref={drag as any}
       onClick={onClick}
       className={`${colors.bg} border-[3px] ${colors.border} rounded-lg p-4 cursor-pointer transition-all hover:scale-[1.02] ${colors.glow} hover:shadow-lg ${
         isDragging ? 'opacity-50 scale-95' : ''

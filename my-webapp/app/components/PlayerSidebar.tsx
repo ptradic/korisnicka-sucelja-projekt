@@ -42,7 +42,7 @@ function PlayerIcon({
 
   return (
     <button
-      ref={drop}
+      ref={drop as any}
       onClick={onClick}
       className={`w-full p-3 rounded-lg transition-all relative border-[3px] shadow-md ${
         isSelected
@@ -113,7 +113,7 @@ function SharedLootIcon({
 
   return (
     <button
-      ref={drop}
+      ref={drop as any}
       onClick={onClick}
       className={`w-full p-3 rounded-lg transition-all relative border-[3px] shadow-md ${
         isSelected

@@ -148,6 +148,15 @@ export function HomePage({ onSelectVault, onCreateVault, vaults, onDeleteVault }
               <LogIn className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
               <span>Enter as {userType === 'dm' ? 'DM' : 'Player'}</span>
             </button>
+
+            {/* DEV MODE - Quick Login (REMOVE FOR PRODUCTION) */}
+            <button
+              type="button"
+              onClick={() => setShowLogin(false)}
+              className="w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-sm rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-2 border-yellow-600"
+            >
+              🚀 DEV: Skip Login
+            </button>
           </form>
 
           <div className="mt-6 pt-6 border-t-3 border-[#8B6F47]">

@@ -23,8 +23,8 @@ type Page = {
 const pages: Page[] = [
   { title: "Home", path: "/", icon: Home },
   {
-    title: "DM Tools",
-    path: "/dm-tools",
+    title: "GM Tools",
+    path: "/gm-tools",
     icon: Wand2,
   },
   {
@@ -66,7 +66,7 @@ function processPage(page: Page, index: number, currentPath?: string, isMobile: 
             : "text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
         )}
       >
-        {isMobile && Icon && <Icon className="w-5 h-5" />}
+        {Icon && <Icon className="w-5 h-5" />}
         <span>{page.title}</span>
       </Link>
     </li>
@@ -82,12 +82,12 @@ export function Navigation() {
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[#F5EFE0]/95 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl">
         <div className="flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg">
+          <Link href="/" className="group flex items-center gap-3 transition-all duration-300">
+            <div className="w-12 h-12 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] rounded-xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg transition-all duration-300">
               <Scroll className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-lg font-extrabold text-[#3D1409]">Trailblazers' Vault</h1>
-          </div>
+          </Link>
         </div>
       </div>
 
@@ -165,14 +165,14 @@ export function Navigation() {
       {/* Desktop Navigation */}
       <nav className="hidden md:block fixed top-0 left-0 right-0 bg-[#F5EFE0]/95 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl z-50">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-20 gap-8">
+          <div className="flex items-center h-20 gap-8">
             {/* Brand Logo - Left */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] rounded-2xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg hover:rotate-6 transition-transform duration-300">
+            <Link href="/" className="group flex items-center gap-3 flex-shrink-0 transition-all duration-300 w-64">
+              <div className="w-14 h-14 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] rounded-2xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg hover:rotate-6 transition-all duration-300">
                 <Scroll className="w-7 h-7 text-white" />
               </div>
               <h1 className="text-2xl font-extrabold text-[#3D1409] hidden xl:block">Trailblazers' Vault</h1>
-            </div>
+            </Link>
             
             {/* Navigation Links - Center */}
             <ul className="flex gap-3 items-center flex-1 justify-center">
@@ -180,9 +180,11 @@ export function Navigation() {
             </ul>
 
             {/* Login - Right */}
-            <ul className="flex-shrink-0">
-              {processPage(pages.find(page => page.path === "/login")!, pages.length - 1, currentPath, false)}
-            </ul>
+            <div className="flex-shrink-0 w-64 flex justify-end">
+              <ul>
+                {processPage(pages.find(page => page.path === "/login")!, pages.length - 1, currentPath, false)}
+              </ul>
+            </div>
           </div>
         </div>
       </nav>

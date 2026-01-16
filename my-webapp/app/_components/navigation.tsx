@@ -66,7 +66,7 @@ function processPage(page: Page, index: number, currentPath?: string, isMobile: 
             : "text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
         )}
       >
-        {Icon && <Icon className="w-5 h-5" />}
+        {Icon && <Icon className={cn("w-5 h-5", !isMobile && "xl:block hidden")} />}
         <span>{page.title}</span>
       </Link>
     </li>
@@ -77,74 +77,100 @@ export function Navigation() {
   const currentPath = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
+  console.log('Navigation isOpen:', isOpen); // Debug
+
   return (
     <div>
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[#F5EFE0]/95 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl">
-        <div className="flex items-center justify-between h-16 px-4">
-          <Link href="/" className="group flex items-center gap-3 transition-all duration-300">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] rounded-xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg transition-all duration-300">
+      <div 
+        className="md:hidden fixed top-0 left-0 right-0 z-40 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl"
+        style={{
+          background: isOpen 
+            ? 'linear-gradient(to right, #5C1A1A, #7A2424)' 
+            : 'rgba(245, 239, 224, 0.95)',
+          transition: 'background 0.15s ease-in-out'
+        }}
+      >
+        <div className="flex items-center justify-between p-4">
+          <Link href="/" className="group flex items-center gap-4 transition-all duration-300">
+            <div 
+              className="w-12 h-12 rounded-xl flex items-center justify-center border-4 shadow-lg"
+              style={{
+                background: isOpen 
+                  ? 'rgba(255, 255, 255, 0.1)' 
+                  : 'linear-gradient(to bottom right, #5C1A1A, #7A2424)',
+                borderColor: isOpen ? 'rgba(255, 255, 255, 0.2)' : '#3D1409',
+                backdropFilter: isOpen ? 'blur(4px)' : 'none',
+                transition: 'all 0.15s ease-in-out'
+              }}
+            >
               <Scroll className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-lg font-extrabold text-[#3D1409]">Trailblazers' Vault</h1>
+            <h1 
+              className="text-xl font-extrabold"
+              style={{ 
+                fontFamily: 'var(--font-archivo-black)',
+                color: isOpen ? '#ffffff' : '#3D1409',
+                transition: 'color 0.15s ease-in-out'
+              }}
+            >
+              Trailblazers' Vault
+            </h1>
           </Link>
+          
+          {/* Hamburger Button with X Animation - Always on Top */}
+          <button 
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-12 h-12 flex flex-col items-center justify-center gap-1.5 rounded-lg fixed top-4 right-4 z-[100] border-4 shadow-lg"
+            style={{
+              background: isOpen 
+                ? 'rgba(255, 255, 255, 0.1)' 
+                : 'transparent',
+              borderColor: isOpen ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+              backdropFilter: isOpen ? 'blur(4px)' : 'none',
+              transition: 'all 0.15s ease-in-out'
+            }}
+            aria-label="Toggle menu"
+          >
+            <span className={cn(
+              "block w-7 h-1 rounded-full transition-all duration-300 ease-in-out",
+              isOpen ? "rotate-45 translate-y-2.5 bg-white" : "bg-[#3D1409]"
+            )} />
+            <span className={cn(
+              "block w-7 h-1 rounded-full transition-all duration-300 ease-in-out",
+              isOpen ? "opacity-0 bg-white" : "bg-[#3D1409]"
+            )} />
+            <span className={cn(
+              "block w-7 h-1 rounded-full transition-all duration-300 ease-in-out",
+              isOpen ? "-rotate-45 -translate-y-2.5 bg-white" : "bg-[#3D1409]"
+            )} />
+          </button>
         </div>
       </div>
 
-      {/* Hamburger Button - Fixed Above Everything */}
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "md:hidden w-12 h-12 flex flex-col items-center justify-center gap-1.5 rounded-lg transition-all duration-300",
-          isOpen && "bg-white border-2 border-[#5C1A1A] shadow-md"
-        )}
-        style={{
-          position: 'fixed',
-          top: '12px',
-          right: '16px',
-          zIndex: 100
-        }}
-        aria-label="Toggle menu"
-      >
-        <span className={cn(
-          "block w-7 h-1 bg-[#3D1409] rounded-full transition-all duration-300 ease-in-out",
-          isOpen && "rotate-45 translate-y-2.5"
-        )} />
-        <span className={cn(
-          "block w-7 h-1 bg-[#3D1409] rounded-full transition-all duration-300 ease-in-out",
-          isOpen && "opacity-0"
-        )} />
-        <span className={cn(
-          "block w-7 h-1 bg-[#3D1409] rounded-full transition-all duration-300 ease-in-out",
-          isOpen && "-rotate-45 -translate-y-2.5"
-        )} />
-      </button>
-
       {/* Mobile Navigation */}
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      {isOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/50 z-20 pt-24"
+          onClick={() => setIsOpen(false)}
+          style={{ top: '0' }}
+        />
+      )}
+      
+      <Sheet open={isOpen} onOpenChange={setIsOpen} modal={false}>
         <SheetTrigger asChild className="hidden">
           <button aria-label="Toggle menu" />
         </SheetTrigger>
-        <SheetContent side="left" className="w-80 bg-gradient-to-br from-[#F5EFE0] via-[#E8D5B7] to-[#DCC8A8] border-r-4 border-[#3D1409] p-0">
+        <SheetContent 
+          side="top" 
+          className="w-full h-auto bg-gradient-to-br from-[#F5EFE0] via-[#E8D5B7] to-[#DCC8A8] border-none p-0 pb-6 pt-24 z-30"
+        >
           <SheetHeader className="sr-only">
             <SheetTitle>Navigation Menu</SheetTitle>
           </SheetHeader>
-          
-          {/* Header */}
-          <div className="bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] p-6 border-b-4 border-[#3D1409]">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border-4 border-white/20 shadow-xl">
-                <Scroll className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h2 className="text-white text-xl font-extrabold">Trailblazers'</h2>
-                <p className="text-white/80 text-sm font-semibold">Vault</p>
-              </div>
-            </div>
-          </div>
 
           {/* Navigation */}
-          <nav className="p-6">
+          <nav className="px-6">
             <p className="text-xs font-bold text-[#5C4A2F] uppercase tracking-wider mb-4">Navigation</p>
             <ul className="space-y-2">
               {pages.map((page, index) => (
@@ -154,33 +180,28 @@ export function Navigation() {
               ))}
             </ul>
           </nav>
-
-          {/* Footer */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#DCC8A8]/50 to-transparent">
-            <p className="text-xs text-[#5C4A2F] text-center">© 2026 Trailblazers' Vault</p>
-          </div>
         </SheetContent>
       </Sheet>
 
       {/* Desktop Navigation */}
       <nav className="hidden md:block fixed top-0 left-0 right-0 bg-[#F5EFE0]/95 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl z-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center h-20 gap-8">
+        <div className="max-w-7xl mx-auto px-3 md:px-4 xl:px-6">
+          <div className="flex items-center h-20 gap-2 xl:gap-6">
             {/* Brand Logo - Left */}
-            <Link href="/" className="group flex items-center gap-3 flex-shrink-0 transition-all duration-300 w-64">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] rounded-2xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg hover:rotate-6 transition-all duration-300">
-                <Scroll className="w-7 h-7 text-white" />
+            <Link href="/" className="group flex items-center gap-2 xl:gap-3 flex-shrink-0 transition-all duration-300 w-auto xl:w-64">
+              <div className="w-12 h-12 xl:w-14 xl:h-14 flex-shrink-0 aspect-square bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] rounded-2xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg hover:rotate-6 transition-all duration-300">
+                <Scroll className="w-6 h-6 xl:w-7 xl:h-7 text-white" />
               </div>
-              <h1 className="text-2xl font-extrabold text-[#3D1409] hidden xl:block">Trailblazers' Vault</h1>
+              <h1 className="text-2xl font-extrabold text-[#3D1409] hidden xl:block" style={{ fontFamily: 'var(--font-archivo-black)' }}>Trailblazers' Vault</h1>
             </Link>
             
             {/* Navigation Links - Center */}
-            <ul className="flex gap-3 items-center flex-1 justify-center">
+            <ul className="flex gap-1.5 md:gap-2 xl:gap-3 items-center flex-1 justify-center">
               {pages.filter(page => page.path !== "/login").map((page, index) => processPage(page, index, currentPath, false))}
             </ul>
 
             {/* Login - Right */}
-            <div className="flex-shrink-0 w-64 flex justify-end">
+            <div className="flex-shrink-0 w-auto xl:w-64 flex justify-end">
               <ul>
                 {processPage(pages.find(page => page.path === "/login")!, pages.length - 1, currentPath, false)}
               </ul>

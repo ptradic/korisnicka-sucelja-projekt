@@ -18,8 +18,9 @@ export default function HomePage() {
           </span>
         </div>
         
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#3D1409]">
-          Trailblazers' Vault
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#3D1409] leading-tight" style={{ fontFamily: 'var(--font-archivo-black)' }}>
+          <span className="block sm:inline">Trailblazers'</span>{' '}
+          <span className="block sm:inline">Vault</span>
         </h1>
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
@@ -59,7 +60,7 @@ export default function HomePage() {
 
       {/* Features Section */}
       <section className="w-full max-w-5xl mb-16 px-4 sm:px-10 mt-8">
-        <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-[#3D1409]">Key Features</h2>
+        <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Key Features</h2>
         <div className="grid gap-8 sm:grid-cols-3">
           <div className="bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl p-6 shadow-lg">
             <div className="flex flex-col items-center text-center">
@@ -107,7 +108,7 @@ export default function HomePage() {
 
       {/* Get Started Section */}
       <section className="w-full max-w-5xl mb-16 px-4 sm:px-10">
-        <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-[#3D1409]">Get Started</h2>
+        <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Get Started</h2>
         <div className="grid gap-6 sm:grid-cols-3">
           <Link href="/gm-tools" className="group">
             <div className="h-full bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300">
@@ -165,7 +166,7 @@ export default function HomePage() {
       {/* About Section */}
       <section className="w-full max-w-5xl mb-16 px-4 sm:px-10">
         <div className="bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl p-8 sm:p-12 shadow-lg">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-[#3D1409] text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-[#3D1409] text-center" style={{ fontFamily: 'var(--font-archivo-black)' }}>
             About the Project
           </h2>
           
@@ -184,7 +185,7 @@ export default function HomePage() {
           </section>
 
           <section>
-            <h3 className="text-2xl font-bold mb-3 text-[#3D1409]">Why We Built It</h3>
+            <h3 className="text-2xl font-bold mb-3 text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Why We Built It</h3>
             <p className="text-base text-[#5C4A2F] leading-relaxed">
               Born from experience at the table, we wanted a simple, reliable way to track and share gear so the game
               stays focused on play instead of spreadsheet management.

@@ -1,29 +1,34 @@
+"use client";
+
 import { Button } from "@/app/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import Link from "next/link";
 import { Package, Wand2, BookOpen, ChevronRight, Sparkles, ChevronDown, Users, Archive, Download } from "lucide-react";
-
-export const dynamic = 'force-static';
+import { useScrollReveal } from "@/app/hooks/useScrollReveal";
 
 export default function HomePage() {
+  const featuresRef = useScrollReveal<HTMLElement>();
+  const getStartedRef = useScrollReveal<HTMLElement>({ delay: 100 });
+  const aboutRef = useScrollReveal<HTMLElement>({ delay: 200 });
+
   return (
     <main className="flex min-h-screen flex-col items-center bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
       
       {/* Hero Section */}
       <section className="w-full max-w-5xl text-center flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
-        <div className="inline-block mb-4 px-4 py-2 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full">
+        <div className="inline-block mb-4 px-4 py-2 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full fade-in-up delay-100">
           <span className="text-sm font-semibold text-[#5C1A1A] flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
             Your Ultimate RPG Inventory Manager
           </span>
         </div>
         
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#3D1409] leading-tight" style={{ fontFamily: 'var(--font-archivo-black)' }}>
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#3D1409] leading-tight fade-in-up delay-200" style={{ fontFamily: 'var(--font-archivo-black)' }}>
           <span className="block sm:inline">Trailblazers'</span>{' '}
           <span className="block sm:inline">Vault</span>
         </h1>
 
-        <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8 fade-in-up delay-300">
           <Link href="/vaults" className="group">
             <button className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409] flex items-center justify-center gap-2">
               <Package className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
@@ -47,19 +52,19 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <p className="text-xl sm:text-2xl text-[#5C1A1A] font-medium">
+        <p className="text-xl sm:text-2xl text-[#5C1A1A] font-medium fade-in-up delay-400">
           "Your party's loot, safely stashed."
         </p>
 
         {/* Scroll Indicator */}
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
+        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce fade-in delay-500">
           <span className="text-sm text-[#5C1A1A] font-medium">Scroll for more</span>
           <ChevronDown className="w-8 h-8 text-[#5C1A1A]" />
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="w-full max-w-5xl mb-16 px-4 sm:px-10 mt-8">
+      <section ref={featuresRef} className="scroll-reveal w-full max-w-5xl mb-16 px-4 sm:px-10 mt-8">
         <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Key Features</h2>
         <div className="grid gap-8 sm:grid-cols-3">
           <div className="bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl p-6 shadow-lg">
@@ -107,7 +112,7 @@ export default function HomePage() {
       </section>
 
       {/* Get Started Section */}
-      <section className="w-full max-w-5xl mb-16 px-4 sm:px-10">
+      <section ref={getStartedRef} className="scroll-reveal w-full max-w-5xl mb-16 px-4 sm:px-10">
         <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Get Started</h2>
         <div className="grid gap-6 sm:grid-cols-3">
           <Link href="/gm-tools" className="group">
@@ -164,7 +169,7 @@ export default function HomePage() {
       </section>
 
       {/* About Section */}
-      <section className="w-full max-w-5xl mb-16 px-4 sm:px-10">
+      <section ref={aboutRef} className="scroll-reveal w-full max-w-5xl mb-16 px-4 sm:px-10">
         <div className="bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl p-8 sm:p-12 shadow-lg">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-[#3D1409] text-center" style={{ fontFamily: 'var(--font-archivo-black)' }}>
             About the Project

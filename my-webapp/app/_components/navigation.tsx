@@ -88,7 +88,7 @@ export function Navigation() {
           background: isOpen 
             ? 'linear-gradient(to right, #5C1A1A, #7A2424)' 
             : 'rgba(245, 239, 224, 0.95)',
-          transition: 'background 0.15s ease-in-out'
+          transition: 'background 0.3s ease-in-out'
         }}
       >
         <div className="flex items-center justify-between p-4">
@@ -101,7 +101,7 @@ export function Navigation() {
                   : 'linear-gradient(to bottom right, #5C1A1A, #7A2424)',
                 borderColor: isOpen ? 'rgba(255, 255, 255, 0.2)' : '#3D1409',
                 backdropFilter: isOpen ? 'blur(4px)' : 'none',
-                transition: 'all 0.15s ease-in-out'
+                transition: 'all 0.4s ease-in-out'
               }}
             >
               <Scroll className="w-6 h-6 text-white" />
@@ -111,7 +111,7 @@ export function Navigation() {
               style={{ 
                 fontFamily: 'var(--font-archivo-black)',
                 color: isOpen ? '#ffffff' : '#3D1409',
-                transition: 'color 0.15s ease-in-out'
+                transition: 'color 0.4s ease-in-out'
               }}
             >
               Trailblazers' Vault
@@ -120,15 +120,21 @@ export function Navigation() {
           
           {/* Hamburger Button with X Animation - Always on Top */}
           <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className="w-12 h-12 flex flex-col items-center justify-center gap-1.5 rounded-lg fixed top-4 right-4 z-[100] border-4 shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setIsOpen(prev => !prev);
+            }}
+            className="w-12 h-12 flex flex-col items-center justify-center gap-1.5 rounded-lg fixed top-4 right-4 z-[100]"
             style={{
               background: isOpen 
                 ? 'rgba(255, 255, 255, 0.1)' 
                 : 'transparent',
-              borderColor: isOpen ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
               backdropFilter: isOpen ? 'blur(4px)' : 'none',
-              transition: 'all 0.15s ease-in-out'
+              boxShadow: isOpen 
+                ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3)' 
+                : '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.4s ease-in-out'
             }}
             aria-label="Toggle menu"
           >
@@ -152,8 +158,11 @@ export function Navigation() {
       {isOpen && (
         <div 
           className="md:hidden fixed inset-0 bg-black/50 z-20 pt-24"
-          onClick={() => setIsOpen(false)}
-          style={{ top: '0' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(false);
+          }}
+          style={{ top: '0', pointerEvents: 'auto' }}
         />
       )}
       
@@ -164,6 +173,12 @@ export function Navigation() {
         <SheetContent 
           side="top" 
           className="w-full h-auto bg-gradient-to-br from-[#F5EFE0] via-[#E8D5B7] to-[#DCC8A8] border-none p-0 pb-6 pt-24 z-30"
+          onPointerDownOutside={(e) => {
+            e.preventDefault();
+          }}
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Navigation Menu</SheetTitle>

@@ -34,7 +34,7 @@ export function HomePage({ onSelectVault, onCreateVault, vaults, onDeleteVault }
 
   if (showLogin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] flex items-center justify-center p-4 pt-32">
         <div className="bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-8 sm:p-10 max-w-md w-full shadow-2xl">
           {/* Header */}
           <div className="flex flex-col items-center mb-8">
@@ -174,40 +174,8 @@ export function HomePage({ onSelectVault, onCreateVault, vaults, onDeleteVault }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
-      {/* Modern Navbar */}
-      <nav className="sticky top-0 z-50 bg-[#F5EFE0]/95 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo and Brand */}
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] rounded-2xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg hover:rotate-6 transition-transform duration-300">
-                <Scroll className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-extrabold text-[#3D1409]">Trailblazers' Vault</h1>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-[#5C4A2F] font-medium">{name}</span>
-                  <span className="px-2 py-0.5 bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] text-white text-xs font-bold rounded-full">
-                    {userType === 'dm' ? 'DM' : 'Player'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Logout Button */}
-            <button
-              onClick={() => setShowLogin(true)}
-              className="group px-6 py-3 bg-white hover:bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] text-[#3D1409] font-bold rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-2"
-            >
-              <LogIn className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      </nav>
-
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 pt-32">
         {/* Create New Vault Section */}
         <div className="mb-8">
           <button

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Averia_Gruesa_Libre, Archivo_Black } from "next/font/google";
 import "./globals.css";
-import { Navigation } from "./_components/navigation";
+import { Navigation } from "./components/Navigation";
+import { LayoutContent } from "./components/LayoutContent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,9 +43,7 @@ export default function RootLayout({
         style={{ fontFamily: 'var(--font-averia)' }}
       >
         <Navigation />
-        <div className="pt-16">
-          {children}
-        </div>
+        <LayoutContent>{children}</LayoutContent>
       </body>
     </html>
   );

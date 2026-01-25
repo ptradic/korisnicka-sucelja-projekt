@@ -168,8 +168,8 @@ export default function VaultsPage() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
-        <div className="flex h-screen">
+      <div className="min-h-screen bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] pt-20">
+        <div className="flex h-[calc(100vh-5rem)]">
           <PlayerSidebar
             players={vaultData.players}
             selectedPlayerId={selectedPlayerId}

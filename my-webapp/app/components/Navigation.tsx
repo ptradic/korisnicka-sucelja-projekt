@@ -77,6 +77,10 @@ export function Navigation() {
   const currentPath = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
+  // Don't show logout on home pages, only on vault/login pages
+  const isVaultPage = currentPath.startsWith('/vaults') || currentPath.startsWith('/login');
+  const isHomePage = currentPath === '/' || currentPath === '/gm-tools' || currentPath === '/guides' || currentPath === '/support';
+
   console.log('Navigation isOpen:', isOpen); // Debug
 
   return (
@@ -193,6 +197,19 @@ export function Navigation() {
                   {processPage(page, index, currentPath, true)}
                 </div>
               ))}
+              {isVaultPage && (
+                <div onClick={() => setIsOpen(false)}>
+                  <li className="w-full">
+                    <Link 
+                      href="/" 
+                      className="inline-flex w-full items-center gap-3 px-5 py-4 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 justify-start text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
+                    >
+                      <LogIn className="w-5 h-5" />
+                      <span>Logout</span>
+                    </Link>
+                  </li>
+                </div>
+              )}
             </ul>
           </nav>
         </SheetContent>
@@ -215,11 +232,21 @@ export function Navigation() {
               {pages.filter(page => page.path !== "/login").map((page, index) => processPage(page, index, currentPath, false))}
             </ul>
 
-            {/* Login - Right */}
+            {/* Login/Logout - Right */}
             <div className="flex-shrink-0 w-auto xl:w-64 flex justify-end">
-              <ul>
-                {processPage(pages.find(page => page.path === "/login")!, pages.length - 1, currentPath, false)}
-              </ul>
+              {isVaultPage ? (
+                <Link 
+                  href="/" 
+                  className="inline-flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 whitespace-nowrap text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
+                >
+                  <LogIn className="w-5 h-5" />
+                  <span>Logout</span>
+                </Link>
+              ) : (
+                <ul>
+                  {processPage(pages.find(page => page.path === "/login")!, pages.length - 1, currentPath, false)}
+                </ul>
+              )}
             </div>
           </div>
         </div>

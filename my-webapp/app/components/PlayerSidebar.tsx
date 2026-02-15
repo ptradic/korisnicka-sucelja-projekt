@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useDrop } from 'react-dnd';
 import { Package, Users } from 'lucide-react';
 import type { Player } from '../types';
@@ -152,6 +153,25 @@ export function PlayerSidebar({
   onDragOverChange,
   sharedLootCount,
 }: PlayerSidebarProps) {
+  const [isWide, setIsWide] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 640px)');
+    const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      setIsWide('matches' in event ? event.matches : event.matches);
+    };
+
+    handleChange(mediaQuery);
+
+    if ('addEventListener' in mediaQuery) {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
   const handleDrop = (toId: string | 'shared') => (itemId: string, fromId: string) => {
     onMoveItem(itemId, fromId, toId);
     onDragOverChange(null);
@@ -164,64 +184,79 @@ export function PlayerSidebar({
     }),
   }), []);
 
-  const isExpanded = isSidebarOver || dragOverPlayerId !== null;
+  const isExpanded = isWide || isSidebarOver || dragOverPlayerId !== null;
 
   return (
     <div
       ref={sidebarDrop as any}
-      className={`${isExpanded ? 'w-56' : 'w-16'} sm:w-56 bg-[#D9C7AA] border-r-[4px] border-[#3D1409] p-2 sm:p-4 flex flex-col shrink-0 transition-all duration-200 overflow-hidden`}
+      className={`${isExpanded ? 'w-56' : 'w-16'} sm:w-56 bg-[#D9C7AA] border-r-[4px] border-[#3D1409] p-2 sm:p-4 flex flex-col shrink-0 transition-all duration-200 overflow-hidden relative`}
       style={{ boxShadow: '4px 0 8px rgba(61, 20, 9, 0.15)' }}
     >
-      <div className="mb-6 pb-4 border-b-[3px] border-[#8B6F47]">
-        <div className="flex items-center gap-3 mb-2">
-          <Package className="w-8 h-8 text-[#3D1409]" />
-          <div>
-            <h1 className="text-[#3D1409]">Trailblazers' Vault</h1>
-            <p className="text-[#5C4A2F] text-xs">Party inventory manager</p>
+      {!isExpanded && (
+        <div className="sm:hidden absolute inset-0 bg-[#5C1A1A] flex flex-col items-center justify-center gap-2 text-white pointer-events-none">
+          <div
+            className="text-xs font-semibold tracking-[0.3em]"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          >
+            INVENTORIES
           </div>
+          <div className="text-base">◀</div>
         </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto space-y-3">
-        <div className="mb-4">
-          <div className="flex items-center gap-2 text-[#5C4A2F] text-xs mb-2 px-2">
-            <Users className="w-4 h-4" />
-            <span>PARTY MEMBERS</span>
+      )}
+      {isExpanded && (
+        <>
+          <div className="mb-6 pb-4 border-b-[3px] border-[#8B6F47]">
+            <div className="flex items-center gap-3 mb-2">
+              <Package className="w-8 h-8 text-[#3D1409]" />
+              <div>
+                <h1 className="text-[#3D1409]">Trailblazers' Vault</h1>
+                <p className="text-[#5C4A2F] text-xs">Party inventory manager</p>
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-            {players.map(player => (
-              <PlayerIcon
-                key={player.id}
-                player={player}
-                isSelected={selectedPlayerId === player.id}
-                onClick={() => onSelectPlayer(player.id)}
-                onDrop={handleDrop(player.id)}
-                isBeingDraggedOver={dragOverPlayerId === player.id}
+
+          <div className="flex-1 overflow-y-auto space-y-3">
+            <div className="mb-4">
+              <div className="flex items-center gap-2 text-[#5C4A2F] text-xs mb-2 px-2">
+                <Users className="w-4 h-4" />
+                <span>PARTY MEMBERS</span>
+              </div>
+              <div className="space-y-2">
+                {players.map(player => (
+                  <PlayerIcon
+                    key={player.id}
+                    player={player}
+                    isSelected={selectedPlayerId === player.id}
+                    onClick={() => onSelectPlayer(player.id)}
+                    onDrop={handleDrop(player.id)}
+                    isBeingDraggedOver={dragOverPlayerId === player.id}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2 text-[#5C4A2F] text-xs mb-2 px-2">
+                <Package className="w-4 h-4" />
+                <span>SHARED</span>
+              </div>
+              <SharedLootIcon
+                isSelected={selectedPlayerId === 'shared'}
+                onClick={() => onSelectPlayer('shared')}
+                onDrop={handleDrop('shared')}
+                itemCount={sharedLootCount}
+                isBeingDraggedOver={dragOverPlayerId === 'shared'}
               />
-            ))}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <div className="flex items-center gap-2 text-[#5C4A2F] text-xs mb-2 px-2">
-            <Package className="w-4 h-4" />
-            <span>SHARED</span>
+          <div className="mt-4 pt-4 border-t-[3px] border-[#8B6F47]">
+            <div className="text-xs text-[#5C4A2F] text-center">
+              Drag items between inventories
+            </div>
           </div>
-          <SharedLootIcon
-            isSelected={selectedPlayerId === 'shared'}
-            onClick={() => onSelectPlayer('shared')}
-            onDrop={handleDrop('shared')}
-            itemCount={sharedLootCount}
-            isBeingDraggedOver={dragOverPlayerId === 'shared'}
-          />
-        </div>
-      </div>
-
-      <div className="mt-4 pt-4 border-t-[3px] border-[#8B6F47]">
-        <div className="text-xs text-[#5C4A2F] text-center">
-          Drag items between inventories
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

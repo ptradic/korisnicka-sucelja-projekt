@@ -5,6 +5,8 @@ interface CategoryFilterProps {
   selectedCategory: Category | 'all';
   onCategoryChange: (category: Category | 'all') => void;
   items: Item[];
+  className?: string;
+  listClassName?: string;
 }
 
 const categories: { value: Category | 'all'; label: string; icon: React.ComponentType<any> }[] = [
@@ -17,15 +19,21 @@ const categories: { value: Category | 'all'; label: string; icon: React.Componen
   { value: 'misc', label: 'Miscellaneous', icon: Package },
 ];
 
-export function CategoryFilter({ selectedCategory, onCategoryChange, items }: CategoryFilterProps) {
+export function CategoryFilter({
+  selectedCategory,
+  onCategoryChange,
+  items,
+  className,
+  listClassName,
+}: CategoryFilterProps) {
   const getCategoryCount = (category: Category | 'all') => {
     if (category === 'all') return items.length;
     return items.filter(item => item.category === category).length;
   };
 
   return (
-    <div className="mb-6 overflow-x-auto">
-      <div className="flex gap-2 min-w-max pb-2">
+    <div className={`mb-4 sm:mb-6 overflow-x-auto sm:overflow-x-visible ${className || ''}`.trim()}>
+      <div className={`flex flex-wrap gap-2 min-w-0 pb-2 ${listClassName || ''}`.trim()}>
         {categories.map(({ value, label, icon: Icon }) => {
           const count = getCategoryCount(value);
           const isSelected = selectedCategory === value;

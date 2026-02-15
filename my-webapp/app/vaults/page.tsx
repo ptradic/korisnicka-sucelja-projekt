@@ -168,8 +168,8 @@ export default function VaultsPage() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] pt-20">
-        <div className="flex h-[calc(100vh-5rem)]">
+      <div className="min-h-screen bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] pt-20 overflow-x-hidden">
+        <div className="flex flex-col md:flex-row md:h-[calc(100vh-5rem)] md:overflow-hidden">
           <PlayerSidebar
             players={vaultData.players}
             selectedPlayerId={selectedPlayerId}
@@ -179,28 +179,30 @@ export default function VaultsPage() {
             onDragOverChange={setDragOverPlayerId}
             sharedLootCount={vaultData.sharedLoot.length}
           />
-          <InventoryView
-            inventory={
-              selectedPlayerId === 'shared'
-                ? vaultData.sharedLoot
-                : vaultData.players.find((p: Player) => p.id === selectedPlayerId)?.inventory || []
-            }
-            owner={
-              selectedPlayerId === 'shared'
-                ? { name: 'Shared Loot', id: 'shared' }
-                : vaultData.players.find((p: Player) => p.id === selectedPlayerId) || null
-            }
-            ownerId={selectedPlayerId}
-            isDM={vaultData.isDM}
-            onAddItem={() => setShowAddItemModal(true)}
-            onItemClick={setSelectedItem}
-            onMoveItem={handleMoveItem}
-            maxWeight={
-              selectedPlayerId !== 'shared'
-                ? vaultData.players.find((p: Player) => p.id === selectedPlayerId)?.maxWeight
-                : undefined
-            }
-          />
+          <div className="flex-1 min-w-0">
+            <InventoryView
+              inventory={
+                selectedPlayerId === 'shared'
+                  ? vaultData.sharedLoot
+                  : vaultData.players.find((p: Player) => p.id === selectedPlayerId)?.inventory || []
+              }
+              owner={
+                selectedPlayerId === 'shared'
+                  ? { name: 'Shared Loot', id: 'shared' }
+                  : vaultData.players.find((p: Player) => p.id === selectedPlayerId) || null
+              }
+              ownerId={selectedPlayerId}
+              isDM={vaultData.isDM}
+              onAddItem={() => setShowAddItemModal(true)}
+              onItemClick={setSelectedItem}
+              onMoveItem={handleMoveItem}
+              maxWeight={
+                selectedPlayerId !== 'shared'
+                  ? vaultData.players.find((p: Player) => p.id === selectedPlayerId)?.maxWeight
+                  : undefined
+              }
+            />
+          </div>
         </div>
 
         {showAddItemModal && (

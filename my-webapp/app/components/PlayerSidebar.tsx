@@ -157,8 +157,21 @@ export function PlayerSidebar({
     onDragOverChange(null);
   };
 
+  const [{ isSidebarOver }, sidebarDrop] = useDrop(() => ({
+    accept: 'INVENTORY_ITEM',
+    collect: (monitor) => ({
+      isSidebarOver: monitor.isOver(),
+    }),
+  }), []);
+
+  const isExpanded = isSidebarOver || dragOverPlayerId !== null;
+
   return (
-    <div className="w-72 bg-[#D9C7AA] border-r-[4px] border-[#3D1409] p-4 flex flex-col" style={{ boxShadow: '4px 0 8px rgba(61, 20, 9, 0.15)' }}>
+    <div
+      ref={sidebarDrop as any}
+      className={`w-16 sm:w-56 bg-[#D9C7AA] border-r-[4px] border-[#3D1409] p-2 sm:p-4 flex flex-col shrink-0 transition-all duration-200 overflow-hidden`}
+      style={{ boxShadow: '4px 0 8px rgba(61, 20, 9, 0.15)' }}
+    >
       <div className="mb-6 pb-4 border-b-[3px] border-[#8B6F47]">
         <div className="flex items-center gap-3 mb-2">
           <Package className="w-8 h-8 text-[#3D1409]" />

@@ -169,7 +169,7 @@ export function PlayerSidebar({
   return (
     <div
       ref={sidebarDrop as any}
-      className={`w-16 sm:w-56 bg-[#D9C7AA] border-r-[4px] border-[#3D1409] p-2 sm:p-4 flex flex-col shrink-0 transition-all duration-200 overflow-hidden`}
+      className={`${isExpanded ? 'w-56' : 'w-16'} sm:w-56 bg-[#D9C7AA] border-r-[4px] border-[#3D1409] p-2 sm:p-4 flex flex-col shrink-0 transition-all duration-200 overflow-hidden`}
       style={{ boxShadow: '4px 0 8px rgba(61, 20, 9, 0.15)' }}
     >
       <div className="mb-6 pb-4 border-b-[3px] border-[#8B6F47]">

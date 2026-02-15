@@ -47,7 +47,7 @@ export function InventoryView({
   };
 
   return (
-    <div className="h-full flex flex-col min-h-0 max-w-full overflow-x-hidden">
+    <div className="h-full w-full min-w-0 flex flex-col min-h-0 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="bg-[#F5EFE0] border-b-[4px] border-[#3D1409] px-4 py-4 sm:px-5 md:px-6 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -166,7 +166,7 @@ export function InventoryView({
       </div>
 
       {/* Inventory Grid */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5 md:p-6">
         {filteredItems.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-[#5C4A2F] text-lg mb-2">No items found</div>
@@ -177,14 +177,15 @@ export function InventoryView({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 justify-items-start">
             {filteredItems.map(item => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                ownerId={ownerId}
-                onClick={() => onItemClick(item)}
-              />
+              <div key={item.id} className="w-full max-w-[320px]">
+                <ItemCard
+                  item={item}
+                  ownerId={ownerId}
+                  onClick={() => onItemClick(item)}
+                />
+              </div>
             ))}
           </div>
         )}

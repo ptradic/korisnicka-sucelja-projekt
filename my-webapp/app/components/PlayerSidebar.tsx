@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDrop } from 'react-dnd';
 import { Package, Users } from 'lucide-react';
 import type { Player } from '../types';
@@ -154,11 +154,13 @@ export function PlayerSidebar({
   sharedLootCount,
 }: PlayerSidebarProps) {
   const [isWide, setIsWide] = useState(false);
+  const [isClickExpanded, setIsClickExpanded] = useState(false);
+  const clickTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 640px)');
     const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
-      setIsWide('matches' in event ? event.matches : event.matches);
+      setIsWide(event.matches);
     };
 
     handleChange(mediaQuery);
@@ -168,8 +170,16 @@ export function PlayerSidebar({
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
 
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
+    (mediaQuery as MediaQueryList).addListener(handleChange);
+    return () => (mediaQuery as MediaQueryList).removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current !== null) {
+        window.clearTimeout(clickTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleDrop = (toId: string | 'shared') => (itemId: string, fromId: string) => {
@@ -184,11 +194,23 @@ export function PlayerSidebar({
     }),
   }), []);
 
-  const isExpanded = isWide || isSidebarOver || dragOverPlayerId !== null;
+  const isExpanded = isWide || isSidebarOver || dragOverPlayerId !== null || isClickExpanded;
+
+  const handleSidebarClick = () => {
+    if (isWide) return;
+    setIsClickExpanded(true);
+    if (clickTimeoutRef.current !== null) {
+      window.clearTimeout(clickTimeoutRef.current);
+    }
+    clickTimeoutRef.current = window.setTimeout(() => {
+      setIsClickExpanded(false);
+    }, 3000);
+  };
 
   return (
     <div
       ref={sidebarDrop as any}
+      onClick={handleSidebarClick}
       className={`${isExpanded ? 'w-56' : 'w-16'} sm:w-56 bg-[#D9C7AA] border-r-[4px] border-[#3D1409] p-2 sm:p-4 flex flex-col shrink-0 transition-all duration-200 overflow-hidden relative`}
       style={{ boxShadow: '4px 0 8px rgba(61, 20, 9, 0.15)' }}
     >

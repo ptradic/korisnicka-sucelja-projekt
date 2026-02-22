@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
-import { Menu, Scroll, Home, Wand2, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save } from "lucide-react";
+import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Page = {
@@ -26,10 +26,10 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const pages: Page[] = [
   { title: "Home", path: "/", icon: Home },
-  { title: "GM Tools", path: "/gm-tools", icon: Wand2 },
   { title: "Guides", path: "/guides", icon: BookOpen },
   { title: "Support", path: "/support", icon: HelpCircle },
   { title: "Login", path: "/login", icon: LogIn },
+  { title: "Vaults", path: "/vaults", icon: Scroll },
 ];
 
 function processPage(page: Page, index: number, currentPath?: string, isMobile: boolean = false) {

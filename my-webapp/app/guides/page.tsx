@@ -46,7 +46,7 @@ export default function GuidesPage() {
             </span>
           </div>
           
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-4 text-[#3D1409]">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-4 text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>
             Guides & Tutorials
           </h1>
           

@@ -491,9 +491,9 @@ export function Navigation() {
                 <p className="text-xs font-bold text-[#5C4A2F] uppercase tracking-wider mb-4">Account</p>
                 
                 {/* Profile card */}
-                <div className="bg-white/60 border-3 border-[#8B6F47] rounded-xl p-4 mb-3">
+                <div className="bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl p-4 mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] flex items-center justify-center border-2 border-[#3D1409] flex-shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] flex items-center justify-center border-4 border-[#3D1409] flex-shrink-0">
                       <span className="text-sm font-bold text-white leading-none">{initials}</span>
                     </div>
                     <div className="min-w-0 flex-1">

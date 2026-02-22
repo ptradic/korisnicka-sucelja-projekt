@@ -1,89 +1,105 @@
-import { LifeBuoy, Github, MessageCircle, HelpCircle, Send, RotateCcw, Mail, ExternalLink, Bug, Lightbulb } from 'lucide-react';
+"use client";
+
+import Link from "next/link";
+import { LifeBuoy, Github, MessageCircle, HelpCircle, Send, RotateCcw, Mail, ExternalLink, Bug, Lightbulb, ChevronDown } from 'lucide-react';
+import { useScrollReveal } from "@/app/hooks/useScrollReveal";
 
 const quickLinks = [
   {
-    href: "https://github.com/your-repo",
+    id: "github",
+    href: "https://github.com/ptradic",
     title: "GitHub Issues",
     desc: "Report bugs or request features",
     icon: Github,
-    external: true
+    external: true,
   },
   {
-    href: "/faq",
+    id: "faq",
+    href: "/support/faq",
     title: "FAQ & Troubleshooting",
     desc: "Common questions and solutions",
     icon: HelpCircle,
-    external: false
+    external: false,
   },
   {
+    id: "discord",
     href: "#",
     title: "Community Discord",
     desc: "Chat with other users",
     icon: MessageCircle,
-    external: true
+    external: true,
   },
 ];
 
-export const dynamic = 'force-static';
-
 export default function SupportPage() {
+  const feedbackRef = useScrollReveal<HTMLElement>();
+  const helpRef = useScrollReveal<HTMLElement>({ delay: 100 });
+
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 sm:p-10 bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
-      <div className="max-w-5xl w-full">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <div className="inline-block mb-4 px-4 py-2 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full">
+    <main className="flex min-h-screen flex-col items-center bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
+
+      {/* Hero + Links — fills first viewport */}
+      <section className="w-full max-w-5xl flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
+        {/* Hero */}
+        <div className="text-center">
+          <div className="inline-block mb-4 px-4 py-2 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full fade-in-up delay-100">
             <span className="text-sm font-semibold text-[#5C1A1A] flex items-center gap-2">
               <LifeBuoy className="w-4 h-4" />
-              We're Here to Help
+              We&apos;re Here to Help
             </span>
           </div>
           
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-4 text-[#3D1409]">
-            Support & Feedback
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 sm:mb-10 text-[#3D1409] leading-tight fade-in-up delay-200" style={{ fontFamily: 'var(--font-archivo-black)' }}>
+            <span className="block sm:inline">Support &</span>{' '}
+            <span className="block sm:inline">Feedback</span>
           </h1>
-          
-          <p className="max-w-2xl mx-auto text-base sm:text-lg text-[#5C4A2F] leading-relaxed">
-            Report bugs, request features, or find quick help resources to get the most out of Trailblazers' Vault.
-          </p>
-        </div>
 
-        {/* Quick Links Section */}
-        <section className="mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-[#3D1409]">Quick Links</h2>
-          <div className="grid gap-6 sm:grid-cols-3">
+          {/* Link Buttons */}
+          <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center items-center gap-3 sm:gap-4 mb-6 sm:mb-8 fade-in-up delay-300">
             {quickLinks.map((link) => {
               const Icon = link.icon;
+              const isInternal = !link.external && link.href !== "#";
+              const Wrapper = isInternal ? Link : "a" as const;
+              const wrapperProps = isInternal
+                ? { href: link.href }
+                : {
+                    href: link.href,
+                    target: link.external ? "_blank" : undefined,
+                    rel: link.external ? "noopener noreferrer" : undefined,
+                  };
               return (
-                <a 
-                  key={link.href} 
-                  href={link.href}
-                  target={link.external ? "_blank" : undefined}
-                  rel={link.external ? "noopener noreferrer" : undefined}
-                  className="group block"
+                <Wrapper
+                  key={link.id}
+                  {...(wrapperProps as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+                  className="group inline-flex items-center gap-2 w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-xl bg-[#F5EFE0] border-3 sm:border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-md sm:shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 justify-center"
                 >
-                  <div className="h-full p-6 rounded-2xl bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="w-14 h-14 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center mb-4 group-hover:rotate-6 transition-transform duration-300 shadow-md">
-                        <Icon className="w-7 h-7 text-white" />
-                      </div>
-                      <h3 className="font-bold text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors mb-2 flex items-center gap-2">
-                        {link.title}
-                        {link.external && <ExternalLink className="w-4 h-4" />}
-                      </h3>
-                      <p className="text-sm text-[#5C4A2F] leading-relaxed">
-                        {link.desc}
-                      </p>
-                    </div>
-                  </div>
-                </a>
+                  <Icon className="w-5 h-5 text-[#5C1A1A] group-hover:rotate-12 transition-transform duration-300" />
+                  <span className="font-bold text-base sm:text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
+                    {link.title}
+                  </span>
+                  {link.external && <ExternalLink className="w-3 h-3 text-[#8B6F47]" />}
+                </Wrapper>
               );
             })}
           </div>
-        </section>
+          
+          <p className="max-w-xs sm:max-w-2xl mx-auto text-sm sm:text-xl md:text-2xl text-[#5C4A2F] leading-relaxed fade-in-up delay-400">
+            Report bugs, request features,<br className="sm:hidden" /> or find quick help resources<br className="sm:hidden" /> to get the most out of<br className="sm:hidden" /> Trailblazers&apos;&nbsp;Vault.
+          </p>
+        </div>
+
+        {/* Scroll Indicator — pinned near bottom */}
+        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 fade-in delay-500">
+          <span className="text-sm text-[#5C1A1A] font-medium">Scroll for more</span>
+          <ChevronDown className="w-8 h-8 text-[#5C1A1A]" />
+        </div>
+      </section>
+
+      {/* Below-the-fold content */}
+      <div className="w-full max-w-5xl px-4 sm:px-10 mt-8">
 
         {/* Feedback Form Section */}
-        <section className="bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 sm:p-10 shadow-2xl mb-12">
+        <section ref={feedbackRef} className="scroll-reveal bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 sm:p-10 shadow-2xl mb-12">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg">
               <Mail className="w-6 h-6 text-white" />
@@ -92,7 +108,7 @@ export default function SupportPage() {
           </div>
 
           <p className="text-[#5C4A2F] mb-6">
-            Have a bug to report or a feature idea? Let us know below and we'll get back to you.
+            Have a bug to report or a feature idea? Let us know below and we&apos;ll get back to you.
           </p>
 
           <form className="space-y-6">
@@ -155,10 +171,10 @@ export default function SupportPage() {
         </section>
 
         {/* Additional Help */}
-        <section className="bg-gradient-to-br from-[#5C1A1A]/10 to-transparent border-4 border-[#8B6F47] rounded-2xl p-6 sm:p-8">
+        <section ref={helpRef} className="scroll-reveal bg-gradient-to-br from-[#5C1A1A]/10 to-transparent border-4 border-[#8B6F47] rounded-2xl p-6 sm:p-8 mb-10">
           <h3 className="text-2xl font-bold mb-4 text-[#3D1409]">Need Immediate Help?</h3>
           <p className="text-[#5C4A2F] leading-relaxed mb-4">
-            Check out our <a href="/guides" className="text-[#5C1A1A] font-semibold hover:underline">Guides & Tutorials</a> for step-by-step walkthroughs, or visit the <a href="/faq" className="text-[#5C1A1A] font-semibold hover:underline">FAQ</a> for answers to common questions.
+            Check out our <a href="/guides" className="text-[#5C1A1A] font-semibold hover:underline">Guides & Tutorials</a> for step-by-step walkthroughs, or visit the <Link href="/support/faq" className="text-[#5C1A1A] font-semibold hover:underline">FAQ</Link> for answers to common questions.
           </p>
           <p className="text-sm text-[#5C4A2F]">
             Most issues can be resolved quickly by checking our documentation first.

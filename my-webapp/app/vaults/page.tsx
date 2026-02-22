@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 // @ts-ignore
 import { DndProvider } from 'react-dnd';
 // @ts-ignore
@@ -55,6 +56,8 @@ const INITIAL_DATA: VaultData = {
 };
 
 export default function VaultsPage() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [vaults, setVaults] = useState<Vault[]>([]);
   const [currentVaultId, setCurrentVaultId] = useState<string | null>(null);
   const [vaultData, setVaultData] = useState<VaultData>(INITIAL_DATA);
@@ -62,6 +65,21 @@ export default function VaultsPage() {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [dragOverPlayerId, setDragOverPlayerId] = useState<string | 'shared' | null>(null);
+
+  // Check authentication
+  useEffect(() => {
+    const auth = localStorage.getItem('trailblazers-auth');
+    if (auth) {
+      const parsed = JSON.parse(auth);
+      if (parsed.isLoggedIn) {
+        setIsAuthenticated(true);
+      } else {
+        router.push('/login');
+      }
+    } else {
+      router.push('/login');
+    }
+  }, [router]);
 
   useEffect(() => {
     const saved = localStorage.getItem(VAULTS_KEY);
@@ -155,6 +173,12 @@ export default function VaultsPage() {
 
     setVaultData({ ...vaultData, players: finalPlayers, sharedLoot: updatedSharedLoot });
   };
+
+  // Show nothing while checking auth (will redirect if not logged in)
+  if (!isAuthenticated) {
+    return null;
+  }
+
   if (!currentVaultId) {
     return (
       <HomePage

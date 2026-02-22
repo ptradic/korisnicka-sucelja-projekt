@@ -3,13 +3,28 @@
 import { Button } from "@/app/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Package, Wand2, BookOpen, ChevronRight, Sparkles, ChevronDown, Users, Archive, Download } from "lucide-react";
 import { useScrollReveal } from "@/app/hooks/useScrollReveal";
 
 export default function HomePage() {
+  const router = useRouter();
   const featuresRef = useScrollReveal<HTMLElement>();
   const getStartedRef = useScrollReveal<HTMLElement>({ delay: 100 });
   const aboutRef = useScrollReveal<HTMLElement>({ delay: 200 });
+
+  const handleManageVaults = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const auth = localStorage.getItem('trailblazers-auth');
+    if (auth) {
+      const parsed = JSON.parse(auth);
+      if (parsed.isLoggedIn) {
+        router.push('/vaults');
+        return;
+      }
+    }
+    router.push('/login');
+  };
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
@@ -29,13 +44,13 @@ export default function HomePage() {
         </h1>
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8 fade-in-up delay-300">
-          <Link href="/vaults" className="group">
+          <a href="/vaults" onClick={handleManageVaults} className="group cursor-pointer">
             <button className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409] flex items-center justify-center gap-2">
               <Package className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
               Manage Vaults
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </button>
-          </Link>
+          </a>
           
           <Link href="/gm-tools" className="group">
             <button className="w-full sm:w-auto px-8 py-4 bg-[#F5EFE0] hover:bg-white text-[#5C1A1A] font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#8B6F47] hover:border-[#5C1A1A] flex items-center justify-center gap-2">
@@ -132,7 +147,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link href="/vaults" className="group">
+          <a href="/vaults" onClick={handleManageVaults} className="group cursor-pointer">
             <div className="h-full bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300">
               <div className="flex items-start justify-between mb-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
@@ -147,7 +162,7 @@ export default function HomePage() {
                 Create and manage your party's inventory vaults.
               </p>
             </div>
-          </Link>
+          </a>
 
           <Link href="/gm-tools" className="group">
             <div className="h-full bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300">

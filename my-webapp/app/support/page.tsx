@@ -170,23 +170,21 @@ export default function SupportPage() {
     <main className="flex min-h-screen flex-col items-center bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
 
       {/* Hero + Links — fills first viewport */}
-      <section className="w-full max-w-5xl flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
-        {/* Hero */}
-        <div className="text-center">
-          <div className="inline-block mb-4 px-4 py-2 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full fade-in-up delay-100">
+      <section className="w-full max-w-5xl text-center flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
+        <div className="inline-block mb-4 px-4 py-2 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full fade-in-up delay-100">
             <span className="text-sm font-semibold text-[#5C1A1A] flex items-center gap-2">
               <LifeBuoy className="w-4 h-4" />
               We&apos;re Here to Help
             </span>
           </div>
           
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 sm:mb-10 text-[#3D1409] leading-tight fade-in-up delay-200" style={{ fontFamily: 'var(--font-archivo-black)' }}>
-            <span className="block sm:inline">Support &</span>{' '}
-            <span className="block sm:inline">Feedback</span>
-          </h1>
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#3D1409] leading-tight fade-in-up delay-200" style={{ fontFamily: 'var(--font-archivo-black)' }}>
+          <span className="block sm:inline">Support &</span>{' '}
+          <span className="block sm:inline">Feedback</span>
+        </h1>
 
-          {/* Link Buttons */}
-          <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center items-center gap-3 sm:gap-4 mb-6 sm:mb-8 fade-in-up delay-300">
+        {/* Link Buttons */}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center items-center gap-4 mb-8 fade-in-up delay-300">
             {quickLinks.map((link) => {
               const Icon = link.icon;
               const isInternal = !link.external && link.href !== "#";
@@ -196,10 +194,10 @@ export default function SupportPage() {
                   <Link
                     key={link.id}
                     href={link.href}
-                    className="group inline-flex items-center gap-2 w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-xl bg-[#F5EFE0] border-3 sm:border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-md sm:shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 justify-center"
+                    className="group inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 justify-center"
                   >
                     <Icon className="w-5 h-5 text-[#5C1A1A] group-hover:rotate-12 transition-transform duration-300" />
-                    <span className="font-bold text-base sm:text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
+                    <span className="font-bold text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
                       {link.title}
                     </span>
                     {link.external && <ExternalLink className="w-3 h-3 text-[#8B6F47]" />}
@@ -213,10 +211,10 @@ export default function SupportPage() {
                   href={link.href}
                   target={link.external ? "_blank" : undefined}
                   rel={link.external ? "noopener noreferrer" : undefined}
-                  className="group inline-flex items-center gap-2 w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-xl bg-[#F5EFE0] border-3 sm:border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-md sm:shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 justify-center"
+                  className="group inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 justify-center"
                 >
                   <Icon className="w-5 h-5 text-[#5C1A1A] group-hover:rotate-12 transition-transform duration-300" />
-                  <span className="font-bold text-base sm:text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
+                  <span className="font-bold text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
                     {link.title}
                   </span>
                   {link.external && <ExternalLink className="w-3 h-3 text-[#8B6F47]" />}
@@ -225,13 +223,12 @@ export default function SupportPage() {
             })}
           </div>
           
-          <p className="max-w-xs sm:max-w-2xl mx-auto text-sm sm:text-xl md:text-2xl text-[#5C4A2F] leading-relaxed fade-in-up delay-400">
-            Report bugs, request features,<br className="sm:hidden" /> or find quick help resources<br className="sm:hidden" /> to get the most out of<br className="sm:hidden" /> Trailblazers&apos;&nbsp;Vault.
-          </p>
-        </div>
+        <p className="text-xl sm:text-2xl text-[#5C4A2F] font-medium fade-in-up delay-400">
+          "Report bugs, request features, or find quick help resources."
+        </p>
 
         {/* Scroll Indicator — pinned near bottom */}
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 fade-in delay-500">
+        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce fade-in delay-500">
           <span className="text-sm text-[#5C1A1A] font-medium">Scroll for more</span>
           <ChevronDown className="w-8 h-8 text-[#5C1A1A]" />
         </div>

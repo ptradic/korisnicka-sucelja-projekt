@@ -328,7 +328,7 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
         style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', maxHeight: 'calc(100vh - 1rem)', maxWidth: '32rem' }}
       >
         {/* Header */}
-        <div className="p-3 sm:p-5 pb-2 sm:pb-3 flex items-start justify-between flex-shrink-0">
+        <div className="p-3 sm:p-5 pb-2 sm:pb-3 flex items-start justify-between shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
               <Scroll className="w-6 h-6 text-white" />
@@ -347,7 +347,7 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
         </div>
 
         {/* Divider */}
-        <div className="mx-3 sm:mx-5 border-t-2 border-[#DCC8A8] flex-shrink-0" />
+        <div className="mx-3 sm:mx-5 border-t-2 border-[#DCC8A8] shrink-0" />
 
         <form onSubmit={handleSubmit} className="p-3 sm:p-5 space-y-2 sm:space-y-3 flex-1 min-h-0">
           {/* Campaign Name */}
@@ -478,10 +478,10 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
           </div>
 
           {/* Divider */}
-          <div className="border-t-2 border-[#DCC8A8] flex-shrink-0" />
+          <div className="border-t-2 border-[#DCC8A8] shrink-0" />
 
           {/* Button */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <button
               type="submit"
               className="group w-full px-6 py-2 sm:py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-4 border-[#3D1409] flex items-center justify-center gap-2"

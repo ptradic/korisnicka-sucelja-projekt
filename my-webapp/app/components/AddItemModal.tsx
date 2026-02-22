@@ -49,8 +49,8 @@ export function AddItemModal({ onClose, onAdd, targetName }: AddItemModalProps) 
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-[#F5EFE0] border-[4px] border-[#3D1409] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" style={{ boxShadow: '0 10px 25px rgba(61, 20, 9, 0.3)' }}>
-        <div className="sticky top-0 bg-[#F5EFE0] border-b-[4px] border-[#3D1409] p-6 flex items-center justify-between">
+      <div className="bg-[#F5EFE0] border-4 border-[#3D1409] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" style={{ boxShadow: '0 10px 25px rgba(61, 20, 9, 0.3)' }}>
+        <div className="sticky top-0 bg-[#F5EFE0] border-b-4 border-[#3D1409] p-6 flex items-center justify-between">
           <div>
             <h2 className="text-[#3D1409]">Give Item to {targetName}</h2>
             <p className="text-[#5C4A2F] text-sm mt-1">Add a new item to this inventory</p>

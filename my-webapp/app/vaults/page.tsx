@@ -21,6 +21,7 @@ interface Vault {
   name: string;
   description: string;
   playerCount: number;
+  password: string;
   lastAccessed: string;
   createdAt: string;
   data: VaultData;
@@ -58,6 +59,7 @@ const INITIAL_DATA: VaultData = {
 export default function VaultsPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userType, setUserType] = useState<string>('player');
   const [vaults, setVaults] = useState<Vault[]>([]);
   const [currentVaultId, setCurrentVaultId] = useState<string | null>(null);
   const [vaultData, setVaultData] = useState<VaultData>(INITIAL_DATA);
@@ -73,6 +75,7 @@ export default function VaultsPage() {
       const parsed = JSON.parse(auth);
       if (parsed.isLoggedIn) {
         setIsAuthenticated(true);
+        setUserType(parsed.userType || 'player');
       } else {
         router.push('/login');
       }
@@ -106,7 +109,7 @@ export default function VaultsPage() {
     }
   };
 
-  const handleCreateVault = (vaultInfo: { name: string; description: string; playerCount: number }) => {
+  const handleCreateVault = (vaultInfo: { name: string; description: string; playerCount: number; password: string }) => {
     const newVault: Vault = {
       ...vaultInfo,
       id: `vault-${Date.now()}`,
@@ -115,6 +118,24 @@ export default function VaultsPage() {
       data: INITIAL_DATA,
     };
     setVaults([...vaults, newVault]);
+  };
+
+  const handleJoinVault = (vaultName: string, password: string): boolean => {
+    // Search all vaults in localStorage (could be from other users)
+    const allVaults = localStorage.getItem(VAULTS_KEY);
+    if (allVaults) {
+      const parsed: Vault[] = JSON.parse(allVaults);
+      const found = parsed.find((v: Vault) => v.name.toLowerCase() === vaultName.toLowerCase() && v.password === password);
+      if (found) {
+        // Check if already joined
+        const alreadyJoined = vaults.some((v: Vault) => v.id === found.id);
+        if (!alreadyJoined) {
+          setVaults([...vaults, { ...found, lastAccessed: new Date().toISOString() }]);
+        }
+        return true;
+      }
+    }
+    return false;
   };
 
   const handleDeleteVault = (vaultId: string) => {
@@ -183,8 +204,10 @@ export default function VaultsPage() {
     return (
       <HomePage
         vaults={vaults}
+        userType={userType}
         onSelectVault={handleSelectVault}
         onCreateVault={handleCreateVault}
+        onJoinVault={handleJoinVault}
         onDeleteVault={handleDeleteVault}
       />
     );

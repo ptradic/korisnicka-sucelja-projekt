@@ -297,3 +297,15 @@ button,
   backface-visibility: hidden;
   will-change: transform;
 }
+
+/* Hide native scrollbar for custom scrollbar replacement */
+.custom-scrollbar {
+  overflow-y: auto !important;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+

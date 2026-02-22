@@ -27,7 +27,7 @@ export default function HomePage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
+    <main className="flex min-h-screen flex-col items-center bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
       
       {/* Hero Section */}
       <section className="w-full max-w-5xl text-center flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
@@ -45,7 +45,7 @@ export default function HomePage() {
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8 fade-in-up delay-300">
           <a href="/vaults" onClick={handleManageVaults} className="group cursor-pointer">
-            <button className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409] flex items-center justify-center gap-2">
+            <button className="w-full sm:w-auto px-8 py-4 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409] flex items-center justify-center gap-2">
               <Package className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
               Manage Vaults
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
@@ -84,7 +84,7 @@ export default function HomePage() {
         <div className="grid gap-8 sm:grid-cols-3">
           <div className="bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl p-6 shadow-lg">
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#8B6F47] to-[#A0845A] rounded-2xl flex items-center justify-center mb-4 shadow-md">
+              <div className="w-16 h-16 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-2xl flex items-center justify-center mb-4 shadow-md">
                 <Package className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-[#3D1409] mb-3">
@@ -98,7 +98,7 @@ export default function HomePage() {
 
           <div className="bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl p-6 shadow-lg">
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#8B6F47] to-[#A0845A] rounded-2xl flex items-center justify-center mb-4 shadow-md">
+              <div className="w-16 h-16 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-2xl flex items-center justify-center mb-4 shadow-md">
                 <Wand2 className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-[#3D1409] mb-3">
@@ -112,7 +112,7 @@ export default function HomePage() {
 
           <div className="bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl p-6 shadow-lg">
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#8B6F47] to-[#A0845A] rounded-2xl flex items-center justify-center mb-4 shadow-md">
+              <div className="w-16 h-16 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-2xl flex items-center justify-center mb-4 shadow-md">
                 <BookOpen className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-[#3D1409] mb-3">
@@ -133,7 +133,7 @@ export default function HomePage() {
           <Link href="/gm-tools" className="group">
             <div className="h-full bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300">
               <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
+                <div className="w-12 h-12 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
                   <Users className="w-6 h-6 text-white" />
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#5C1A1A] group-hover:translate-x-1 transition-transform duration-300 mt-1" />
@@ -150,7 +150,7 @@ export default function HomePage() {
           <a href="/vaults" onClick={handleManageVaults} className="group cursor-pointer">
             <div className="h-full bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300">
               <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
+                <div className="w-12 h-12 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
                   <Archive className="w-6 h-6 text-white" />
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#5C1A1A] group-hover:translate-x-1 transition-transform duration-300 mt-1" />
@@ -167,7 +167,7 @@ export default function HomePage() {
           <Link href="/gm-tools" className="group">
             <div className="h-full bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300">
               <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
+                <div className="w-12 h-12 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
                   <Download className="w-6 h-6 text-white" />
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#5C1A1A] group-hover:translate-x-1 transition-transform duration-300 mt-1" />

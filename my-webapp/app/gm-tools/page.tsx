@@ -17,7 +17,7 @@ export const dynamic = 'force-static';
 
 export default function DMToolsPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 sm:p-10 bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
+    <main className="flex min-h-screen flex-col items-center p-4 sm:p-10 bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
       <div className="max-w-6xl w-full">
         {/* Hero Section */}
         <div className="text-center mb-12">
@@ -47,7 +47,7 @@ export default function DMToolsPage() {
                 <a key={t.href} href={t.href} className="group block">
                   <div className="h-full p-6 rounded-2xl bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center flex-shrink-0 group-hover:rotate-6 transition-transform duration-300 shadow-md">
+                      <div className="w-12 h-12 bg-linear-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shrink-0 group-hover:rotate-6 transition-transform duration-300 shadow-md">
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex-1">
@@ -67,7 +67,7 @@ export default function DMToolsPage() {
         {/* Vault Library Section */}
         <section className="bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 sm:p-10 shadow-2xl">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-linear-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#3D1409]">Vault Library</h2>
@@ -112,7 +112,7 @@ export default function DMToolsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button className="group flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-semibold text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 border-2 border-[#3D1409]">
+                  <button className="group flex-1 px-4 py-2 rounded-lg bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-semibold text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 border-2 border-[#3D1409]">
                     <Eye className="w-4 h-4" />
                     View
                   </button>
@@ -126,7 +126,7 @@ export default function DMToolsPage() {
           </div>
 
           {/* Footer Note */}
-          <div className="bg-gradient-to-br from-[#5C1A1A]/10 to-transparent border-3 border-[#8B6F47] rounded-xl p-5">
+          <div className="bg-linear-to-br from-[#5C1A1A]/10 to-transparent border-3 border-[#8B6F47] rounded-xl p-5">
             <p className="text-sm text-[#5C4A2F] leading-relaxed">
               <strong className="text-[#3D1409]">Want to add your own templates?</strong> Provide a JSON/CSV import in the Vault settings or contribute to the community library.
             </p>

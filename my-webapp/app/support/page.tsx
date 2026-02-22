@@ -36,7 +36,7 @@ export default function SupportPage() {
   const helpRef = useScrollReveal<HTMLElement>({ delay: 100 });
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
+    <main className="flex min-h-screen flex-col items-center bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
 
       {/* Hero + Links — fills first viewport */}
       <section className="w-full max-w-5xl flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
@@ -59,18 +59,29 @@ export default function SupportPage() {
             {quickLinks.map((link) => {
               const Icon = link.icon;
               const isInternal = !link.external && link.href !== "#";
-              const Wrapper = isInternal ? Link : "a" as const;
-              const wrapperProps = isInternal
-                ? { href: link.href }
-                : {
-                    href: link.href,
-                    target: link.external ? "_blank" : undefined,
-                    rel: link.external ? "noopener noreferrer" : undefined,
-                  };
+              
+              if (isInternal) {
+                return (
+                  <Link
+                    key={link.id}
+                    href={link.href}
+                    className="group inline-flex items-center gap-2 w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-xl bg-[#F5EFE0] border-3 sm:border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-md sm:shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 justify-center"
+                  >
+                    <Icon className="w-5 h-5 text-[#5C1A1A] group-hover:rotate-12 transition-transform duration-300" />
+                    <span className="font-bold text-base sm:text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
+                      {link.title}
+                    </span>
+                    {link.external && <ExternalLink className="w-3 h-3 text-[#8B6F47]" />}
+                  </Link>
+                );
+              }
+              
               return (
-                <Wrapper
+                <a
                   key={link.id}
-                  {...(wrapperProps as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+                  href={link.href}
+                  target={link.external ? "_blank" : undefined}
+                  rel={link.external ? "noopener noreferrer" : undefined}
                   className="group inline-flex items-center gap-2 w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-xl bg-[#F5EFE0] border-3 sm:border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-md sm:shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 justify-center"
                 >
                   <Icon className="w-5 h-5 text-[#5C1A1A] group-hover:rotate-12 transition-transform duration-300" />
@@ -78,7 +89,7 @@ export default function SupportPage() {
                     {link.title}
                   </span>
                   {link.external && <ExternalLink className="w-3 h-3 text-[#8B6F47]" />}
-                </Wrapper>
+                </a>
               );
             })}
           </div>
@@ -101,7 +112,7 @@ export default function SupportPage() {
         {/* Feedback Form Section */}
         <section ref={feedbackRef} className="scroll-reveal bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 sm:p-10 shadow-2xl mb-12">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-linear-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg">
               <Mail className="w-6 h-6 text-white" />
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#3D1409]">Send Feedback</h2>
@@ -154,7 +165,7 @@ export default function SupportPage() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button 
                 type="submit" 
-                className="group flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 border-4 border-[#3D1409]"
+                className="group flex-1 px-6 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 border-4 border-[#3D1409]"
               >
                 <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 Send Feedback
@@ -171,7 +182,7 @@ export default function SupportPage() {
         </section>
 
         {/* Additional Help */}
-        <section ref={helpRef} className="scroll-reveal bg-gradient-to-br from-[#5C1A1A]/10 to-transparent border-4 border-[#8B6F47] rounded-2xl p-6 sm:p-8 mb-10">
+        <section ref={helpRef} className="scroll-reveal bg-linear-to-br from-[#5C1A1A]/10 to-transparent border-4 border-[#8B6F47] rounded-2xl p-6 sm:p-8 mb-10">
           <h3 className="text-2xl font-bold mb-4 text-[#3D1409]">Need Immediate Help?</h3>
           <p className="text-[#5C4A2F] leading-relaxed mb-4">
             Check out our <a href="/guides" className="text-[#5C1A1A] font-semibold hover:underline">Guides & Tutorials</a> for step-by-step walkthroughs, or visit the <Link href="/support/faq" className="text-[#5C1A1A] font-semibold hover:underline">FAQ</Link> for answers to common questions.

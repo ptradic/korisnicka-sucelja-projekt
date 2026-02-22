@@ -44,7 +44,7 @@ function processPage(page: Page, index: number, currentPath?: string, isMobile: 
           "inline-flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 whitespace-nowrap",
           isMobile ? "w-full justify-start px-5 py-4" : "justify-center",
           isActive 
-            ? "bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] text-white border-[#3D1409] shadow-lg" 
+            ? "bg-linear-to-r from-[#5C1A1A] to-[#7A2424] text-white border-[#3D1409] shadow-lg" 
             : "text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
         )}
       >
@@ -128,7 +128,7 @@ function ProfileModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4" onClick={onClose}>
+    <div className="fixed inset-0 z-200 flex items-center justify-center px-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
         className="relative bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 max-w-sm w-full shadow-2xl"
@@ -252,7 +252,7 @@ function ProfileModal({
           {/* General error */}
           {errors.general && (
             <div className="flex items-start gap-2 p-2.5 bg-red-50 border-2 border-red-200 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
               <p className="text-xs text-red-600">{errors.general}</p>
             </div>
           )}
@@ -260,7 +260,7 @@ function ProfileModal({
           {/* Success */}
           {successMsg && (
             <div className="flex items-center gap-2 p-2.5 bg-green-50 border-2 border-green-200 rounded-lg">
-              <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
               <p className="text-xs text-green-700 font-semibold">{successMsg}</p>
             </div>
           )}
@@ -268,7 +268,7 @@ function ProfileModal({
           {/* Save */}
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-3 border-[#3D1409]"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-3 border-[#3D1409]"
           >
             <Save className="w-4 h-4" />
             Save Changes
@@ -429,7 +429,7 @@ export function Navigation() {
               e.preventDefault();
               setIsOpen(prev => !prev);
             }}
-            className="w-12 h-12 flex flex-col items-center justify-center gap-1.5 rounded-lg fixed top-4 right-4 z-[100]"
+            className="w-12 h-12 flex flex-col items-center justify-center gap-1.5 rounded-lg fixed top-4 right-4 z-100"
             style={{
               background: isOpen ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
               backdropFilter: isOpen ? 'blur(4px)' : 'none',
@@ -462,7 +462,7 @@ export function Navigation() {
         </SheetTrigger>
         <SheetContent 
           side="top" 
-          className="w-full h-auto bg-gradient-to-br from-[#F5EFE0] via-[#E8D5B7] to-[#DCC8A8] border-none p-0 pb-6 pt-24 z-30"
+          className="w-full h-auto bg-linear-to-br from-[#F5EFE0] via-[#E8D5B7] to-[#DCC8A8] border-none p-0 pb-6 pt-24 z-30"
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
@@ -493,13 +493,13 @@ export function Navigation() {
                 {/* Profile card */}
                 <div className="bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl p-4 mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] flex items-center justify-center border-4 border-[#3D1409] flex-shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-[#5C1A1A] to-[#7A2424] flex items-center justify-center border-4 border-[#3D1409] shrink-0">
                       <span className="text-sm font-bold text-white leading-none">{initials}</span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-bold text-[#3D1409] truncate">{authData.name}</p>
-                        <span className="inline-flex items-center px-1.5 py-0.5 bg-[#5C1A1A]/10 border border-[#5C1A1A]/30 rounded text-[10px] font-bold text-[#5C1A1A] uppercase flex-shrink-0">
+                        <span className="inline-flex items-center px-1.5 py-0.5 bg-[#5C1A1A]/10 border border-[#5C1A1A]/30 rounded text-[10px] font-bold text-[#5C1A1A] uppercase shrink-0">
                           {authData.userType === "dm" || authData.userType === "gm" ? "GM" : "Player"}
                         </span>
                       </div>
@@ -540,8 +540,8 @@ export function Navigation() {
         <div className="max-w-7xl mx-auto px-3 md:px-4 xl:px-6">
           <div className="flex items-center h-20 gap-2 xl:gap-6">
             {/* Brand Logo */}
-            <Link href="/" className="group flex items-center gap-2 xl:gap-3 flex-shrink-0 transition-all duration-300 w-auto xl:w-64">
-              <div className="w-12 h-12 xl:w-14 xl:h-14 flex-shrink-0 aspect-square bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] rounded-2xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg hover:rotate-6 transition-all duration-300">
+            <Link href="/" className="group flex items-center gap-2 xl:gap-3 shrink-0 transition-all duration-300 w-auto xl:w-64">
+              <div className="w-12 h-12 xl:w-14 xl:h-14 shrink-0 aspect-square bg-linear-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] rounded-2xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg hover:rotate-6 transition-all duration-300">
                 <Scroll className="w-6 h-6 xl:w-7 xl:h-7 text-white" />
               </div>
               <h1 className="text-2xl font-extrabold text-[#3D1409] hidden xl:block" style={{ fontFamily: 'var(--font-archivo-black)' }}>Trailblazers' Vault</h1>
@@ -553,7 +553,7 @@ export function Navigation() {
             </ul>
 
             {/* Right side: Profile or Login */}
-            <div className="flex-shrink-0 w-auto xl:w-64 flex justify-end">
+            <div className="shrink-0 w-auto xl:w-64 flex justify-end">
               {isLoggedIn && authData ? (
                 <div className="relative" ref={dropdownRef}>
                   {/* Profile icon button */}
@@ -562,8 +562,8 @@ export function Navigation() {
                     className={cn(
                       "w-12 h-12 xl:w-14 xl:h-14 rounded-2xl flex items-center justify-center transition-all duration-300 border-4 transform hover:-translate-y-0.5 hover:rotate-6 active:scale-95",
                       profileDropdownOpen
-                        ? "bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-lg"
-                        : "bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-lg hover:from-[#4A1515] hover:to-[#5C1A1A]"
+                        ? "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-lg"
+                        : "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-lg hover:from-[#4A1515] hover:to-[#5C1A1A]"
                     )}
                   >
                     <span className="text-sm xl:text-base font-bold text-white leading-none">{initials}</span>
@@ -571,17 +571,17 @@ export function Navigation() {
 
                   {/* Dropdown menu */}
                   {profileDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-64 bg-[#F5EFE0] border-3 border-[#3D1409] rounded-xl shadow-2xl overflow-hidden z-[60]">
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-[#F5EFE0] border-3 border-[#3D1409] rounded-xl shadow-2xl overflow-hidden z-60">
                       {/* User info */}
                       <div className="p-4 border-b-2 border-[#D9C7AA]">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] flex items-center justify-center border-2 border-[#3D1409] flex-shrink-0">
+                          <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-[#5C1A1A] to-[#7A2424] flex items-center justify-center border-2 border-[#3D1409] shrink-0">
                             <span className="text-sm font-bold text-white leading-none">{initials}</span>
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-bold text-[#3D1409] truncate">{authData.name}</p>
-                              <span className="inline-flex items-center px-1.5 py-0.5 bg-[#5C1A1A]/10 border border-[#5C1A1A]/30 rounded text-[10px] font-bold text-[#5C1A1A] uppercase flex-shrink-0">
+                              <span className="inline-flex items-center px-1.5 py-0.5 bg-[#5C1A1A]/10 border border-[#5C1A1A]/30 rounded text-[10px] font-bold text-[#5C1A1A] uppercase shrink-0">
                                 {authData.userType === "dm" || authData.userType === "gm" ? "GM" : "Player"}
                               </span>
                             </div>

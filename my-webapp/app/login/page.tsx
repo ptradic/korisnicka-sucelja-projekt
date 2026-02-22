@@ -194,7 +194,7 @@ export default function LoginPage() {
 
   //  Render 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] flex items-center justify-center px-4 py-8 sm:py-12 pt-24 sm:pt-28">
+    <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] flex items-center justify-center px-4 py-8 sm:py-12 pt-24 sm:pt-28">
       <div className="bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 sm:p-8 md:p-10 max-w-md w-full shadow-2xl">
         {/*  Header  */}
         <h1
@@ -251,7 +251,7 @@ export default function LoginPage() {
               {/* Error */}
               {loginError && (
                 <div className="flex items-start gap-2 p-3 bg-red-50 border-2 border-red-200 rounded-xl">
-                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                   <p className="text-sm text-red-600">{loginError}</p>
                 </div>
               )}
@@ -259,7 +259,7 @@ export default function LoginPage() {
               {/* Submit */}
               <button
                 type="submit"
-                className="group w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409]"
+                className="group w-full flex items-center justify-center gap-2 px-6 py-4 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409]"
               >
                 <LogIn className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 <span>Log In</span>
@@ -306,7 +306,7 @@ export default function LoginPage() {
                     onClick={() => { setUserType("gm"); setSignupErrors((p) => { const n = { ...p }; delete n.role; return n; }); }}
                     className={`group px-4 py-4 rounded-lg border-3 transition-all duration-300 ${
                       userType === "gm"
-                        ? "bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-md"
+                        ? "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-md"
                         : "bg-white/50 border-[#8B6F47] hover:border-[#5C1A1A] hover:bg-white"
                     }`}
                   >
@@ -330,7 +330,7 @@ export default function LoginPage() {
                     onClick={() => { setUserType("player"); setSignupErrors((p) => { const n = { ...p }; delete n.role; return n; }); }}
                     className={`group px-4 py-4 rounded-lg border-3 transition-all duration-300 ${
                       userType === "player"
-                        ? "bg-gradient-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-md"
+                        ? "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-md"
                         : "bg-white/50 border-[#8B6F47] hover:border-[#5C1A1A] hover:bg-white"
                     }`}
                   >
@@ -358,7 +358,7 @@ export default function LoginPage() {
                 {tutorialStep === 0 && (
                   <div className="mt-2 bg-[#5C1A1A]/5 border-2 border-[#5C1A1A]/15 rounded-lg px-3 py-2">
                     <p className="text-xs text-[#5C1A1A] leading-relaxed flex items-start gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                      <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>{tutorialMessages[0]}</span>
                     </p>
                   </div>
@@ -388,7 +388,7 @@ export default function LoginPage() {
                 {tutorialStep === 1 && (
                   <div className="mt-2 bg-[#5C1A1A]/5 border-2 border-[#5C1A1A]/15 rounded-lg px-3 py-2">
                     <p className="text-xs text-[#5C1A1A] leading-relaxed flex items-start gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                      <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>{tutorialMessages[1]}</span>
                     </p>
                   </div>
@@ -417,7 +417,7 @@ export default function LoginPage() {
                 {tutorialStep === 2 && (
                   <div className="mt-2 bg-[#5C1A1A]/5 border-2 border-[#5C1A1A]/15 rounded-lg px-3 py-2">
                     <p className="text-xs text-[#5C1A1A] leading-relaxed flex items-start gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                      <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>{tutorialMessages[2]}</span>
                     </p>
                   </div>
@@ -456,7 +456,7 @@ export default function LoginPage() {
                 {tutorialStep === 3 && (
                   <div className="mt-2 bg-[#5C1A1A]/5 border-2 border-[#5C1A1A]/15 rounded-lg px-3 py-2">
                     <p className="text-xs text-[#5C1A1A] leading-relaxed flex items-start gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                      <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>{tutorialMessages[3]}</span>
                     </p>
                   </div>
@@ -495,7 +495,7 @@ export default function LoginPage() {
                 {tutorialStep === 4 && (
                   <div className="mt-2 bg-[#5C1A1A]/5 border-2 border-[#5C1A1A]/15 rounded-lg px-3 py-2">
                     <p className="text-xs text-[#5C1A1A] leading-relaxed flex items-start gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                      <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>{tutorialMessages[4]}</span>
                     </p>
                   </div>
@@ -506,7 +506,7 @@ export default function LoginPage() {
               {tutorialStep === 5 && (
                 <div className="bg-[#5C1A1A]/5 border-2 border-[#5C1A1A]/15 rounded-lg px-3 py-2">
                   <p className="text-xs text-[#5C1A1A] leading-relaxed flex items-start gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                     <span>{tutorialMessages[5]}</span>
                   </p>
                 </div>
@@ -515,7 +515,7 @@ export default function LoginPage() {
               {/* Submit */}
               <button
                 type="submit"
-                className="group w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-base sm:text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409]"
+                className="group w-full flex items-center justify-center gap-2 px-6 py-4 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-base sm:text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409]"
               >
                 <UserPlus className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
                 <span>{userType ? `Sign Up as ${userType === "gm" ? "Game Master" : "Player"}` : "Sign Up"}</span>

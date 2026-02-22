@@ -6,7 +6,7 @@ import { GiDiceTwentyFacesTwenty } from "react-icons/gi";
 
 export default function NotFound() {
   return (
-    <main className="h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden px-4 py-4">
+    <main className="h-screen flex flex-col items-center justify-center bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden px-4 py-4">
       
       {/* Content container - vertically centered */}
       <section className="w-full max-w-lg text-center flex flex-col items-center">
@@ -65,7 +65,7 @@ export default function NotFound() {
         {/* Action Buttons - matching home page style */}
         <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 w-full mb-3 sm:mb-4">
           <Link href="/" className="group flex-1 sm:flex-none">
-            <button className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-sm sm:text-base rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-3 border-[#3D1409] flex items-center justify-center gap-2">
+            <button className="w-full sm:w-auto px-6 py-3 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-sm sm:text-base rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-3 border-[#3D1409] flex items-center justify-center gap-2">
               <Home className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
               Return to Home
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />

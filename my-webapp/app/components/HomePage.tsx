@@ -21,14 +21,14 @@ export function HomePage({ onSelectVault, onCreateVault, vaults, onDeleteVault }
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
+    <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8 pt-32">
         {/* Create New Vault Section */}
         <div className="mb-8">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="w-full bg-[#F5EFE0] border-[4px] border-[#5C1A1A] border-dashed rounded-xl p-8 hover:bg-[#F0E8D5] transition-all shadow-md hover:shadow-lg"
+            className="w-full bg-[#F5EFE0] border-4 border-[#5C1A1A] border-dashed rounded-xl p-8 hover:bg-[#F0E8D5] transition-all shadow-md hover:shadow-lg"
             style={{ boxShadow: '0 4px 6px -1px rgba(61, 20, 9, 0.15)' }}
           >
             <div className="flex flex-col items-center gap-4">
@@ -134,7 +134,7 @@ function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => vo
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t-[2px] border-[#D9C7AA]">
+      <div className="mt-4 pt-4 border-t-2 border-[#D9C7AA]">
         <div className="text-[#5C1A1A] text-sm group-hover:text-[#3D1409] transition-colors">
           Open Vault →
         </div>
@@ -159,8 +159,8 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-[#F5EFE0] border-[4px] border-[#3D1409] rounded-xl max-w-lg w-full shadow-2xl" style={{ boxShadow: '0 10px 25px rgba(61, 20, 9, 0.3)' }}>
-        <div className="bg-[#F5EFE0] border-b-[4px] border-[#3D1409] p-6 flex items-center justify-between">
+      <div className="bg-[#F5EFE0] border-4 border-[#3D1409] rounded-xl max-w-lg w-full shadow-2xl" style={{ boxShadow: '0 10px 25px rgba(61, 20, 9, 0.3)' }}>
+        <div className="bg-[#F5EFE0] border-b-4 border-[#3D1409] p-6 flex items-center justify-between">
           <div>
             <h2 className="text-[#3D1409]">Create New Campaign Vault</h2>
             <p className="text-[#5C4A2F] text-sm mt-1">Set up a new party inventory system</p>

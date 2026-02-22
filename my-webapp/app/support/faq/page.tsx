@@ -90,7 +90,7 @@ const faqCategories = [
 
 export default function FaqPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 sm:p-10 bg-gradient-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
+    <main className="flex min-h-screen flex-col items-center p-4 sm:p-10 bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
       <div className="max-w-5xl w-full">
         {/* Back Button */}
         <Link
@@ -132,7 +132,7 @@ export default function FaqPage() {
               key={category.title}
               className="bg-[#F5EFE0] border-4 border-[#8B6F47] rounded-2xl overflow-hidden shadow-lg"
             >
-              <div className="px-6 py-4 bg-gradient-to-r from-[#5C1A1A]/5 to-transparent border-b-2 border-[#D9C7AA]">
+              <div className="px-6 py-4 bg-linear-to-r from-[#5C1A1A]/5 to-transparent border-b-2 border-[#D9C7AA]">
                 <h3 className="text-lg font-bold text-[#3D1409]">{category.title}</h3>
               </div>
 
@@ -152,7 +152,7 @@ export default function FaqPage() {
                           {item.answer}
                         </p>
                         <div className="flex items-center gap-2 pt-2 border-t border-[#DCC8A8]">
-                          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#8B6F47] to-[#A0845A] flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-lg bg-linear-to-br from-[#8B6F47] to-[#A0845A] flex items-center justify-center">
                             <span className="text-[8px] font-bold text-white leading-none">
                               {item.author.slice(0, 2).toUpperCase()}
                             </span>

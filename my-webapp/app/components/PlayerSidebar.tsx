@@ -211,7 +211,7 @@ export function PlayerSidebar({
     <div
       ref={sidebarDrop as any}
       onClick={handleSidebarClick}
-      className={`${isExpanded ? 'w-56' : 'w-16'} sm:w-56 bg-[#D9C7AA] border-r-[4px] border-[#3D1409] p-2 sm:p-4 flex flex-col shrink-0 transition-all duration-200 overflow-hidden relative`}
+      className={`${isExpanded ? 'w-56' : 'w-16'} sm:w-56 bg-[#D9C7AA] border-r-4 border-[#3D1409] p-2 sm:p-4 flex flex-col shrink-0 transition-all duration-200 overflow-hidden relative`}
       style={{ boxShadow: '4px 0 8px rgba(61, 20, 9, 0.15)' }}
     >
       {!isExpanded && (

@@ -56,13 +56,18 @@ function TemplateItemPicker({
 
   return (
     <>
-      <div className="sticky top-0 bg-[#F5EFE0] border-b-4 border-[#3D1409] p-5 flex items-center justify-between z-10">
-        <div>
-          <h2 className="text-[#3D1409] text-lg font-bold">Add Item to {targetName}</h2>
-          <p className="text-[#5C4A2F] text-sm mt-0.5">Choose an item from the list</p>
+      <div className="sticky top-0 bg-[#F5EFE0] p-4 sm:p-5 pb-3 flex items-start justify-between z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md shrink-0">
+            <Search className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold text-[#3D1409]">Add Item to {targetName}</h2>
+            <p className="text-[#5C4A2F] text-xs mt-0.5">Choose an item from the list</p>
+          </div>
         </div>
-        <button onClick={onClose} className="text-[#5C4A2F] hover:text-[#3D1409] transition-colors">
-          <X className="w-6 h-6" />
+        <button onClick={onClose} className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all">
+          <X className="w-5 h-5" />
         </button>
       </div>
 
@@ -178,46 +183,57 @@ function CustomItemForm({
 
   return (
     <>
-      <div className="sticky top-0 bg-[#F5EFE0] border-b-4 border-[#3D1409] p-5 flex items-center justify-between z-10">
-        <div>
-          <h2 className="text-[#3D1409] text-lg font-bold">Create Custom Item</h2>
-          <p className="text-[#5C4A2F] text-sm mt-0.5">Add to {targetName}</p>
+      <div className="sticky top-0 bg-[#F5EFE0] p-4 sm:p-5 pb-3 flex items-start justify-between z-10 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md shrink-0">
+            <Package className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold text-[#3D1409]">Create Custom Item</h2>
+            <p className="text-[#5C4A2F] text-xs mt-0.5">Add to {targetName}</p>
+          </div>
         </div>
-        <button onClick={onClose} className="text-[#5C4A2F] hover:text-[#3D1409] transition-colors">
-          <X className="w-6 h-6" />
+        <button onClick={onClose} className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all">
+          <X className="w-5 h-5" />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mx-4 sm:mx-5 border-t-2 border-[#DCC8A8] shrink-0" />
+
+      <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3 overflow-y-auto flex-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="md:col-span-2">
-            <label className="block text-[#3D1409] text-sm mb-1.5">Item Name *</label>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-1">
+              Item Name <span className="text-[#8B3A3A]">*</span>
+            </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C4A2F]"
+              className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
               placeholder="e.g., Flaming Longsword"
               required
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-[#3D1409] text-sm mb-1.5">Description</label>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-1">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C4A2F] min-h-[80px]"
+              className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 min-h-20 resize-none"
               placeholder="Describe the item..."
             />
           </div>
 
           <div>
-            <label className="block text-[#3D1409] text-sm mb-1.5">Category *</label>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-1">
+              Category <span className="text-[#8B3A3A]">*</span>
+            </label>
             <select
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value as Category })}
-              className="w-full px-3 py-2 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C4A2F] capitalize"
+              className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat} className="capitalize">{cat}</option>
@@ -226,11 +242,13 @@ function CustomItemForm({
           </div>
 
           <div>
-            <label className="block text-[#3D1409] text-sm mb-1.5">Rarity *</label>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-1">
+              Rarity <span className="text-[#8B3A3A]">*</span>
+            </label>
             <select
               value={formData.rarity}
               onChange={(e) => setFormData({ ...formData, rarity: e.target.value as Rarity })}
-              className="w-full px-3 py-2 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C4A2F] capitalize"
+              className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
             >
               {rarities.map((rar) => (
                 <option key={rar} value={rar} className="capitalize">{rar}</option>
@@ -239,68 +257,54 @@ function CustomItemForm({
           </div>
 
           <div>
-            <label className="block text-[#3D1409] text-sm mb-1.5">Quantity</label>
-            <input
-              type="number"
-              min="1"
-              value={formData.quantity}
-              onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-              className="w-full px-3 py-2 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C4A2F]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[#3D1409] text-sm mb-1.5">Weight (lbs) *</label>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-1">
+              Weight (lbs) <span className="text-[#8B3A3A]">*</span>
+            </label>
             <input
               type="number"
               step="0.1"
               min="0"
               value={formData.weight}
               onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-              className="w-full px-3 py-2 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C4A2F]"
+              className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
               placeholder="0.0"
               required
             />
           </div>
 
           <div>
-            <label className="block text-[#3D1409] text-sm mb-1.5">Value (gp)</label>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-1">Value (gp)</label>
             <input
               type="number"
               min="0"
               value={formData.value}
               onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-              className="w-full px-3 py-2 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C4A2F]"
+              className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
               placeholder="0"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-center gap-2.5 cursor-pointer p-2.5 bg-white/40 border-2 border-[#DCC8A8] rounded-xl hover:bg-white/60 transition-colors">
               <input
                 type="checkbox"
                 checked={formData.attunement}
                 onChange={(e) => setFormData({ ...formData, attunement: e.target.checked })}
-                className="w-4 h-4 rounded border-[#8B6F47] bg-white/70 text-[#5C1A1A]"
+                className="w-4 h-4 rounded border-[#8B6F47] bg-white/70 text-[#5C1A1A] accent-[#5C1A1A]"
               />
-              <span className="text-[#3D1409] text-sm">Requires Attunement</span>
+              <span className="text-[#3D1409] text-sm font-semibold">Requires Attunement</span>
             </label>
           </div>
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 bg-white/70 hover:bg-[#F0E8D5] border-2 border-[#8B6F47] text-[#3D1409] rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
+        <div className="border-t-2 border-[#DCC8A8] shrink-0" />
+
+        <div className="flex gap-3">
           <button
             type="submit"
-            className="flex-1 px-4 py-2.5 bg-[#5C1A1A] hover:bg-[#4A1515] text-white rounded-lg transition-all border-2 border-[#3D1409]"
-            style={{ boxShadow: '0 4px 6px -1px rgba(61, 20, 9, 0.3)' }}
+            className="flex-1 group px-4 py-2.5 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-3 border-[#3D1409] flex items-center justify-center gap-2"
           >
+            <Plus className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
             Create Item
           </button>
         </div>
@@ -329,19 +333,19 @@ export function AddItemModal({ onClose, onAdd, targetName, isDM, templateItems =
       }}
     >
       <div
-        className="bg-[#F5EFE0] border-4 border-[#3D1409] rounded-xl max-w-2xl w-full flex flex-col shadow-2xl"
-        style={{ boxShadow: '0 10px 25px rgba(61, 20, 9, 0.3)', maxHeight: 'min(90vh, 700px)' }}
+        className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl"
+        style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', maxHeight: 'min(90vh, 700px)' }}
       >
         {/* GM gets tabs to switch between template picker and custom form */}
         {isDM && (
-          <div className="flex border-b-2 border-[#8B6F47]/40 bg-[#E8D5B7] rounded-t-lg overflow-hidden">
+          <div className="flex border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] rounded-t-xl overflow-hidden">
             <button
               onClick={() => setMode('pick')}
               className={
-                'flex-1 py-2.5 text-sm font-medium transition-colors ' +
+                'flex-1 py-3 text-sm font-bold transition-all duration-300 ' +
                 (mode === 'pick'
-                  ? 'bg-[#F5EFE0] text-[#3D1409] border-b-2 border-[#5C1A1A]'
-                  : 'text-[#5C4A2F] hover:bg-[#F5EFE0]/50')
+                  ? 'bg-[#F5EFE0] text-[#3D1409] border-b-3 border-[#5C1A1A] shadow-sm'
+                  : 'text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409]')
               }
             >
               Choose from List
@@ -349,10 +353,10 @@ export function AddItemModal({ onClose, onAdd, targetName, isDM, templateItems =
             <button
               onClick={() => setMode('custom')}
               className={
-                'flex-1 py-2.5 text-sm font-medium transition-colors ' +
+                'flex-1 py-3 text-sm font-bold transition-all duration-300 ' +
                 (mode === 'custom'
-                  ? 'bg-[#F5EFE0] text-[#3D1409] border-b-2 border-[#5C1A1A]'
-                  : 'text-[#5C4A2F] hover:bg-[#F5EFE0]/50')
+                  ? 'bg-[#F5EFE0] text-[#3D1409] border-b-3 border-[#5C1A1A] shadow-sm'
+                  : 'text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409]')
               }
             >
               Create Custom

@@ -32,14 +32,15 @@ const pages: Page[] = [
   { title: "Vaults", path: "/vaults", icon: Scroll },
 ];
 
-function processPage(page: Page, index: number, currentPath?: string, isMobile: boolean = false) {
+function processPage(page: Page, index: number, currentPath?: string, isMobile: boolean = false, onClick?: () => void) {
   const isActive = page.path === "/" ? currentPath === page.path : currentPath?.startsWith(page.path);
   const Icon = page.icon;
   
   return (
     <li key={index} className={isMobile ? "w-full" : ""}>
       <Link 
-        href={page.path} 
+        href={page.path}
+        onClick={onClick}
         className={cn(
           "inline-flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 whitespace-nowrap",
           isMobile ? "w-full justify-start px-5 py-4" : "justify-center",
@@ -475,7 +476,7 @@ export function Navigation() {
             <ul className="space-y-2">
               {navPages.map((page, index) => (
                 <div key={index} onClick={() => setIsOpen(false)}>
-                  {processPage(page, index, currentPath, true)}
+                  {processPage(page, index, currentPath, true, page.path === '/vaults' ? () => window.dispatchEvent(new Event('vaults-go-home')) : undefined)}
                 </div>
               ))}
               {!isLoggedIn && (
@@ -549,7 +550,7 @@ export function Navigation() {
             
             {/* Navigation Links */}
             <ul className="flex gap-1.5 md:gap-2 xl:gap-3 items-center flex-1 justify-center">
-              {navPages.map((page, index) => processPage(page, index, currentPath, false))}
+              {navPages.map((page, index) => processPage(page, index, currentPath, false, page.path === '/vaults' ? () => window.dispatchEvent(new Event('vaults-go-home')) : undefined))}
             </ul>
 
             {/* Right side: Profile or Login */}

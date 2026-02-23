@@ -56,7 +56,7 @@ const TEMPLATE_ITEMS: Item[] = [
     description: 'A vial of red liquid that restores 2d4+2 hit points when consumed.',
     category: 'potion',
     rarity: 'common',
-    quantity: 3,
+    quantity: 1,
     weight: 0.5,
     value: 50,
     attunement: false,
@@ -124,16 +124,34 @@ function buildInitialData(playerCount: number): VaultData {
   const avatars = ['\u2694\uFE0F', '\u2728', '\uD83D\uDEE1\uFE0F', '\uD83C\uDFF9', '\uD83D\uDD25', '\uD83C\uDF19', '\uD83D\uDD28', '\uD83C\uDF0A'];
   const emptyCurrency: Currency = { pp: 0, gp: 0, sp: 0, cp: 0 };
 
+  // Create playerCount - 1 players (leave one empty slot for testing)
+  const actualCount = Math.min(Math.max(playerCount - 1, 1), names.length);
+
   const players: Player[] = [];
-  const usedTemplates: Item[] = [];
-  for (let i = 0; i < Math.min(playerCount, names.length); i++) {
-    // Give first player some template items, rest get empty
+  for (let i = 0; i < actualCount; i++) {
     const inv: Item[] = [];
-    if (i === 0 && TEMPLATE_ITEMS.length > 0) {
-      inv.push(
-        { ...TEMPLATE_ITEMS[0], id: `item-${Date.now()}-${i}-0` },
-        { ...TEMPLATE_ITEMS[2], id: `item-${Date.now()}-${i}-1` },
-      );
+    // Give each player different template items for testing variety
+    if (TEMPLATE_ITEMS.length > 0) {
+      if (i === 0) {
+        inv.push(
+          { ...TEMPLATE_ITEMS[0], id: `item-${Date.now()}-${i}-0` },
+          { ...TEMPLATE_ITEMS[2], id: `item-${Date.now()}-${i}-1` },
+        );
+      } else if (i === 1 && TEMPLATE_ITEMS.length > 3) {
+        inv.push(
+          { ...TEMPLATE_ITEMS[1], id: `item-${Date.now()}-${i}-0` },
+          { ...TEMPLATE_ITEMS[3], id: `item-${Date.now()}-${i}-1` },
+        );
+      } else if (i === 2 && TEMPLATE_ITEMS.length > 6) {
+        inv.push(
+          { ...TEMPLATE_ITEMS[6], id: `item-${Date.now()}-${i}-0` },
+          { ...TEMPLATE_ITEMS[7], id: `item-${Date.now()}-${i}-1` },
+        );
+      } else if (TEMPLATE_ITEMS.length > 1) {
+        inv.push(
+          { ...TEMPLATE_ITEMS[i % TEMPLATE_ITEMS.length], id: `item-${Date.now()}-${i}-0` },
+        );
+      }
     }
     players.push({
       id: `player-${i + 1}`,
@@ -142,7 +160,7 @@ function buildInitialData(playerCount: number): VaultData {
       avatar: avatars[i],
       maxWeight: 150,
       inventory: inv,
-      currency: { ...emptyCurrency, gp: i === 0 ? 50 : 0 },
+      currency: { ...emptyCurrency, gp: [50, 30, 15, 25, 10, 40, 20, 35][i] ?? 10 },
     });
   }
 
@@ -182,6 +200,13 @@ export default function VaultsPage() {
       router.push('/login');
     }
   }, [router]);
+
+  // Listen for "go back to vault list" event from Navigation
+  useEffect(() => {
+    const handler = () => handleBackToHome();
+    window.addEventListener('vaults-go-home', handler);
+    return () => window.removeEventListener('vaults-go-home', handler);
+  });
 
   // Load vaults
   useEffect(() => {
@@ -283,10 +308,23 @@ export default function VaultsPage() {
 
       if (!item) return prev;
 
+      // Stack at destination: merge into existing item with same name/category/rarity
+      const stackInto = (items: Item[], movedItem: Item): Item[] => {
+        const existingIdx = items.findIndex(
+          (i) => i.name.toLowerCase() === movedItem.name.toLowerCase() && i.category === movedItem.category && i.rarity === movedItem.rarity
+        );
+        if (existingIdx !== -1) {
+          const updated = [...items];
+          updated[existingIdx] = { ...updated[existingIdx], quantity: updated[existingIdx].quantity + movedItem.quantity };
+          return updated;
+        }
+        return [...items, movedItem];
+      };
+
       const finalPlayers = updatedPlayers.map((p) =>
-        p.id === toId ? { ...p, inventory: [...p.inventory, item!] } : p
+        p.id === toId ? { ...p, inventory: stackInto(p.inventory, item!) } : p
       );
-      if (toId === 'shared') updatedShared = [...updatedShared, item];
+      if (toId === 'shared') updatedShared = stackInto(updatedShared, item);
 
       return { ...prev, players: finalPlayers, sharedLoot: updatedShared };
     });
@@ -343,7 +381,6 @@ export default function VaultsPage() {
             sharedLootCount={vaultData.sharedLoot.length}
             campaignName={currentVault?.name ?? 'Vault'}
             totalSlots={currentVault?.playerCount ?? vaultData.players.length}
-            onBack={handleBackToHome}
           />
           <div className="flex-1 min-w-0">
             <InventoryView
@@ -374,16 +411,33 @@ export default function VaultsPage() {
             isDM={isDM}
             templateItems={TEMPLATE_ITEMS}
             onAdd={(item: Omit<Item, 'id'>) => {
-              const newItem: Item = { ...item, id: `item-${Date.now()}` };
               setVaultData((prev) => {
+                const addQty = item.quantity || 1;
                 if (isShared) {
-                  return { ...prev, sharedLoot: [...prev.sharedLoot, newItem] };
+                  const existingIdx = prev.sharedLoot.findIndex(
+                    (i) => i.name.toLowerCase() === item.name.toLowerCase() && i.category === item.category && i.rarity === item.rarity
+                  );
+                  if (existingIdx !== -1) {
+                    const updated = [...prev.sharedLoot];
+                    updated[existingIdx] = { ...updated[existingIdx], quantity: updated[existingIdx].quantity + addQty };
+                    return { ...prev, sharedLoot: updated };
+                  }
+                  return { ...prev, sharedLoot: [...prev.sharedLoot, { ...item, id: `item-${Date.now()}` }] };
                 }
                 return {
                   ...prev,
-                  players: prev.players.map((p) =>
-                    p.id === selectedPlayerId ? { ...p, inventory: [...p.inventory, newItem] } : p
-                  ),
+                  players: prev.players.map((p) => {
+                    if (p.id !== selectedPlayerId) return p;
+                    const existingIdx = p.inventory.findIndex(
+                      (i) => i.name.toLowerCase() === item.name.toLowerCase() && i.category === item.category && i.rarity === item.rarity
+                    );
+                    if (existingIdx !== -1) {
+                      const updated = [...p.inventory];
+                      updated[existingIdx] = { ...updated[existingIdx], quantity: updated[existingIdx].quantity + addQty };
+                      return { ...p, inventory: updated };
+                    }
+                    return { ...p, inventory: [...p.inventory, { ...item, id: `item-${Date.now()}` }] };
+                  }),
                 };
               });
               setShowAddItemModal(false);
@@ -408,14 +462,23 @@ export default function VaultsPage() {
               setSelectedItem(null);
             }}
             onDelete={() => {
-              setVaultData((prev) => ({
-                ...prev,
-                players: prev.players.map((p) => ({
-                  ...p,
-                  inventory: p.inventory.filter((i) => i.id !== selectedItem.id),
-                })),
-                sharedLoot: prev.sharedLoot.filter((i) => i.id !== selectedItem.id),
-              }));
+              setVaultData((prev) => {
+                const decrementOrRemove = (items: Item[]) => {
+                  const idx = items.findIndex((i) => i.id === selectedItem.id);
+                  if (idx === -1) return items;
+                  if (items[idx].quantity > 1) {
+                    const updated = [...items];
+                    updated[idx] = { ...updated[idx], quantity: updated[idx].quantity - 1 };
+                    return updated;
+                  }
+                  return items.filter((i) => i.id !== selectedItem.id);
+                };
+                return {
+                  ...prev,
+                  players: prev.players.map((p) => ({ ...p, inventory: decrementOrRemove(p.inventory) })),
+                  sharedLoot: decrementOrRemove(prev.sharedLoot),
+                };
+              });
               setSelectedItem(null);
             }}
           />

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useDrop } from 'react-dnd';
-import { Package, Users, User, ChevronLeft } from 'lucide-react';
+import { useDrop, useDragLayer } from 'react-dnd';
+import { Package, Users, User } from 'lucide-react';
 import type { Player } from '../types';
 
 interface PlayerSidebarProps {
@@ -13,7 +13,6 @@ interface PlayerSidebarProps {
   sharedLootCount: number;
   campaignName: string;
   totalSlots: number;
-  onBack: () => void;
 }
 
 /*  Compact pill for mobile horizontal bar  */
@@ -23,12 +22,14 @@ function PlayerPill({
   onClick,
   onDrop,
   isBeingDraggedOver,
+  isAnyDragging,
 }: {
   player: Player;
   isSelected: boolean;
   onClick: () => void;
   onDrop: (itemId: string, fromId: string) => void;
   isBeingDraggedOver: boolean;
+  isAnyDragging: boolean;
 }) {
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
@@ -50,7 +51,8 @@ function PlayerPill({
       ref={drop as any}
       onClick={onClick}
       className={
-        'shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 transition-all whitespace-nowrap relative ' +
+        'shrink-0 flex items-center gap-1.5 rounded-full border-2 transition-all whitespace-nowrap relative ' +
+        (isAnyDragging ? 'px-5 py-3 ' : 'px-3 py-1.5 ') +
         (isSelected
           ? 'bg-[#5C1A1A] text-white border-[#3D1409] shadow-md'
           : isOver && canDrop
@@ -62,13 +64,14 @@ function PlayerPill({
     >
       <div
         className={
-          'w-6 h-6 rounded-full flex items-center justify-center shrink-0 ' +
+          (isAnyDragging ? 'w-8 h-8 ' : 'w-6 h-6 ') +
+          'rounded-full flex items-center justify-center shrink-0 transition-all ' +
           (isSelected ? 'bg-white/20' : 'bg-[#D9C7AA]')
         }
       >
-        <User className={'w-3 h-3 ' + (isSelected ? 'text-white/80' : 'text-[#8B6F47]')} />
+        <User className={(isAnyDragging ? 'w-4 h-4 ' : 'w-3 h-3 ') + (isSelected ? 'text-white/80' : 'text-[#8B6F47]')} />
       </div>
-      <span className="text-xs font-semibold">{player.name}</span>
+      <span className={(isAnyDragging ? 'text-sm ' : 'text-xs ') + 'font-semibold'}>{player.name}</span>
       {isOver && canDrop && (
         <div className="absolute inset-0 bg-[#B8860B]/20 rounded-full pointer-events-none animate-pulse" />
       )}
@@ -82,12 +85,14 @@ function SharedPill({
   onDrop,
   itemCount,
   isBeingDraggedOver,
+  isAnyDragging,
 }: {
   isSelected: boolean;
   onClick: () => void;
   onDrop: (itemId: string, fromId: string) => void;
   itemCount: number;
   isBeingDraggedOver: boolean;
+  isAnyDragging: boolean;
 }) {
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
@@ -109,7 +114,8 @@ function SharedPill({
       ref={drop as any}
       onClick={onClick}
       className={
-        'shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 transition-all whitespace-nowrap relative ' +
+        'shrink-0 flex items-center gap-1.5 rounded-full border-2 transition-all whitespace-nowrap relative ' +
+        (isAnyDragging ? 'px-5 py-3 ' : 'px-3 py-1.5 ') +
         (isSelected
           ? 'bg-[#8B6F47] text-white border-[#3D1409] shadow-md'
           : isOver && canDrop
@@ -119,9 +125,17 @@ function SharedPill({
               : 'bg-[#F5EFE0] border-[#8B6F47]/50 text-[#3D1409]')
       }
     >
-      <Package className={'w-3.5 h-3.5 ' + (isSelected ? 'text-white/80' : 'text-[#8B6F47]')} />
-      <span className="text-xs font-semibold">Shared</span>
-      <span className={'text-[10px] ' + (isSelected ? 'text-white/60' : 'text-[#8B6F47]')}>
+      <div
+        className={
+          (isAnyDragging ? 'w-8 h-8 ' : 'w-6 h-6 ') +
+          'rounded-full flex items-center justify-center shrink-0 transition-all ' +
+          (isSelected ? 'bg-white/20' : 'bg-[#D9C7AA]')
+        }
+      >
+        <Package className={(isAnyDragging ? 'w-4 h-4 ' : 'w-3 h-3 ') + (isSelected ? 'text-white/80' : 'text-[#8B6F47]')} />
+      </div>
+      <span className={(isAnyDragging ? 'text-sm ' : 'text-xs ') + 'font-semibold'}>Shared</span>
+      <span className={(isAnyDragging ? 'text-xs ' : 'text-[10px] ') + (isSelected ? 'text-white/60' : 'text-[#8B6F47]')}>
         ({itemCount})
       </span>
       {isOver && canDrop && (
@@ -311,8 +325,11 @@ export function PlayerSidebar({
   sharedLootCount,
   campaignName,
   totalSlots,
-  onBack,
 }: PlayerSidebarProps) {
+  const { isDragging: isAnyDragging } = useDragLayer((monitor) => ({
+    isDragging: monitor.isDragging(),
+  }));
+
   const handleDrop = useCallback(
     (toId: string | 'shared') => (itemId: string, fromId: string) => {
       onMoveItem(itemId, fromId, toId);
@@ -339,20 +356,13 @@ export function PlayerSidebar({
         className="sm:hidden bg-[#D9C7AA] border-b-4 border-[#3D1409] px-3 py-2 shrink-0"
         style={{ boxShadow: '0 4px 8px rgba(61, 20, 9, 0.15)' }}
       >
-        {/* Top row: back + campaign name */}
+        {/* Campaign name */}
         <div className="flex items-center gap-2 mb-2">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1 text-[#5C4A2F] hover:text-[#3D1409] transition-colors text-xs shrink-0"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-            <span>Back</span>
-          </button>
           <h2 className="text-[#3D1409] text-sm font-bold truncate flex-1">{campaignName}</h2>
         </div>
 
-        {/* Horizontal scrollable player pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide">
+        {/* Wrapping player pills */}
+        <div className="flex flex-wrap items-center gap-2">
           {players.map((player) => (
             <PlayerPill
               key={player.id}
@@ -361,6 +371,7 @@ export function PlayerSidebar({
               onClick={() => onSelectPlayer(player.id)}
               onDrop={handleDrop(player.id)}
               isBeingDraggedOver={dragOverPlayerId === player.id}
+              isAnyDragging={isAnyDragging}
             />
           ))}
           <SharedPill
@@ -369,6 +380,7 @@ export function PlayerSidebar({
             onDrop={handleDrop('shared')}
             itemCount={sharedLootCount}
             isBeingDraggedOver={dragOverPlayerId === 'shared'}
+            isAnyDragging={isAnyDragging}
           />
         </div>
       </div>
@@ -380,13 +392,6 @@ export function PlayerSidebar({
       >
         {/* Campaign name header */}
         <div className="mb-3 pb-2 border-b-2 border-[#8B6F47]/50">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1 text-[#5C4A2F] hover:text-[#3D1409] transition-colors mb-1 text-[10px]"
-          >
-            <ChevronLeft className="w-3 h-3" />
-            <span>Back</span>
-          </button>
           <h2 className="text-[#3D1409] text-sm font-bold truncate leading-tight">
             {campaignName}
           </h2>

@@ -315,6 +315,16 @@ export default function SupportPage() {
                 <div className="relative">
                   <textarea 
                     ref={textareaRef}
+                    onInput={() => {
+                      const el = textareaRef.current;
+                      if (el) el.scrollTop = el.scrollHeight;
+                      updateScrollbar();
+                    }}
+                    onKeyUp={() => {
+                      const el = textareaRef.current;
+                      if (el) el.scrollTop = el.scrollHeight;
+                      updateScrollbar();
+                    }}
                     className="w-full px-4 py-3 pr-8 border-3 border-[#8B6F47] rounded-xl bg-white/70 text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-[border-color,box-shadow] duration-300 custom-scrollbar resize-none" 
                     style={{ height: '150px' }}
                     placeholder="Describe the bug or feature request in detail. Include steps to reproduce if reporting a bug."

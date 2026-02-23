@@ -5,7 +5,7 @@ export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' 
 export interface Item {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   category: Category;
   rarity: Rarity;
   quantity: number;
@@ -16,6 +16,13 @@ export interface Item {
   createdAt?: string;
 }
 
+export interface Currency {
+  pp: number;
+  gp: number;
+  sp: number;
+  cp: number;
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -23,6 +30,7 @@ export interface Player {
   avatar: string;
   maxWeight: number;
   inventory: Item[];
+  currency: Currency;
 }
 
 export interface VaultData {

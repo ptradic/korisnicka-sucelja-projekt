@@ -118,7 +118,7 @@ const steps = [
       "The target slot highlights when you hover over it.",
       "Release to complete the transfer.",
     ],
-    tip: "Drag and drop works on desktop only. On mobile, use the item details modal to move items.",
+    tip: "Drag and drop works on desktop and mobile.",
   },
 ];
 

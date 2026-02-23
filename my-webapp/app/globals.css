@@ -309,3 +309,11 @@ button,
   display: none; /* Chrome/Safari */
 }
 
+/* Hide scrollbar for horizontal pill bars */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

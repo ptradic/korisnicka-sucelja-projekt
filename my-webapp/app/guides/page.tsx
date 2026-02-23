@@ -1,146 +1,267 @@
-import { BookOpen, Rocket, MousePointer, Upload, Users, FileText, Lightbulb, ChevronRight } from 'lucide-react';
+"use client";
 
-const guides = [
-  { 
-    href: "/quick-start", 
-    title: "Quick Start", 
-    desc: "Create a campaign, add players, add items and share the vault.", 
-    icon: Rocket,
-    difficulty: "Beginner"
+import Link from "next/link";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  LogIn,
+  UserPlus,
+  Plus,
+  Package,
+  Users,
+  Wand2,
+  PenLine,
+  MousePointer,
+  AlertTriangle,
+  CheckCircle2,
+  ArrowRight,
+} from "lucide-react";
+import { useScrollReveal } from "@/app/hooks/useScrollReveal";
+
+/* ── Tutorial step data ─────────────────────────────────────────────── */
+const steps = [
+  {
+    number: 1,
+    title: "Create Your Account",
+    icon: UserPlus,
+    description:
+      "Head to the Sign-In page and create a new account. Pick a display name, enter your email and a password, then choose your role — Game Master or Player.",
+    details: [
+      'Click "Sign In" in the navigation bar.',
+      'Switch to the "Create Account" tab.',
+      "Fill in your Name, Email and Password.",
+      'Select your role: Game Master (GM) or Player.',
+      'Hit "Create Account" – you\'re in!',
+    ],
+    tip: "Game Masters can create vaults and manage items for the whole party. Players can view and interact with their own inventory.",
   },
-  { 
-    href: "/guides/drag-drop", 
-    title: "Drag & Drop", 
-    desc: "Walkthrough of moving items, stacking and sorting within vaults.", 
-    icon: MousePointer,
-    difficulty: "Beginner"
+  {
+    number: 2,
+    title: "Sign In to Your Account",
+    icon: LogIn,
+    description:
+      "Once registered, sign in with your email and password. You'll be redirected to the home page where you can start managing vaults.",
+    details: [
+      "Enter the email and password you just created.",
+      'Click "Sign In" to access your dashboard.',
+      "You'll see the home page with a welcome message.",
+    ],
+    tip: "Your session is saved locally — you'll stay signed in until you log out.",
   },
-  { 
-    href: "/guides/import-export", 
-    title: "Import & Export", 
-    desc: "How to import templates and export vault data (CSV / JSON).", 
-    icon: Upload,
-    difficulty: "Intermediate"
+  {
+    number: 3,
+    title: "Create Your First Vault",
+    icon: Plus,
+    description:
+      "From the home page, open the Create Vault modal. Name your campaign, set the number of player slots, and bring your adventure to life.",
+    details: [
+      'Click the "Create New Vault" button on the home page.',
+      "Give your campaign a memorable name (e.g., Curse of Strahd).",
+      "Set the number of player slots (2–8 adventurers).",
+      'Press "Create Vault" — your vault is ready!',
+    ],
+    tip: "You can always create additional vaults later. Each vault is an independent campaign with its own players and inventory.",
   },
-  { 
-    href: "/guides/shared-vaults", 
-    title: "Shared Vaults", 
-    desc: "Sharing settings, permissions, and syncing between players.", 
+  {
+    number: 4,
+    title: "Meet the Vault Interface",
     icon: Users,
-    difficulty: "Intermediate"
+    description:
+      "Your vault opens with a sidebar of party members and a shared-loot section. Select any player or Shared Loot to view their inventory.",
+    details: [
+      "The left sidebar shows all party member slots.",
+      'A "Shared Loot" section holds items not yet distributed.',
+      "Click a player to view and manage their personal inventory.",
+      "The weight bar shows how close each player is to their carry limit.",
+    ],
+    tip: "On mobile, the sidebar appears as a horizontal scrollable bar at the top of the screen.",
+  },
+  {
+    number: 5,
+    title: "Add Items from the Template List",
+    icon: Package,
+    description:
+      'As a Game Master, click "Add Item" in any inventory. Switch to the "Choose from List" tab to browse pre-built D&D items organized by category and rarity.',
+    details: [
+      'Select a player (or Shared Loot) and click "+ Add Item".',
+      'The "Choose from List" tab shows all template items.',
+      "Use the search bar and category pills to filter items.",
+      "Click any item to instantly add it to the inventory.",
+    ],
+    tip: "Template items include classic D&D equipment — weapons, armor, potions, wondrous items, and more.",
+  },
+  {
+    number: 6,
+    title: "Create a Custom Item",
+    icon: PenLine,
+    description:
+      'Switch to the "Create Custom" tab to design your own item from scratch. Set the name, description, category, rarity, weight, value, and whether it requires attunement.',
+    details: [
+      'In the Add Item modal, switch to the "Create Custom" tab.',
+      "Fill in the Item Name (required), Description, Category and Rarity.",
+      "Set the Weight (lbs) and optionally a gold-piece Value.",
+      'Toggle "Requires Attunement" if applicable.',
+      'Click "Create Item" to add it.',
+    ],
+    tip: "Custom items are perfect for homebrew gear, quest rewards, or anything not in the standard list.",
+  },
+  {
+    number: 7,
+    title: "Drag & Drop Between Inventories",
+    icon: MousePointer,
+    description:
+      "Move items between players or to shared loot with drag and drop. Grab any item card and drop it onto another player in the sidebar to transfer it instantly.",
+    details: [
+      "Click and hold an item card to start dragging.",
+      "Drag it onto a player slot in the sidebar.",
+      "The target slot highlights when you hover over it.",
+      "Release to complete the transfer.",
+    ],
+    tip: "Drag and drop works on desktop only. On mobile, use the item details modal to move items.",
   },
 ];
 
-export const dynamic = 'force-static';
-
+/* ── Component ──────────────────────────────────────────────────────── */
 export default function GuidesPage() {
+  /* scroll-reveal refs – one per below-the-fold section */
+  const stepRefs = [
+    useScrollReveal<HTMLElement>({ delay: 0 }),
+    useScrollReveal<HTMLElement>({ delay: 50 }),
+    useScrollReveal<HTMLElement>({ delay: 0 }),
+    useScrollReveal<HTMLElement>({ delay: 50 }),
+    useScrollReveal<HTMLElement>({ delay: 0 }),
+    useScrollReveal<HTMLElement>({ delay: 50 }),
+    useScrollReveal<HTMLElement>({ delay: 0 }),
+  ];
+  const bonusRef = useScrollReveal<HTMLElement>({ delay: 100 });
+
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 sm:p-10 bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
-      <div className="max-w-6xl w-full">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <div className="inline-block mb-4 px-4 py-2 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full">
-            <span className="text-sm font-semibold text-[#5C1A1A] flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Learn How to Use the Vault
-            </span>
-          </div>
-          
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-4 text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>
-            Guides & Tutorials
-          </h1>
-          
-          <p className="max-w-2xl mx-auto text-base sm:text-lg text-[#5C4A2F] leading-relaxed">
-            Step-by-step walkthroughs to get started with Trailblazers' Vault and master all features.
-          </p>
+    <main className="flex min-h-screen flex-col items-center bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
+      {/* ─── Hero — fills first viewport ─── */}
+      <section className="w-full max-w-5xl text-center flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
+        <div className="inline-block mb-4 px-4 py-2 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full fade-in-up delay-100">
+          <span className="text-sm font-semibold text-[#5C1A1A] flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Step-by-Step Tutorial
+          </span>
         </div>
 
-        {/* Guides Grid */}
-        <section className="mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-[#3D1409]">Available Guides</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-            {guides.map((guide) => {
-              const Icon = guide.icon;
-              return (
-                <a key={guide.href} href={guide.href} className="group block">
-                  <div className="h-full p-6 rounded-2xl bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-12 h-12 bg-linear-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shrink-0 group-hover:rotate-6 transition-transform duration-300 shadow-md">
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <h3 className="font-bold text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
-                            {guide.title}
-                          </h3>
-                          <span className={`text-xs px-2 py-1 rounded-md font-semibold whitespace-nowrap ${
-                            guide.difficulty === 'Beginner' 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-amber-100 text-amber-700'
-                          }`}>
-                            {guide.difficulty}
-                          </span>
-                        </div>
-                        <p className="text-sm text-[#5C4A2F] leading-relaxed">{guide.desc}</p>
-                      </div>
+        <h1
+          className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 text-[#3D1409] leading-tight fade-in-up delay-200"
+          style={{ fontFamily: "var(--font-archivo-black)" }}
+        >
+          <span className="block sm:inline">Getting</span>{" "}
+          <span className="block sm:inline">Started</span>
+        </h1>
+
+        <p className="max-w-2xl mx-auto text-lg sm:text-xl text-[#5C4A2F] leading-relaxed mb-8 fade-in-up delay-300">
+          From creating your account to managing your first vault — follow this guide and you&apos;ll be running campaigns like a seasoned Game Master in no time.
+        </p>
+
+        {/* Quick-jump pills */}
+        <div className="flex flex-wrap justify-center gap-3 fade-in-up delay-400">
+          <Link
+            href="/login"
+            className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-3 border-[#3D1409]"
+          >
+            <Wand2 className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
+            Start Now
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+          </Link>
+
+          <Link
+            href="/support"
+            className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#F5EFE0] border-3 border-[#8B6F47] hover:border-[#5C1A1A] text-[#3D1409] font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300"
+          >
+            Need Help?
+          </Link>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce fade-in delay-500">
+          <span className="text-sm text-[#5C1A1A] font-medium">Scroll to begin</span>
+          <ChevronDown className="w-8 h-8 text-[#5C1A1A]" />
+        </div>
+      </section>
+
+      {/* ─── Steps ─── */}
+      <div className="w-full max-w-5xl px-4 sm:px-10 mt-8 space-y-10 mb-12">
+        {steps.map((step, i) => {
+          const Icon = step.icon;
+          return (
+            <section
+              key={step.number}
+              ref={stepRefs[i]}
+              className="scroll-reveal bg-[#F5EFE0] border-4 border-[#8B6F47] rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden"
+            >
+              {/* Step number accent */}
+              <div className="absolute -top-1 -right-1 w-20 h-20 bg-[#5C1A1A]/5 rounded-full" />
+              <div className="absolute top-3 right-4 text-[#5C1A1A]/15 text-6xl font-extrabold select-none" style={{ fontFamily: "var(--font-archivo-black)" }}>
+                {step.number}
+              </div>
+
+              {/* Header */}
+              <div className="flex items-center gap-4 mb-5 relative z-10">
+                <div className="w-12 h-12 bg-linear-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg shrink-0">
+                  <Icon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-[#5C1A1A] uppercase tracking-wider">Step {step.number}</span>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#3D1409] leading-tight">{step.title}</h2>
+                </div>
+              </div>
+
+              {/* Description */}
+              <p className="text-[#5C4A2F] leading-relaxed mb-5 text-base sm:text-lg">{step.description}</p>
+
+              {/* Detail list */}
+              <div className="space-y-2.5 mb-5">
+                {step.details.map((detail, j) => (
+                  <div key={j} className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-[#5C1A1A] text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                      {j + 1}
                     </div>
-                    <div className="flex items-center gap-2 text-[#5C1A1A] font-semibold text-sm group-hover:gap-3 transition-all duration-300">
-                      <span>Open guide</span>
-                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                    </div>
+                    <p className="text-[#3D1409] text-sm sm:text-base leading-relaxed">{detail}</p>
                   </div>
-                </a>
-              );
-            })}
-          </div>
-        </section>
+                ))}
+              </div>
 
-        {/* Additional Resources */}
-        <section className="bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 sm:p-10 shadow-2xl">
-          <div className="flex items-center gap-3 mb-6">
+              {/* Tip box */}
+              <div className="bg-linear-to-r from-[#5C1A1A]/8 to-transparent border-2 border-[#8B6F47]/50 rounded-xl p-4 flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-[#5C1A1A] shrink-0 mt-0.5" />
+                <p className="text-sm text-[#5C4A2F] leading-relaxed">
+                  <strong className="text-[#3D1409]">Tip:</strong> {step.tip}
+                </p>
+              </div>
+            </section>
+          );
+        })}
+
+        {/* ─── Bonus: 404 easter-egg link ─── */}
+        <section
+          ref={bonusRef}
+          className="scroll-reveal bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 sm:p-10 shadow-2xl"
+        >
+          <div className="flex items-center gap-3 mb-5">
             <div className="w-12 h-12 bg-linear-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg">
-              <Lightbulb className="w-6 h-6 text-white" />
+              <AlertTriangle className="w-6 h-6 text-white" />
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#3D1409]">Additional Resources</h2>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#3D1409]">Bonus: The Secret Room</h2>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 mb-6">
-            <div className="bg-white/60 border-3 border-[#DCC8A8] rounded-xl p-6">
-              <div className="flex items-start gap-3 mb-3">
-                <FileText className="w-6 h-6 text-[#5C1A1A] shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-bold text-lg text-[#3D1409] mb-2">Documentation</h3>
-                  <p className="text-sm text-[#5C4A2F] leading-relaxed mb-4">
-                    Complete API documentation and technical references for advanced users.
-                  </p>
-                  <a href="/docs" className="inline-flex items-center gap-2 text-sm font-semibold text-[#5C1A1A] hover:gap-3 transition-all duration-300">
-                    View docs <ChevronRight className="w-4 h-4" />
-                  </a>
-                </div>
-              </div>
-            </div>
+          <p className="text-[#5C4A2F] leading-relaxed mb-4 text-base sm:text-lg">
+            Every dungeon has a hidden chamber. What happens when an adventurer wanders off the map? Try visiting a page that doesn&apos;t exist and find out what awaits those who stray from the path.
+          </p>
 
-            <div className="bg-white/60 border-3 border-[#DCC8A8] rounded-xl p-6">
-              <div className="flex items-start gap-3 mb-3">
-                <Users className="w-6 h-6 text-[#5C1A1A] shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-bold text-lg text-[#3D1409] mb-2">Community</h3>
-                  <p className="text-sm text-[#5C4A2F] leading-relaxed mb-4">
-                    Join our community for tips, templates, and support from other users.
-                  </p>
-                  <a href="/community" className="inline-flex items-center gap-2 text-sm font-semibold text-[#5C1A1A] hover:gap-3 transition-all duration-300">
-                    Join community <ChevronRight className="w-4 h-4" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-linear-to-br from-[#5C1A1A]/10 to-transparent border-3 border-[#8B6F47] rounded-xl p-5">
-            <p className="text-sm text-[#5C4A2F] leading-relaxed">
-              <strong className="text-[#3D1409]">Need more help?</strong> Visit our <a href="/support" className="text-[#5C1A1A] font-semibold hover:underline">Support page</a> to report issues or request new features.
-            </p>
-          </div>
+          <Link
+            href="/the-secret-room-that-does-not-exist"
+            className="group inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-3 border-[#3D1409]"
+          >
+            <Wand2 className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+            Enter the Unknown
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+          </Link>
         </section>
       </div>
     </main>

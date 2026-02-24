@@ -23,7 +23,7 @@ interface HomePageProps {
 export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, onDeleteVault, userType }: HomePageProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const isDM = userType === 'gm';
+  const isDM = userType === 'dm';
 
   return (
     <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">

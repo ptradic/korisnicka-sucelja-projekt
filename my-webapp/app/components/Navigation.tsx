@@ -484,8 +484,8 @@ export function Navigation() {
       )}
       
       <Sheet open={isOpen} onOpenChange={setIsOpen} modal={false}>
-        <SheetTrigger asChild className="hidden">
-          <button aria-label="Toggle menu" />
+        <SheetTrigger asChild className="hidden" suppressHydrationWarning>
+          <button aria-label="Toggle menu" suppressHydrationWarning />
         </SheetTrigger>
         <SheetContent 
           side="top" 

@@ -31,7 +31,7 @@ export default function LoginPage() {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Sign-up state
-  const [userType, setUserType] = useState<"gm" | "player" | null>(null);
+  const [userType, setUserType] = useState<"dm" | "player" | null>(null);
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
@@ -56,7 +56,7 @@ export default function LoginPage() {
 
   const tutorialMessages: Record<number, string> = {
     0: "First, choose whether you are a Game Master or a Player. This determines your role and permissions.",
-    1: userType === "gm"
+    1: userType === "dm"
       ? "Great! Now give your account a GM name \u2014 this is how players will see you."
       : "Great! Now choose your Player name \u2014 this is your adventurer identity.",
     2: "Enter your email address. We\u2019ll use this for login and account recovery.",
@@ -277,9 +277,9 @@ export default function LoginPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => { setUserType("gm"); setSignupErrors((p) => { const n = { ...p }; delete n.role; return n; }); }}
+                    onClick={() => { setUserType("dm"); setSignupErrors((p) => { const n = { ...p }; delete n.role; return n; }); }}
                     className={`group px-4 py-4 rounded-lg border-3 transition-all duration-300 ${
-                      userType === "gm"
+                      userType === "dm"
                         ? "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-md"
                         : "bg-white/50 border-[#8B6F47] hover:border-[#5C1A1A] hover:bg-white"
                     }`}
@@ -287,12 +287,12 @@ export default function LoginPage() {
                     <div className="flex items-center justify-center gap-2">
                       <Wand2
                         className={`w-5 h-5 transition-colors ${
-                          userType === "gm" ? "text-white" : "text-[#5C1A1A]"
+                          userType === "dm" ? "text-white" : "text-[#5C1A1A]"
                         }`}
                       />
                       <span
                         className={`font-bold text-sm transition-colors ${
-                          userType === "gm" ? "text-white" : "text-[#3D1409]"
+                          userType === "dm" ? "text-white" : "text-[#3D1409]"
                         }`}
                       >
                         Game Master
@@ -342,7 +342,7 @@ export default function LoginPage() {
               {/* 2. Name */}
               <div>
                 <label className="block text-[#3D1409] font-semibold mb-2">
-                  {userType === "gm" ? "GM Name" : "Player Name"}
+                  {userType === "dm" ? "GM Name" : "Player Name"}
                 </label>
                 <input
                   type="text"
@@ -352,7 +352,7 @@ export default function LoginPage() {
                     setSignupErrors((p) => { const n = { ...p }; delete n.name; return n; });
                   }}
                   className={signupErrors.name ? inputErrorClass : inputClass}
-                  placeholder={userType === "gm" ? "e.g., Game Master" : "e.g., Aragorn"}
+                  placeholder={userType === "dm" ? "e.g., Game Master" : "e.g., Aragorn"}
                 />
                 {signupErrors.name && (
                   <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
@@ -380,7 +380,7 @@ export default function LoginPage() {
                     setSignupErrors((p) => { const n = { ...p }; delete n.email; return n; });
                   }}
                   className={signupErrors.email ? inputErrorClass : inputClass}
-                  placeholder={userType === "gm" ? "gm@example.com" : "player@example.com"}
+                  placeholder={userType === "dm" ? "gm@example.com" : "player@example.com"}
                   autoComplete="email"
                 />
                 {signupErrors.email && (
@@ -492,7 +492,7 @@ export default function LoginPage() {
                 className="group w-full flex items-center justify-center gap-2 px-6 py-4 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-base sm:text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409]"
               >
                 <UserPlus className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-                <span>{userType ? `Sign Up as ${userType === "gm" ? "Game Master" : "Player"}` : "Sign Up"}</span>
+                <span>{userType ? `Sign Up as ${userType === "dm" ? "Game Master" : "Player"}` : "Sign Up"}</span>
               </button>
             </form>
 

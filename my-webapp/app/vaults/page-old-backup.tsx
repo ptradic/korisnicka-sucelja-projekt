@@ -253,7 +253,7 @@ export default function VaultsPage() {
     setVaults([...vaults, newVault]);
   };
 
-  const handleJoinVault = (vaultName: string, password: string): boolean => {
+  const handleJoinVault = async (vaultName: string, password: string): Promise<boolean> => {
     const allVaults = localStorage.getItem(VAULTS_KEY);
     if (allVaults) {
       const parsed: Vault[] = JSON.parse(allVaults);

@@ -279,7 +279,8 @@ export async function updatePlayerInventory(
   campaignId: string,
   playerId: string,
   inventory: Item[],
-  currency?: Currency
+  currency?: Currency,
+  maxWeight?: number
 ): Promise<void> {
   const docRef = doc(db, 'campaigns', campaignId, 'playerInventories', playerId);
   const updateData: any = {
@@ -288,6 +289,9 @@ export async function updatePlayerInventory(
   };
   if (currency) {
     updateData.currency = currency;
+  }
+  if (maxWeight !== undefined) {
+    updateData.maxWeight = maxWeight;
   }
   await updateDoc(docRef, updateData);
 }

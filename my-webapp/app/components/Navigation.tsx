@@ -336,26 +336,30 @@ export function Navigation() {
   };
 
   const handleRoleToggle = async () => {
-    if (!authData?.uid) return;
+    if (!authData?.uid) {
+      alert('Unable to switch role: UID not found. Please log in again.');
+      return;
+    }
     
-    const newRole = authData.userType === 'gm' || authData.userType === 'dm' ? 'player' : 'dm';
+    const newRole = authData.userType === 'dm' ? 'player' : 'dm';
     
     try {
       await updateUserRole(authData.uid, newRole);
       
       const updatedAuth = {
         ...authData,
-        userType: newRole === 'dm' ? 'gm' : 'player',
+        userType: newRole,
       };
       
       localStorage.setItem('trailblazers-auth', JSON.stringify(updatedAuth));
       setAuthData(updatedAuth);
       
-      // Trigger page reload to refresh campaign list
-      window.location.reload();
-    } catch (error) {
+      // Reload after a short delay
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error: any) {
       console.error('Failed to toggle role:', error);
-      alert('Failed to switch role. Please try again.');
+      const errorMsg = error?.message || 'Unknown error occurred';
+      alert(`Failed to switch role: ${errorMsg}`);
     }
   };
 

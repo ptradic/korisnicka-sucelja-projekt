@@ -220,7 +220,7 @@ export default function VaultsPage() {
     const auth = localStorage.getItem('trailblazers-auth');
     if (auth) {
       const parsed = JSON.parse(auth);
-      parsed.userType = newRole === 'dm' ? 'gm' : 'player';
+      parsed.userType = newRole;
       localStorage.setItem('trailblazers-auth', JSON.stringify(parsed));
     }
   };
@@ -359,7 +359,7 @@ export default function VaultsPage() {
     return (
       <HomePage
         vaults={vaults}
-        userType={userRole === 'dm' ? 'gm' : 'player'}
+        userType={userRole === 'dm' ? 'dm' : 'player'}
         onSelectVault={handleSelectCampaign}
         onCreateVault={handleCreateCampaign}
         onJoinVault={handleJoinCampaign}

@@ -376,7 +376,7 @@ export default function VaultsPage() {
           <div className="fixed top-20 right-4 z-30">
             <div className="bg-[#F5EFE0] border-3 border-[#8B6F47] rounded-xl px-4 py-2 shadow-lg">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[#5C4A2F]">Campaign ID:</span>
+                <span className="text-xs font-semibold text-[#5C4A2F] max-sm:hidden">Campaign ID:</span>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(currentCampaignId);

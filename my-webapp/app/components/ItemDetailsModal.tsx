@@ -45,8 +45,8 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDeta
     attunement: item.attunement || false,
   });
 
-  const handleSave = () => {
-    onUpdate({
+  const handleSave = async () => {
+    await onUpdate({
       name: formData.name,
       description: formData.description,
       category: formData.category,

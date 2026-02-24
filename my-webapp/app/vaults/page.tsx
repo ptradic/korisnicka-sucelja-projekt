@@ -318,13 +318,16 @@ export default function VaultsPage() {
 
   // Max weight change
   const handleMaxWeightChange = async (playerId: string, newMax: number) => {
-    // This would require updating the player inventory doc schema
-    // For now, it's a local-only change
-    setPlayerInventories(inventories =>
-      inventories.map(inv =>
-        inv.playerId === playerId ? { ...inv, maxWeight: newMax } : inv
-      )
-    );
+    if (!currentCampaignId) return;
+
+    try {
+      const playerInv = playerInventories.find((p) => p.playerId === playerId);
+      if (playerInv) {
+        await updatePlayerInventory(currentCampaignId, playerId, playerInv.inventory, playerInv.currency, newMax);
+      }
+    } catch (error) {
+      console.error('Failed to update max weight:', error);
+    }
   };
 
   // Convert PlayerInventoryDoc to Player for UI components
@@ -450,7 +453,7 @@ export default function VaultsPage() {
                   await updateSharedLoot(currentCampaignId, updatedShared);
                 } else if (selectedPlayer) {
                   const updatedInventory = [...selectedPlayer.inventory, newItem];
-                  await updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory);
+                  await updatePlayerInventory(currentCampaignId, selectedPlayerId as string, updatedInventory, selectedPlayer.currency);
                 }
                 setShowAddItemModal(false);
               } catch (error) {
@@ -487,7 +490,7 @@ export default function VaultsPage() {
                   if (itemIndex >= 0) {
                     const updatedInventory = [...player.inventory];
                     updatedInventory[itemIndex] = updatedItem;
-                    await updatePlayerInventory(currentCampaignId, player.id, updatedInventory);
+                    await updatePlayerInventory(currentCampaignId, player.id, updatedInventory, player.currency);
                     setSelectedItem(null);
                     return;
                   }

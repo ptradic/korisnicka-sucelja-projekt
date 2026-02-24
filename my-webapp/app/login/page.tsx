@@ -14,29 +14,10 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { signUpUser, signInUser, onAuthChange, getUserDoc } from "@/src/firebaseService";
 
 //  Helpers 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function getAccounts(): Record<string, { name: string; userType: string; email: string; password: string }> {
-  if (typeof window === "undefined") return {};
-  const raw = localStorage.getItem("trailblazers-accounts");
-  return raw ? JSON.parse(raw) : {};
-}
-
-function saveAccount(email: string, data: { name: string; userType: string; password: string }) {
-  const accounts = getAccounts();
-  accounts[email.toLowerCase()] = { ...data, email: email.toLowerCase() };
-  localStorage.setItem("trailblazers-accounts", JSON.stringify(accounts));
-}
-
-function authenticate(email: string, password: string) {
-  const accounts = getAccounts();
-  const account = accounts[email.toLowerCase()];
-  if (!account) return null;
-  if (account.password !== password) return null;
-  return account;
-}
 
 //  Main Component 
 export default function LoginPage() {
@@ -92,7 +73,7 @@ export default function LoginPage() {
   }, [mode]);
 
   //  Login handler 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
 
@@ -101,27 +82,37 @@ export default function LoginPage() {
       return;
     }
 
-    const account = authenticate(loginEmail, loginPassword);
-    if (!account) {
-      setLoginError("Invalid email or password. Don\u2019t have an account? Sign up below.");
-      return;
+    try {
+      const user = await signInUser(loginEmail, loginPassword);
+      const userDoc = await getUserDoc(user.uid);
+      
+      if (userDoc) {
+        localStorage.setItem(
+          "trailblazers-auth",
+          JSON.stringify({
+            isLoggedIn: true,
+            uid: user.uid,
+            userType: userDoc.role,
+            name: userDoc.name,
+            email: userDoc.email,
+            loginTime: new Date().toISOString(),
+          })
+        );
+        router.push("/vaults");
+      }
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        setLoginError("Invalid email or password. Don't have an account? Sign up below.");
+      } else if (error.code === 'auth/too-many-requests') {
+        setLoginError("Too many failed login attempts. Please try again later.");
+      } else {
+        setLoginError("Login failed. Please try again.");
+      }
     }
-
-    localStorage.setItem(
-      "trailblazers-auth",
-      JSON.stringify({
-        isLoggedIn: true,
-        userType: account.userType,
-        name: account.name,
-        email: account.email,
-        loginTime: new Date().toISOString(),
-      })
-    );
-    router.push("/vaults");
   };
 
   //  Sign-up handler 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, string> = {};
 
@@ -133,58 +124,41 @@ export default function LoginPage() {
     else if (signupPassword.length < 6) errors.password = "Password must be at least 6 characters.";
     if (signupPassword !== signupConfirm) errors.confirm = "Passwords do not match.";
 
-    // Template name-uniqueness check (any name is accepted for now)
-    const accounts = getAccounts();
-    const nameTaken = Object.values(accounts).some(
-      (a) => a.name.toLowerCase() === signupName.trim().toLowerCase()
-    );
-    if (nameTaken) errors.name = "This name is already taken. Please choose another.";
-
-    const emailTaken = !!accounts[signupEmail.toLowerCase()];
-    if (emailTaken && !errors.email) errors.email = "An account with this email already exists.";
-
     setSignupErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
-    // Save account
-    saveAccount(signupEmail, {
-      name: signupName.trim(),
-      userType: userType!,
-      password: signupPassword,
-    });
+    try {
+      const user = await signUpUser(signupEmail, signupPassword, signupName.trim(), userType!);
+      setSignupSuccess(true);
 
-    setSignupSuccess(true);
-
-    // Auto-login after short delay
-    setTimeout(() => {
-      localStorage.setItem(
-        "trailblazers-auth",
-        JSON.stringify({
-          isLoggedIn: true,
-          userType,
-          name: signupName.trim(),
-          email: signupEmail.toLowerCase(),
-          loginTime: new Date().toISOString(),
-        })
-      );
-      router.push("/vaults");
-    }, 1500);
+      // Auto-login after short delay
+      setTimeout(() => {
+        localStorage.setItem(
+          "trailblazers-auth",
+          JSON.stringify({
+            isLoggedIn: true,
+            uid: user.uid,
+            userType,
+            name: signupName.trim(),
+            email: signupEmail.toLowerCase(),
+            loginTime: new Date().toISOString(),
+          })
+        );
+        router.push("/vaults");
+      }, 1500);
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        setSignupErrors({ email: "An account with this email already exists." });
+      } else if (error.code === 'auth/weak-password') {
+        setSignupErrors({ password: "Password is too weak. Please use a stronger password." });
+      } else {
+        setSignupErrors({ email: "Sign up failed. Please try again." });
+      }
+    }
   };
 
-  //  DEV skip 
-  const handleDevSkip = () => {
-    localStorage.setItem(
-      "trailblazers-auth",
-      JSON.stringify({
-        isLoggedIn: true,
-        userType: "gm",
-        name: "Dev User",
-        email: "dev@example.com",
-        loginTime: new Date().toISOString(),
-      })
-    );
-    router.push("/vaults");
-  };
+  //  DEV skip - removed, using real auth now
+
 
   //  Shared UI pieces 
   const inputClass =
@@ -519,15 +493,6 @@ export default function LoginPage() {
               >
                 <UserPlus className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
                 <span>{userType ? `Sign Up as ${userType === "gm" ? "Game Master" : "Player"}` : "Sign Up"}</span>
-              </button>
-
-              {/* DEV skip */}
-              <button
-                type="button"
-                onClick={handleDevSkip}
-                className="w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-sm rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-2 border-yellow-600"
-              >
-                DEV: Skip Login
               </button>
             </form>
 

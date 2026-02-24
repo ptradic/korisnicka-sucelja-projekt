@@ -5,8 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
-import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save } from "lucide-react";
+import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save, ToggleLeft, ToggleRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { updateUserRole } from "@/src/firebaseService";
 
 type Page = {
   title: string;
@@ -20,6 +21,7 @@ type AuthData = {
   name: string;
   email: string;
   loginTime: string;
+  uid?: string;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -333,6 +335,30 @@ export function Navigation() {
     router.push('/');
   };
 
+  const handleRoleToggle = async () => {
+    if (!authData?.uid) return;
+    
+    const newRole = authData.userType === 'gm' || authData.userType === 'dm' ? 'player' : 'dm';
+    
+    try {
+      await updateUserRole(authData.uid, newRole);
+      
+      const updatedAuth = {
+        ...authData,
+        userType: newRole === 'dm' ? 'gm' : 'player',
+      };
+      
+      localStorage.setItem('trailblazers-auth', JSON.stringify(updatedAuth));
+      setAuthData(updatedAuth);
+      
+      // Trigger page reload to refresh campaign list
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to toggle role:', error);
+      alert('Failed to switch role. Please try again.');
+    }
+  };
+
   const handleProfileSave = (updated: { name: string; email: string; newPassword?: string }) => {
     if (!authData) return { success: false, error: "Not logged in." };
 
@@ -513,6 +539,24 @@ export function Navigation() {
                 <ul className="space-y-2">
                   <li className="w-full">
                     <button
+                      onClick={() => { setIsOpen(false); handleRoleToggle(); }}
+                      className="inline-flex w-full items-center gap-3 px-5 py-4 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 justify-start text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
+                    >
+                      {authData.userType === 'dm' || authData.userType === 'gm' ? (
+                        <>
+                          <ToggleRight className="w-5 h-5" />
+                          <span>Switch to Player Mode</span>
+                        </>
+                      ) : (
+                        <>
+                          <ToggleLeft className="w-5 h-5" />
+                          <span>Switch to DM Mode</span>
+                        </>
+                      )}
+                    </button>
+                  </li>
+                  <li className="w-full">
+                    <button
                       onClick={() => { setIsOpen(false); setProfileModalOpen(true); }}
                       className="inline-flex w-full items-center gap-3 px-5 py-4 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 justify-start text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
                     >
@@ -593,6 +637,22 @@ export function Navigation() {
 
                       {/* Actions */}
                       <div className="p-2">
+                        <button
+                          onClick={() => { setProfileDropdownOpen(false); handleRoleToggle(); }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#3D1409] hover:bg-white/80 transition-colors"
+                        >
+                          {authData.userType === 'dm' || authData.userType === 'gm' ? (
+                            <>
+                              <ToggleRight className="w-4 h-4 text-[#5C1A1A]" />
+                              Switch to Player
+                            </>
+                          ) : (
+                            <>
+                              <ToggleLeft className="w-4 h-4 text-[#5C1A1A]" />
+                              Switch to DM
+                            </>
+                          )}
+                        </button>
                         <button
                           onClick={() => { setProfileDropdownOpen(false); setProfileModalOpen(true); }}
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#3D1409] hover:bg-white/80 transition-colors"

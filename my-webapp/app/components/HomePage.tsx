@@ -14,7 +14,7 @@ interface Vault {
 interface HomePageProps {
   onSelectVault: (vaultId: string) => void;
   onCreateVault: (vault: Omit<Vault, 'id' | 'createdAt' | 'lastAccessed'>) => void;
-  onJoinVault: (vaultName: string, password: string) => boolean;
+  onJoinVault: (campaignId: string, password: string) => Promise<boolean>;
   vaults: Vault[];
   onDeleteVault: (vaultId: string) => void;
   userType: string;
@@ -497,24 +497,28 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
   );
 }
 
-function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (vaultName: string, password: string) => boolean }) {
-  const [vaultName, setVaultName] = useState('');
+function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (campaignId: string, password: string) => Promise<boolean> }) {
+  const [campaignId, setCampaignId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!vaultName.trim() || !password.trim()) return;
+    if (!campaignId.trim() || !password.trim()) return;
     
-    const joined = onJoin(vaultName.trim(), password.trim());
+    setIsLoading(true);
+    const joined = await onJoin(campaignId.trim().toUpperCase(), password.trim());
+    setIsLoading(false);
+    
     if (joined) {
       setSuccess(true);
       setTimeout(() => onClose(), 1500);
     } else {
-      setError('Vault not found or incorrect password. Please check and try again.');
+      setError('Campaign not found or incorrect password. Please check the Campaign ID and try again.');
     }
   };
 
@@ -537,8 +541,8 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (vau
               <LogIn className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Join Campaign Vault</h2>
-              <p className="text-[#5C4A2F] text-sm mt-0.5">Enter the vault name and password from your GM</p>
+              <h2 className="text-xl font-extrabold text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Join Campaign</h2>
+              <p className="text-[#5C4A2F] text-sm mt-0.5">Enter the campaign ID and password from your DM</p>
             </div>
           </div>
           <button
@@ -553,19 +557,21 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (vau
         <div className="mx-6 border-t-2 border-[#DCC8A8]" />
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Vault Name */}
+          {/* Campaign ID */}
           <div>
             <label className="block text-[#3D1409] font-semibold text-sm mb-2">
-              Vault Name <span className="text-[#8B3A3A]">*</span>
+              Campaign ID <span className="text-[#8B3A3A]">*</span>
             </label>
+            <p className="text-[#5C4A2F] text-xs mb-2">Ask your DM for the 8-character campaign code</p>
             <div className="relative">
               <Scroll className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B6F47]" />
               <input
                 type="text"
-                value={vaultName}
-                onChange={(e) => { setVaultName(e.target.value); setError(''); }}
-                className="w-full pl-10 pr-4 py-3 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
-                placeholder="Enter the campaign vault name"
+                value={campaignId}
+                onChange={(e) => { setCampaignId(e.target.value.toUpperCase()); setError(''); }}
+                className="w-full pl-10 pr-4 py-3 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 font-mono text-lg tracking-wider"
+                placeholder="ABC12345"
+                maxLength={8}
                 required
               />
             </div>
@@ -583,7 +589,7 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (vau
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(''); }}
                 className="w-full pl-10 pr-12 py-3 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
-                placeholder="Enter the vault password"
+                placeholder="Enter the campaign password"
                 required
               />
               <button
@@ -608,7 +614,7 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (vau
           {success && (
             <div className="flex items-center gap-2 p-3 bg-green-600/10 border-2 border-green-600/30 rounded-xl">
               <Shield className="w-4 h-4 text-green-700 shrink-0" />
-              <span className="text-sm text-green-700 font-medium">Successfully joined the vault!</span>
+              <span className="text-sm text-green-700 font-medium">Successfully joined the campaign!</span>
             </div>
           )}
 
@@ -619,12 +625,21 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (vau
           <div>
             <button
               type="submit"
-              disabled={success}
+              disabled={success || isLoading}
               className="group w-full px-6 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-4 border-[#3D1409] flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
             >
-              <LogIn className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-              Join Vault
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Joining...</span>
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                  Join Campaign
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+                </>
+              )}
             </button>
           </div>
         </form>

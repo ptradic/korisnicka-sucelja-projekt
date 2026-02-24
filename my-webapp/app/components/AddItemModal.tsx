@@ -166,18 +166,28 @@ function CustomItemForm({
     e.preventDefault();
     if (!formData.name.trim() || !formData.weight) return;
 
-    onAdd({
+    const item: Omit<Item, 'id'> = {
       name: formData.name,
-      description: formData.description || undefined,
       category: formData.category,
       rarity: formData.rarity,
       quantity: formData.quantity,
       weight: parseFloat(formData.weight),
-      value: formData.value ? parseFloat(formData.value) : undefined,
-      notes: formData.notes || undefined,
       attunement: formData.attunement,
       createdAt: new Date().toISOString(),
-    });
+    };
+
+    // Only add optional fields if they have values
+    if (formData.description.trim()) {
+      item.description = formData.description;
+    }
+    if (formData.value) {
+      item.value = parseFloat(formData.value);
+    }
+    if (formData.notes.trim()) {
+      item.notes = formData.notes;
+    }
+
+    onAdd(item);
     onClose();
   };
 

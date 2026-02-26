@@ -23,6 +23,22 @@ import {
 import { auth, db } from './firebase';
 import type { Item, Player, Currency } from '@/app/types';
 
+// Helper function to remove undefined values from objects (Firestore doesn't allow undefined)
+function cleanItem(item: Item): Item {
+  const cleaned: any = {};
+  Object.keys(item).forEach((key) => {
+    const value = (item as any)[key];
+    if (value !== undefined) {
+      cleaned[key] = value;
+    }
+  });
+  return cleaned as Item;
+}
+
+function cleanItems(items: Item[]): Item[] {
+  return items.map(cleanItem);
+}
+
 // Generate random campaign ID
 export function generateCampaignId(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -284,7 +300,7 @@ export async function updatePlayerInventory(
 ): Promise<void> {
   const docRef = doc(db, 'campaigns', campaignId, 'playerInventories', playerId);
   const updateData: any = {
-    inventory,
+    inventory: cleanItems(inventory),
     updatedAt: serverTimestamp(),
   };
   if (currency) {
@@ -299,7 +315,7 @@ export async function updatePlayerInventory(
 export async function updateSharedLoot(campaignId: string, sharedLoot: Item[]): Promise<void> {
   const docRef = doc(db, 'campaigns', campaignId);
   await updateDoc(docRef, {
-    sharedLoot,
+    sharedLoot: cleanItems(sharedLoot),
     updatedAt: serverTimestamp(),
   });
 }
@@ -312,7 +328,19 @@ export async function addItemToInventory(
   const inventory = await getPlayerInventory(campaignId, playerId);
   if (!inventory) throw new Error('Inventory not found');
   
-  inventory.inventory.push(item);
+  // Check if item already exists (same name, category, rarity)
+  const existingIndex = inventory.inventory.findIndex(
+    (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+  );
+  
+  if (existingIndex >= 0) {
+    // Stack items by increasing quantity
+    inventory.inventory[existingIndex].quantity += item.quantity;
+  } else {
+    // Add as new item
+    inventory.inventory.push(cleanItem(item));
+  }
+  
   await updatePlayerInventory(campaignId, playerId, inventory.inventory);
 }
 
@@ -320,7 +348,19 @@ export async function addItemToSharedLoot(campaignId: string, item: Item): Promi
   const campaign = await getCampaign(campaignId);
   if (!campaign) throw new Error('Campaign not found');
   
-  campaign.sharedLoot.push(item);
+  // Check if item already exists (same name, category, rarity)
+  const existingIndex = campaign.sharedLoot.findIndex(
+    (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+  );
+  
+  if (existingIndex >= 0) {
+    // Stack items by increasing quantity
+    campaign.sharedLoot[existingIndex].quantity += item.quantity;
+  } else {
+    // Add as new item
+    campaign.sharedLoot.push(cleanItem(item));
+  }
+  
   await updateSharedLoot(campaignId, campaign.sharedLoot);
 }
 
@@ -355,14 +395,36 @@ export async function moveItemBetweenInventories(
 
   if (!item) throw new Error('Item not found');
 
-  // Add item to destination
+  // Add item to destination (stack if duplicate exists)
   if (toId === 'shared') {
-    campaign.sharedLoot.push(item);
+    // Check if item already exists in shared loot
+    const existingIndex = campaign.sharedLoot.findIndex(
+      (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+    );
+    
+    if (existingIndex >= 0) {
+      // Stack items by increasing quantity
+      campaign.sharedLoot[existingIndex].quantity += item.quantity;
+    } else {
+      // Add as new item
+      campaign.sharedLoot.push(item);
+    }
     await updateSharedLoot(campaignId, campaign.sharedLoot);
   } else {
     const toInventory = await getPlayerInventory(campaignId, toId);
     if (toInventory) {
-      toInventory.inventory.push(item);
+      // Check if item already exists in player inventory
+      const existingIndex = toInventory.inventory.findIndex(
+        (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+      );
+      
+      if (existingIndex >= 0) {
+        // Stack items by increasing quantity
+        toInventory.inventory[existingIndex].quantity += item.quantity;
+      } else {
+        // Add as new item
+        toInventory.inventory.push(item);
+      }
       await updatePlayerInventory(campaignId, toId, toInventory.inventory);
     }
   }

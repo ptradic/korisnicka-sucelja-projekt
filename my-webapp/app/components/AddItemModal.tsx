@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { X, Search, Plus, Package } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X, Search, Plus, Package, Loader2 } from 'lucide-react';
 import type { Item, Category, Rarity } from '../types';
 
 interface AddItemModalProps {
@@ -8,6 +8,12 @@ interface AddItemModalProps {
   targetName: string;
   isDM?: boolean;
   templateItems?: Item[];
+}
+
+interface DnDItemListItem {
+  index: string;
+  name: string;
+  type: 'equipment' | 'magic';
 }
 
 const categories: Category[] = ['weapon', 'armor', 'potion', 'magic', 'treasure', 'misc'];
@@ -43,15 +49,75 @@ function TemplateItemPicker({
   targetName: string;
 }) {
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
+  const [dndItems, setDndItems] = useState<DnDItemListItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState<string | null>(null);
+  const [useDndApi, setUseDndApi] = useState(true);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const filtered = templateItems.filter((item) => {
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+  // Fetch D&D items from API
+  useEffect(() => {
+    if (!useDndApi) return;
+
+    // Debounce search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      if (search.length < 2) {
+        setDndItems([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/dnd-items?search=${encodeURIComponent(search)}`);
+        if (response.ok) {
+          const items = await response.json();
+          setDndItems(items);
+        }
+      } catch (error) {
+        console.error('Failed to fetch D&D items:', error);
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [search, useDndApi]);
+
+  // Handle selecting a D&D item (fetch full details)
+  const handleSelectDndItem = async (dndItem: DnDItemListItem) => {
+    setLoadingDetails(dndItem.index);
+    try {
+      const response = await fetch(`/api/dnd-items?index=${encodeURIComponent(dndItem.index)}`);
+      if (response.ok) {
+        const itemDetails = await response.json();
+        onSelect({
+          id: `dnd-${dndItem.index}`,
+          ...itemDetails,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch item details:', error);
+      alert('Failed to load item details. Please try again.');
+    } finally {
+      setLoadingDetails(null);
+    }
+  };
+
+  // Filter template items (fallback)
+  const filteredTemplates = templateItems.filter((item) => {
     const matchesSearch =
       search === '' ||
       item.name.toLowerCase().includes(search.toLowerCase()) ||
       (item.description || '').toLowerCase().includes(search.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesSearch;
   });
 
   return (
@@ -63,7 +129,9 @@ function TemplateItemPicker({
           </div>
           <div>
             <h2 className="text-lg font-extrabold text-[#3D1409]">Add Item to {targetName}</h2>
-            <p className="text-[#5C4A2F] text-xs mt-0.5">Choose an item from the list</p>
+            <p className="text-[#5C4A2F] text-xs mt-0.5">
+              {useDndApi ? 'Search D&D 5e items' : 'Choose from templates'}
+            </p>
           </div>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all">
@@ -77,42 +145,92 @@ function TemplateItemPicker({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
           <input
             type="text"
-            placeholder="Search items..."
+            placeholder={useDndApi ? "Search D&D items (e.g., 'sword', 'potion')..." : "Search templates..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F]"
           />
+          {loading && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F] animate-spin" />
+          )}
         </div>
 
-        {/* Category pills */}
-        <div className="flex flex-wrap gap-1.5">
-          {(['all', ...categories] as const).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={
-                'px-2.5 py-1 rounded-full text-xs capitalize transition-all border ' +
-                (selectedCategory === cat
-                  ? 'bg-[#5C1A1A] text-white border-[#3D1409]'
-                  : 'bg-white/60 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5] hover:border-[#5C4A2F]')
-              }
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Toggle between D&D API and templates */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setUseDndApi(true)}
+            className={
+              'flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border-2 ' +
+              (useDndApi
+                ? 'bg-[#5C1A1A] text-white border-[#3D1409]'
+                : 'bg-white/60 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
+            }
+          >
+            D&D 5e Items
+          </button>
+          <button
+            onClick={() => setUseDndApi(false)}
+            className={
+              'flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border-2 ' +
+              (!useDndApi
+                ? 'bg-[#5C1A1A] text-white border-[#3D1409]'
+                : 'bg-white/60 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
+            }
+          >
+            Templates ({templateItems.length})
+          </button>
         </div>
       </div>
 
       {/* Item list */}
       <div className="flex-1 overflow-y-auto p-3 min-h-0">
-        {filtered.length === 0 ? (
+        {loading && search.length >= 2 ? (
+          <div className="text-center py-8">
+            <Loader2 className="w-10 h-10 text-[#8B6F47] mx-auto mb-2 animate-spin" />
+            <div className="text-[#5C4A2F] text-sm">Searching D&D items...</div>
+          </div>
+        ) : useDndApi && search.length < 2 ? (
+          <div className="text-center py-8">
+            <Search className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
+            <div className="text-[#5C4A2F] text-sm">Type at least 2 characters to search</div>
+            <div className="text-[#8B6F47]/70 text-xs mt-1">Search for weapons, armor, potions, and magic items</div>
+          </div>
+        ) : useDndApi && dndItems.length === 0 && search.length >= 2 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
-            <div className="text-[#5C4A2F] text-sm">No items match your search</div>
+            <div className="text-[#5C4A2F] text-sm">No D&D items found</div>
+            <div className="text-[#8B6F47]/70 text-xs mt-1">Try a different search term</div>
+          </div>
+        ) : useDndApi ? (
+          <div className="space-y-1.5">
+            {dndItems.map((item) => (
+              <button
+                key={item.index}
+                onClick={() => handleSelectDndItem(item)}
+                disabled={loadingDetails === item.index}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-[#D4C4A8] bg-white/40 hover:bg-[#F5EFE0] hover:border-[#8B6F47] transition-all text-left group disabled:opacity-50 disabled:cursor-wait"
+              >
+                <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#5C7A3B]" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-[#3D1409] font-medium truncate">{item.name}</div>
+                  <div className="text-[11px] text-[#8B6F47] capitalize">{item.type === 'magic' ? 'Magic Item' : 'Equipment'}</div>
+                </div>
+                {loadingDetails === item.index ? (
+                  <Loader2 className="w-4 h-4 text-[#5C1A1A] animate-spin shrink-0" />
+                ) : (
+                  <Plus className="w-4 h-4 text-[#8B6F47]/40 group-hover:text-[#5C1A1A] transition-colors shrink-0" />
+                )}
+              </button>
+            ))}
+          </div>
+        ) : filteredTemplates.length === 0 ? (
+          <div className="text-center py-8">
+            <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
+            <div className="text-[#5C4A2F] text-sm">No templates match your search</div>
           </div>
         ) : (
           <div className="space-y-1.5">
-            {filtered.map((item) => (
+            {filteredTemplates.map((item) => (
               <button
                 key={item.id}
                 onClick={() => onSelect(item)}
@@ -269,8 +387,22 @@ function CustomItemForm({
           </div>
         </div>
 
-        {/* Weight + Value */}
-        <div className="grid grid-cols-2 gap-2 shrink-0">
+        {/* Quantity + Weight + Value */}
+        <div className="grid grid-cols-3 gap-2 shrink-0">
+          <div>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
+              Quantity <span className="text-[#8B3A3A]">*</span>
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={formData.quantity}
+              onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+              className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+              placeholder="1"
+              required
+            />
+          </div>
           <div>
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Weight (lbs) <span className="text-[#8B3A3A]">*</span>

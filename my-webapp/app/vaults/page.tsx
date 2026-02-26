@@ -442,17 +442,46 @@ export default function VaultsPage() {
             onAdd={async (item: Omit<Item, 'id'>) => {
               if (!currentCampaignId || !currentCampaign) return;
 
-              const newItem: Item = {
-                ...item,
-                id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              };
-
               try {
                 if (isShared) {
-                  const updatedShared = [...currentCampaign.sharedLoot, newItem];
+                  // Check if item already exists in shared loot
+                  const existingIndex = currentCampaign.sharedLoot.findIndex(
+                    (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+                  );
+                  
+                  let updatedShared: Item[];
+                  if (existingIndex >= 0) {
+                    // Stack items by increasing quantity
+                    updatedShared = [...currentCampaign.sharedLoot];
+                    updatedShared[existingIndex].quantity += item.quantity;
+                  } else {
+                    // Add as new item
+                    const newItem: Item = {
+                      ...item,
+                      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    };
+                    updatedShared = [...currentCampaign.sharedLoot, newItem];
+                  }
                   await updateSharedLoot(currentCampaignId, updatedShared);
                 } else if (selectedPlayer) {
-                  const updatedInventory = [...selectedPlayer.inventory, newItem];
+                  // Check if item already exists in player inventory
+                  const existingIndex = selectedPlayer.inventory.findIndex(
+                    (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+                  );
+                  
+                  let updatedInventory: Item[];
+                  if (existingIndex >= 0) {
+                    // Stack items by increasing quantity
+                    updatedInventory = [...selectedPlayer.inventory];
+                    updatedInventory[existingIndex].quantity += item.quantity;
+                  } else {
+                    // Add as new item
+                    const newItem: Item = {
+                      ...item,
+                      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    };
+                    updatedInventory = [...selectedPlayer.inventory, newItem];
+                  }
                   await updatePlayerInventory(currentCampaignId, selectedPlayerId as string, updatedInventory, selectedPlayer.currency);
                 }
                 setShowAddItemModal(false);

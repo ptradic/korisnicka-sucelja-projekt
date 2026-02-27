@@ -653,7 +653,7 @@ export function Navigation() {
                           ) : (
                             <>
                               <ToggleLeft className="w-4 h-4 text-[#5C1A1A]" />
-                              Switch to DM
+                              Switch to GM
                             </>
                           )}
                         </button>

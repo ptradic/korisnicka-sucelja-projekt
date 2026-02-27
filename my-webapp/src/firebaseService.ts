@@ -368,64 +368,93 @@ export async function moveItemBetweenInventories(
   campaignId: string,
   itemId: string,
   fromId: string | 'shared',
-  toId: string | 'shared'
+  toId: string | 'shared',
+  currentUserId?: string,
+  isDM?: boolean
 ): Promise<void> {
   const campaign = await getCampaign(campaignId);
   if (!campaign) throw new Error('Campaign not found');
 
-  let item: Item | undefined;
+  // Validation: non-DM players can only move items FROM shared loot TO their own inventory
+  if (currentUserId && !isDM && fromId === 'shared' && toId !== 'shared' && toId !== currentUserId) {
+    throw new Error('You can only move items from shared loot to your own inventory.');
+  }
 
-  // Find and remove item from source
+  let item: Item | undefined;
+  let sourceInventory: Item[] | undefined;
+
+  // Find item in source (don't remove yet)
   if (fromId === 'shared') {
     const index = campaign.sharedLoot.findIndex((i) => i.id === itemId);
     if (index >= 0) {
-      item = campaign.sharedLoot.splice(index, 1)[0];
-      await updateSharedLoot(campaignId, campaign.sharedLoot);
+      item = { ...campaign.sharedLoot[index] };
+      sourceInventory = campaign.sharedLoot;
     }
   } else {
     const fromInventory = await getPlayerInventory(campaignId, fromId);
     if (fromInventory) {
       const index = fromInventory.inventory.findIndex((i) => i.id === itemId);
       if (index >= 0) {
-        item = fromInventory.inventory.splice(index, 1)[0];
-        await updatePlayerInventory(campaignId, fromId, fromInventory.inventory);
+        item = { ...fromInventory.inventory[index] };
+        sourceInventory = fromInventory.inventory;
       }
     }
   }
 
   if (!item) throw new Error('Item not found');
 
-  // Add item to destination (stack if duplicate exists)
-  if (toId === 'shared') {
-    // Check if item already exists in shared loot
-    const existingIndex = campaign.sharedLoot.findIndex(
-      (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
-    );
-    
-    if (existingIndex >= 0) {
-      // Stack items by increasing quantity
-      campaign.sharedLoot[existingIndex].quantity += item.quantity;
-    } else {
-      // Add as new item
-      campaign.sharedLoot.push(item);
-    }
-    await updateSharedLoot(campaignId, campaign.sharedLoot);
-  } else {
-    const toInventory = await getPlayerInventory(campaignId, toId);
-    if (toInventory) {
-      // Check if item already exists in player inventory
-      const existingIndex = toInventory.inventory.findIndex(
+  // Now try to add to destination (this might fail due to permissions)
+  try {
+    if (toId === 'shared') {
+      // Check if item already exists in shared loot
+      const existingIndex = campaign.sharedLoot.findIndex(
         (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
       );
       
       if (existingIndex >= 0) {
         // Stack items by increasing quantity
-        toInventory.inventory[existingIndex].quantity += item.quantity;
+        campaign.sharedLoot[existingIndex].quantity += item.quantity;
       } else {
         // Add as new item
-        toInventory.inventory.push(item);
+        campaign.sharedLoot.push(item);
       }
-      await updatePlayerInventory(campaignId, toId, toInventory.inventory);
+      await updateSharedLoot(campaignId, campaign.sharedLoot);
+    } else {
+      const toInventory = await getPlayerInventory(campaignId, toId);
+      if (toInventory) {
+        // Check if item already exists in player inventory
+        const existingIndex = toInventory.inventory.findIndex(
+          (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+        );
+        
+        if (existingIndex >= 0) {
+          // Stack items by increasing quantity
+          toInventory.inventory[existingIndex].quantity += item.quantity;
+        } else {
+          // Add as new item
+          toInventory.inventory.push(item);
+        }
+        await updatePlayerInventory(campaignId, toId, toInventory.inventory);
+      } else {
+        throw new Error('Destination inventory not found');
+      }
+    }
+  } catch (error) {
+    // If adding to destination failed, don't remove from source
+    throw error;
+  }
+
+  // Only now remove from source (after destination write succeeded)
+  if (sourceInventory) {
+    const index = sourceInventory.findIndex((i) => i.id === itemId);
+    if (index >= 0) {
+      sourceInventory.splice(index, 1);
+      
+      if (fromId === 'shared') {
+        await updateSharedLoot(campaignId, sourceInventory);
+      } else {
+        await updatePlayerInventory(campaignId, fromId, sourceInventory);
+      }
     }
   }
 }

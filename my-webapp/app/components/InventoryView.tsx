@@ -2,6 +2,7 @@ import { Plus, Search, Weight, Minus, Coins } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
+import { useAutoScroll } from '../hooks/useAutoScroll';
 import type { Item, Category, Currency } from '../types';
 
 interface InventoryViewProps {
@@ -182,6 +183,10 @@ export function InventoryView({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const itemListRef = useRef<HTMLDivElement>(null);
+
+  // Enable auto-scroll when dragging items near the top
+  useAutoScroll(itemListRef, { scrollThreshold: 100, scrollSpeed: 10 });
 
   const filteredItems = inventory.filter((item) => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
@@ -350,7 +355,7 @@ export function InventoryView({
       </div>
 
       {/* Item list */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5" ref={itemListRef}>
         {filteredItems.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-[#5C4A2F] text-base mb-1">No items found</div>

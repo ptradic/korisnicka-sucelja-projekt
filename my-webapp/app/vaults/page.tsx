@@ -295,7 +295,14 @@ export default function VaultsPage() {
     if (!currentCampaignId) return;
 
     try {
-      await moveItemBetweenInventories(currentCampaignId, itemId, fromId, toId);
+      await moveItemBetweenInventories(
+        currentCampaignId, 
+        itemId, 
+        fromId, 
+        toId,
+        userId,
+        userRole === 'dm'
+      );
     } catch (error) {
       console.error('Failed to move item:', error);
       alert('Failed to move item. Please try again.');

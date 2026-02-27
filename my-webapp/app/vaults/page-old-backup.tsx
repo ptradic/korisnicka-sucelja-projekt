@@ -184,6 +184,18 @@ export default function VaultsPage() {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [dragOverPlayerId, setDragOverPlayerId] = useState<string | 'shared' | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size (used for scroll behavior in useAutoScroll)
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Auth check
   useEffect(() => {

@@ -7,23 +7,27 @@ import { LayoutContent } from "./components/LayoutContent";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const averiaGruesaLibre = Averia_Gruesa_Libre({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-averia",
+  display: "swap",
 });
 
 const archivoBlack = Archivo_Black({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-archivo-black",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -38,6 +42,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${averiaGruesaLibre.variable} ${archivoBlack.variable} antialiased`}
         style={{ fontFamily: 'var(--font-averia)' }}

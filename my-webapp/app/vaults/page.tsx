@@ -139,6 +139,7 @@ export default function VaultsPage() {
   const [dragOverPlayerId, setDragOverPlayerId] = useState<string | 'shared' | null>(null);
   const [newCampaignId, setNewCampaignId] = useState<string | null>(null);
   const [newCampaignName, setNewCampaignName] = useState<string>('');
+  const [showError, setShowError] = useState(false);
 
   // Auth check and user data loading
   useEffect(() => {
@@ -305,7 +306,8 @@ export default function VaultsPage() {
       );
     } catch (error) {
       console.error('Failed to move item:', error);
-      alert('Failed to move item. Please try again.');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
     }
   };
 
@@ -577,6 +579,16 @@ export default function VaultsPage() {
               setNewCampaignName('');
             }}
           />
+        )}
+
+        {/* Error Toast Notification */}
+        {showError && (
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in duration-300">
+            <div className="bg-[#8B3A3A] text-white px-6 py-3 rounded-lg shadow-lg border border-[#6B2020] flex items-center gap-2">
+              <div className="w-2 h-2 bg-white rounded-full"></div>
+              <span className="text-sm font-medium">You aren't allowed to do that action</span>
+            </div>
+          </div>
         )}
       </div>
     </DndProvider>

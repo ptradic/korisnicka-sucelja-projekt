@@ -12,7 +12,6 @@ const nextConfig: NextConfig = {
     },
   },
   reactStrictMode: true,
-  swcMinify: true,
   images: {
     formats: ['image/webp', 'image/avif'],
   },

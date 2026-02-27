@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 // @ts-ignore
 import { DndProvider } from 'react-dnd-multi-backend';
 // @ts-ignore
-import { HTML5toTouch } from 'rdndmb-html5-to-touch';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+// @ts-ignore
+import { TouchBackend } from 'react-dnd-touch-backend';
+// @ts-ignore
+import { MouseTransition, TouchTransition } from 'dnd-multi-backend';
 import { HomePage } from '@/app/components/HomePage';
 import { PlayerSidebar } from '@/app/components/PlayerSidebar';
 import { InventoryView } from '@/app/components/InventoryView';
@@ -122,6 +126,24 @@ const TEMPLATE_ITEMS: Item[] = [
     attunement: true,
   },
 ];
+
+// Multi-backend configuration for desktop and mobile
+const HTML5toTouch = {
+  backends: [
+    {
+      id: 'html5',
+      backend: HTML5Backend,
+      transition: MouseTransition,
+    },
+    {
+      id: 'touch',
+      backend: TouchBackend,
+      options: { enableMouseEvents: true },
+      preview: true,
+      transition: TouchTransition,
+    },
+  ],
+};
 
 export default function VaultsPage() {
   const router = useRouter();

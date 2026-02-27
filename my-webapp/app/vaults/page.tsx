@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 // @ts-ignore
-import { DndProvider } from 'react-dnd';
+import { DndProvider } from 'react-dnd-multi-backend';
 // @ts-ignore
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { HTML5toTouch } from 'rdndmb-html5-to-touch';
 import { HomePage } from '@/app/components/HomePage';
 import { PlayerSidebar } from '@/app/components/PlayerSidebar';
 import { InventoryView } from '@/app/components/InventoryView';
@@ -126,6 +126,7 @@ const TEMPLATE_ITEMS: Item[] = [
 export default function VaultsPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
   const [userRole, setUserRole] = useState<'dm' | 'player'>('player');
@@ -173,6 +174,7 @@ export default function VaultsPage() {
             email: userDoc.email,
             loginTime: new Date().toISOString(),
           }));
+          setIsLoading(false);
         } else {
           router.push('/login');
         }
@@ -379,6 +381,18 @@ export default function VaultsPage() {
     createdAt: c.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(),
   }));
 
+  // Show loading spinner while authenticating
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#8B6F47] border-t-[#5C1A1A] rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#3D1409] font-semibold">Loading your vaults...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentCampaignId) {
     return (
       <HomePage
@@ -393,7 +407,7 @@ export default function VaultsPage() {
   }
 
   return (
-    <DndProvider backend={HTML5Backend}>
+    <DndProvider options={HTML5toTouch}>
       <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] pt-20 overflow-x-hidden">
         {/* Campaign ID Display for DMs */}
         {isDM && currentCampaign && (

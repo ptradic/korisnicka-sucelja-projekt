@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
       exclude: ['error'],
     },
   },
+  reactStrictMode: true,
+  swcMinify: true,
+  images: {
+    formats: ['image/webp', 'image/avif'],
+  },
 };
 
 export default nextConfig;

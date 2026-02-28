@@ -2,6 +2,32 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html, body, #__next {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: #E8D5B7;
+  background-image: linear-gradient(135deg, #E8D5B7 0%, #DCC8A8 50%, #E0CFAF 100%);
+  background-attachment: fixed;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#__next {
+  background: transparent;
+  min-height: 100%;
+}
+
 :root {
   --font-size: 16px;
   --background: #ffffff;

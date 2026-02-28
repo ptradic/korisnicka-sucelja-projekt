@@ -47,7 +47,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${averiaGruesaLibre.variable} ${archivoBlack.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${averiaGruesaLibre.variable} ${archivoBlack.variable} antialiased m-0 p-0`}
         style={{ fontFamily: 'var(--font-averia)' }}
       >
         <Navigation />

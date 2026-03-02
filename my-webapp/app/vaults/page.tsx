@@ -10,6 +10,8 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
 // @ts-ignore
 import { MouseTransition, TouchTransition } from 'dnd-multi-backend';
+// @ts-ignore
+import { usePreview } from 'react-dnd-multi-backend';
 import { HomePage } from '@/app/components/HomePage';
 import { PlayerSidebar } from '@/app/components/PlayerSidebar';
 import { InventoryView } from '@/app/components/InventoryView';
@@ -138,12 +140,38 @@ const HTML5toTouch = {
     {
       id: 'touch',
       backend: TouchBackend,
-      options: { enableMouseEvents: true },
+      options: { enableMouseEvents: false, delayTouchStart: 150 },
       preview: true,
       transition: TouchTransition,
     },
   ],
 };
+
+// Touch drag preview that follows the finger on mobile
+function TouchDragPreview() {
+  const preview = usePreview();
+  if (!preview.display) return null;
+
+  const { item, style } = preview;
+  return (
+    <div
+      style={{
+        ...style,
+        zIndex: 9999,
+        pointerEvents: 'none',
+        opacity: 0.85,
+        transform: `${style.transform || ''} scale(1.05)`,
+      }}
+    >
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-white/90 border-[#8B6F47] shadow-xl backdrop-blur-sm max-w-[200px]">
+        <div className="w-2.5 h-2.5 rounded-full bg-[#8B6F47] shrink-0" />
+        <span className="text-sm text-[#3D1409] font-medium truncate">
+          {(item as any)?.name || 'Item'}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function VaultsPage() {
   const router = useRouter();
@@ -418,6 +446,7 @@ export default function VaultsPage() {
 
   return (
     <DndProvider options={HTML5toTouch}>
+      <TouchDragPreview />
       <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] pt-20 overflow-x-hidden">
         {/* Campaign ID Display for DMs */}
         {isDM && currentCampaign && (

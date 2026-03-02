@@ -21,12 +21,12 @@ export function ItemCard({ item, ownerId, onClick }: ItemCardProps) {
   const [{ isDragging }, drag] = useDrag(
     () => ({
       type: 'INVENTORY_ITEM',
-      item: { id: item.id, ownerId },
+      item: { id: item.id, ownerId, name: item.name, rarity: item.rarity },
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
       }),
     }),
-    [item.id, ownerId],
+    [item.id, ownerId, item.name, item.rarity],
   );
 
   const colors = rarityColors[item.rarity] || rarityColors.common;
@@ -35,8 +35,9 @@ export function ItemCard({ item, ownerId, onClick }: ItemCardProps) {
     <div
       ref={drag as any}
       onClick={onClick}
+      style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
       className={
-        'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all border bg-white/40 ' +
+        'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all border bg-white/40 select-none ' +
         colors.border + ' ' +
         colors.bg +
         (isDragging ? ' opacity-40 scale-95' : ' hover:shadow-sm')

@@ -35,7 +35,10 @@ export function ItemCard({ item, ownerId, onClick }: ItemCardProps) {
     <div
       ref={drag as any}
       onClick={onClick}
-      style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
+      // touch-action:pan-y lets the browser scroll vertically on a quick swipe.
+      // React-dnd still receives all touch events; with delayTouchStart it waits
+      // before committing to a drag, so a quick swipe stays a scroll.
+      style={{ touchAction: 'pan-y', WebkitUserSelect: 'none', userSelect: 'none' }}
       className={
         'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all border bg-white/40 select-none ' +
         colors.border + ' ' +
@@ -43,7 +46,10 @@ export function ItemCard({ item, ownerId, onClick }: ItemCardProps) {
         (isDragging ? ' opacity-40 scale-95' : ' hover:shadow-sm')
       }
     >
-      <GripVertical className="w-4 h-4 text-[#8B6F47]/40 shrink-0 cursor-grab" />
+      {/* Grip icon — visual hint that the card is draggable */}
+      <div className="shrink-0 p-0.5 -ml-0.5">
+        <GripVertical className="w-4 h-4 text-[#8B6F47]/40" />
+      </div>
       <div className={'w-2.5 h-2.5 rounded-full shrink-0 ' + colors.dot} />
       <div className="flex-1 min-w-0">
         <span className="text-sm text-[#3D1409] font-medium truncate block">{item.name}</span>

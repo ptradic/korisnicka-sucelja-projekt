@@ -140,7 +140,10 @@ const HTML5toTouch = {
     {
       id: 'touch',
       backend: TouchBackend,
-      options: { enableMouseEvents: false, delayTouchStart: 150 },
+      // delayTouchStart: 400ms — a quick swipe scrolls the list, a deliberate
+      // hold starts the drag. Browser scroll works because ItemCard uses
+      // touch-action:pan-y instead of touch-action:none.
+      options: { enableMouseEvents: false, delayTouchStart: 400 },
       preview: true,
       transition: TouchTransition,
     },

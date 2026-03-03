@@ -114,9 +114,9 @@ function AddCoinsButton({
       <button
         onClick={() => setOpen(!open)}
         className="w-7 h-7 rounded-lg bg-[#D9C7AA] hover:bg-[#CDB89D] active:bg-[#C4B590] flex items-center justify-center transition-colors border border-[#8B6F47]/40"
-        title="Add coins"
+        title="Add or subtract coins"
       >
-        <Plus className="w-3.5 h-3.5 text-[#5C4A2F]" />
+        <Coins className="w-3.5 h-3.5 text-[#B8860B]" />
       </button>
 
       {open && (
@@ -126,17 +126,17 @@ function AddCoinsButton({
         >
           <div className="text-xs font-bold text-[#3D1409] mb-2 flex items-center gap-1.5">
             <Coins className="w-3.5 h-3.5 text-[#B8860B]" />
-            Add Coins
+            Add / Subtract Coins
           </div>
+          <p className="text-[10px] text-[#8B6F47] mb-2 -mt-1">Use negative numbers to subtract</p>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {coinTypes.map(({ key, label, color }) => (
               <div key={key} className="flex items-center gap-1.5">
                 <input
                   type="number"
-                  min="0"
                   value={amounts[key] || ''}
                   onChange={(e) =>
-                    setAmounts({ ...amounts, [key]: Math.max(0, parseInt(e.target.value) || 0) })
+                    setAmounts({ ...amounts, [key]: parseInt(e.target.value) || 0 })
                   }
                   onKeyDown={handleKeyDown}
                   placeholder="0"
@@ -157,7 +157,7 @@ function AddCoinsButton({
               onClick={handleSubmit}
               className="flex-1 px-2 py-1.5 text-xs text-white bg-[#5C1A1A] hover:bg-[#4A1515] border border-[#3D1409] rounded-lg transition-colors font-semibold"
             >
-              Add
+              Apply
             </button>
           </div>
         </div>
@@ -256,10 +256,10 @@ export function InventoryView({
             <AddCoinsButton
               onAdd={(added) =>
                 onCurrencyChange({
-                  pp: currency.pp + added.pp,
-                  gp: currency.gp + added.gp,
-                  sp: currency.sp + added.sp,
-                  cp: currency.cp + added.cp,
+                  pp: Math.max(0, currency.pp + added.pp),
+                  gp: Math.max(0, currency.gp + added.gp),
+                  sp: Math.max(0, currency.sp + added.sp),
+                  cp: Math.max(0, currency.cp + added.cp),
                 })
               }
             />

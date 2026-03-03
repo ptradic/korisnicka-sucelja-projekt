@@ -580,39 +580,39 @@ export default function VaultsPage() {
               const updatedItem = { ...selectedItem, ...updates };
 
               try {
-                // Update in shared loot
-                const sharedIndex = currentCampaign.sharedLoot.findIndex((i) => i.id === selectedItem.id);
-                if (sharedIndex >= 0) {
-                  const updatedShared = [...currentCampaign.sharedLoot];
-                  updatedShared[sharedIndex] = updatedItem;
-                  await updateSharedLoot(currentCampaignId, updatedShared);
-                  setSelectedItem(null);
-                  return;
-                }
-
-                // Update in player inventory
-                for (const player of players) {
-                  const itemIndex = player.inventory.findIndex((i) => i.id === selectedItem.id);
-                  if (itemIndex >= 0) {
-                    const updatedInventory = [...player.inventory];
-                    updatedInventory[itemIndex] = updatedItem;
-                    await updatePlayerInventory(currentCampaignId, player.id, updatedInventory, player.currency);
+                if (selectedPlayerId === 'shared') {
+                  const sharedIndex = currentCampaign.sharedLoot.findIndex((i) => i.id === selectedItem.id);
+                  if (sharedIndex >= 0) {
+                    const updatedShared = [...currentCampaign.sharedLoot];
+                    updatedShared[sharedIndex] = updatedItem;
+                    await updateSharedLoot(currentCampaignId, updatedShared);
                     setSelectedItem(null);
-                    return;
+                  }
+                } else {
+                  const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
+                  if (player) {
+                    const itemIndex = player.inventory.findIndex((i) => i.id === selectedItem.id);
+                    if (itemIndex >= 0) {
+                      const updatedInventory = [...player.inventory];
+                      updatedInventory[itemIndex] = updatedItem;
+                      await updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight);
+                      setSelectedItem(null);
+                    }
                   }
                 }
-              } catch (error) {
+              } catch (error: any) {
                 console.error('Failed to update item:', error);
-                alert('Failed to update item. Please try again.');
+                alert(`Failed to update item: ${error?.message || 'Please try again.'}`);
               }
             }}
             onDelete={async () => {
               if (!currentCampaignId || !currentCampaign) return;
 
               try {
-                // Remove one unit from shared loot
-                const sharedIndex = currentCampaign.sharedLoot.findIndex((i) => i.id === selectedItem.id);
-                if (sharedIndex >= 0) {
+                if (selectedPlayerId === 'shared') {
+                  // Remove one unit from shared loot
+                  const sharedIndex = currentCampaign.sharedLoot.findIndex((i) => i.id === selectedItem.id);
+                  if (sharedIndex < 0) { setSelectedItem(null); return; }
                   const updatedShared = [...currentCampaign.sharedLoot];
                   if (updatedShared[sharedIndex].quantity > 1) {
                     updatedShared[sharedIndex] = { ...updatedShared[sharedIndex], quantity: updatedShared[sharedIndex].quantity - 1 };
@@ -620,28 +620,24 @@ export default function VaultsPage() {
                     updatedShared.splice(sharedIndex, 1);
                   }
                   await updateSharedLoot(currentCampaignId, updatedShared);
-                  setSelectedItem(null);
-                  return;
-                }
-
-                // Remove one unit from player inventory
-                for (const player of players) {
+                } else {
+                  // Remove one unit from the specific player's inventory
+                  const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
+                  if (!player) { setSelectedItem(null); return; }
                   const itemIndex = player.inventory.findIndex((i) => i.id === selectedItem.id);
-                  if (itemIndex >= 0) {
-                    const updatedInventory = [...player.inventory];
-                    if (updatedInventory[itemIndex].quantity > 1) {
-                      updatedInventory[itemIndex] = { ...updatedInventory[itemIndex], quantity: updatedInventory[itemIndex].quantity - 1 };
-                    } else {
-                      updatedInventory.splice(itemIndex, 1);
-                    }
-                    await updatePlayerInventory(currentCampaignId, player.id, updatedInventory);
-                    setSelectedItem(null);
-                    return;
+                  if (itemIndex < 0) { setSelectedItem(null); return; }
+                  const updatedInventory = [...player.inventory];
+                  if (updatedInventory[itemIndex].quantity > 1) {
+                    updatedInventory[itemIndex] = { ...updatedInventory[itemIndex], quantity: updatedInventory[itemIndex].quantity - 1 };
+                  } else {
+                    updatedInventory.splice(itemIndex, 1);
                   }
+                  await updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight);
                 }
-              } catch (error) {
+                setSelectedItem(null);
+              } catch (error: any) {
                 console.error('Failed to delete item:', error);
-                alert('Failed to delete item. Please try again.');
+                alert(`Failed to delete item: ${error?.message || 'Please try again.'}`);
               }
             }}
           />

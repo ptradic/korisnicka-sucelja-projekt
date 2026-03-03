@@ -542,7 +542,7 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
             </div>
             <div>
               <h2 className="text-xl font-extrabold text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Join Campaign</h2>
-              <p className="text-[#5C4A2F] text-sm mt-0.5">Enter the campaign ID and password from your DM</p>
+              <p className="text-[#5C4A2F] text-sm mt-0.5">Enter the campaign ID and password from your GM</p>
             </div>
           </div>
           <button
@@ -562,7 +562,7 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
             <label className="block text-[#3D1409] font-semibold text-sm mb-2">
               Campaign ID <span className="text-[#8B3A3A]">*</span>
             </label>
-            <p className="text-[#5C4A2F] text-xs mb-2">Ask your DM for the 8-character campaign code</p>
+            <p className="text-[#5C4A2F] text-xs mb-2">Ask your GM for the 8-character campaign code</p>
             <div className="relative">
               <Scroll className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B6F47]" />
               <input

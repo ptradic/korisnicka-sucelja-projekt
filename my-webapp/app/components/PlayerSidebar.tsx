@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrop, useDragLayer } from 'react-dnd';
-import { Package, Users, User } from 'lucide-react';
+import { Package, Users, User, Copy, Check } from 'lucide-react';
 import type { Player } from '../types';
 
 interface PlayerSidebarProps {
@@ -12,6 +12,8 @@ interface PlayerSidebarProps {
   onDragOverChange: (playerId: string | 'shared' | null) => void;
   sharedLootCount: number;
   campaignName: string;
+  campaignId?: string;
+  isDM?: boolean;
   totalSlots: number;
 }
 
@@ -324,8 +326,18 @@ export function PlayerSidebar({
   onDragOverChange,
   sharedLootCount,
   campaignName,
+  campaignId,
+  isDM,
   totalSlots,
 }: PlayerSidebarProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = () => {
+    if (!campaignId) return;
+    navigator.clipboard.writeText(campaignId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   const { isDragging: isAnyDragging } = useDragLayer((monitor) => ({
     isDragging: monitor.isDragging(),
   }));
@@ -359,6 +371,15 @@ export function PlayerSidebar({
         {/* Campaign name */}
         <div className="flex items-center gap-2 mb-2">
           <h2 className="text-[#3D1409] text-sm font-bold truncate flex-1">{campaignName}</h2>
+          {isDM && campaignId && (
+            <button
+              onClick={handleCopyId}
+              title={copied ? 'Copied!' : 'Copy campaign ID'}
+              className="flex items-center gap-1 px-1.5 py-0.5 bg-white/60 hover:bg-white border border-[#8B6F47]/50 rounded text-[10px] font-bold text-[#5C1A1A] transition-all shrink-0"
+            >
+              {copied ? <><Check className="w-3 h-3 text-green-600" /> <span className="text-green-600">Copied</span></> : <><Copy className="w-3 h-3" /> <span>ID</span></>}
+            </button>
+          )}
         </div>
 
         {/* Wrapping player pills */}
@@ -392,9 +413,20 @@ export function PlayerSidebar({
       >
         {/* Campaign name header */}
         <div className="mb-3 pb-2 border-b-2 border-[#8B6F47]/50">
-          <h2 className="text-[#3D1409] text-sm font-bold truncate leading-tight">
-            {campaignName}
-          </h2>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-[#3D1409] text-sm font-bold truncate leading-tight flex-1">
+              {campaignName}
+            </h2>
+            {isDM && campaignId && (
+              <button
+                onClick={handleCopyId}
+                title={copied ? 'Copied!' : 'Copy campaign ID'}
+                className="flex items-center gap-1 px-1.5 py-0.5 bg-white/60 hover:bg-white border border-[#8B6F47]/50 rounded text-[10px] font-bold text-[#5C1A1A] transition-all shrink-0"
+              >
+                {copied ? <><Check className="w-3 h-3 text-green-600" /><span className="text-green-600">Copied</span></> : <><Copy className="w-3 h-3" /><span>ID</span></>}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Party Members */}

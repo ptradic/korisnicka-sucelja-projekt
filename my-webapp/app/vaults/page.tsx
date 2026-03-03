@@ -451,31 +451,6 @@ export default function VaultsPage() {
     <DndProvider options={HTML5toTouch}>
       <TouchDragPreview />
       <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] pt-20 overflow-x-hidden">
-        {/* Campaign ID Display for DMs */}
-        {isDM && currentCampaign && (
-          <div className="fixed top-20 right-4 z-30">
-            <div className="bg-[#F5EFE0] border-3 border-[#8B6F47] rounded-xl px-4 py-2 shadow-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[#5C4A2F] max-sm:hidden">Campaign ID:</span>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(currentCampaignId);
-                    alert('Campaign ID copied to clipboard!');
-                  }}
-                  className="flex items-center gap-1.5 px-2 py-1 bg-white border-2 border-[#8B6F47] rounded-lg hover:bg-[#F0E8D5] transition-all group"
-                  title="Click to copy"
-                >
-                  <span className="font-mono text-sm font-bold text-[#3D1409] tracking-wider">{currentCampaignId}</span>
-                  <svg className="w-3.5 h-3.5 text-[#5C1A1A] group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" strokeWidth="2"/>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" strokeWidth="2"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="flex flex-col sm:flex-row sm:h-[calc(100vh-5rem)] sm:overflow-hidden">
           <PlayerSidebar
             players={players}
@@ -486,6 +461,8 @@ export default function VaultsPage() {
             onDragOverChange={setDragOverPlayerId}
             sharedLootCount={currentCampaign?.sharedLoot.length || 0}
             campaignName={currentCampaign?.name ?? 'Campaign'}
+            campaignId={currentCampaignId ?? undefined}
+            isDM={isDM}
             totalSlots={currentCampaign?.playerIds.length || players.length}
           />
           <div className="flex-1 min-w-0">

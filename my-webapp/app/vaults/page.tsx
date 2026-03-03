@@ -610,20 +610,30 @@ export default function VaultsPage() {
               if (!currentCampaignId || !currentCampaign) return;
 
               try {
-                // Remove from shared loot
+                // Remove one unit from shared loot
                 const sharedIndex = currentCampaign.sharedLoot.findIndex((i) => i.id === selectedItem.id);
                 if (sharedIndex >= 0) {
-                  const updatedShared = currentCampaign.sharedLoot.filter((i) => i.id !== selectedItem.id);
+                  const updatedShared = [...currentCampaign.sharedLoot];
+                  if (updatedShared[sharedIndex].quantity > 1) {
+                    updatedShared[sharedIndex] = { ...updatedShared[sharedIndex], quantity: updatedShared[sharedIndex].quantity - 1 };
+                  } else {
+                    updatedShared.splice(sharedIndex, 1);
+                  }
                   await updateSharedLoot(currentCampaignId, updatedShared);
                   setSelectedItem(null);
                   return;
                 }
 
-                // Remove from player inventory
+                // Remove one unit from player inventory
                 for (const player of players) {
                   const itemIndex = player.inventory.findIndex((i) => i.id === selectedItem.id);
                   if (itemIndex >= 0) {
-                    const updatedInventory = player.inventory.filter((i) => i.id !== selectedItem.id);
+                    const updatedInventory = [...player.inventory];
+                    if (updatedInventory[itemIndex].quantity > 1) {
+                      updatedInventory[itemIndex] = { ...updatedInventory[itemIndex], quantity: updatedInventory[itemIndex].quantity - 1 };
+                    } else {
+                      updatedInventory.splice(itemIndex, 1);
+                    }
                     await updatePlayerInventory(currentCampaignId, player.id, updatedInventory);
                     setSelectedItem(null);
                     return;

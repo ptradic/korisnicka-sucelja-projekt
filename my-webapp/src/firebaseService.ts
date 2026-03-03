@@ -1,6 +1,7 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
   User as FirebaseUser,
@@ -20,7 +21,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { auth, db, googleProvider } from './firebase';
 import type { Item, Player, Currency } from '@/app/types';
 
 // Helper function to remove undefined values from objects (Firestore doesn't allow undefined)
@@ -117,6 +118,32 @@ export async function signInUser(email: string, password: string) {
 
 export async function signOutUser() {
   await signOut(auth);
+}
+
+export async function signInWithGoogle(): Promise<{ user: FirebaseUser; isNewUser: boolean }> {
+  const result = await signInWithPopup(auth, googleProvider);
+  const user = result.user;
+  
+  // Check if user document exists
+  const existingUserDoc = await getUserDoc(user.uid);
+  
+  if (!existingUserDoc) {
+    // New user - create user document with 'player' as default role
+    const userDoc: UserDoc = {
+      uid: user.uid,
+      email: user.email?.toLowerCase() || '',
+      name: user.displayName || 'Adventurer',
+      role: 'player', // Default role for Google sign-in
+      createdAt: serverTimestamp() as Timestamp,
+      updatedAt: serverTimestamp() as Timestamp,
+      dmCampaigns: [],
+      playerCampaigns: [],
+    };
+    await setDoc(doc(db, 'users', user.uid), userDoc);
+    return { user, isNewUser: true };
+  }
+  
+  return { user, isNewUser: false };
 }
 
 export function onAuthChange(callback: (user: FirebaseUser | null) => void) {

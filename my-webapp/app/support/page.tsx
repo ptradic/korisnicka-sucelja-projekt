@@ -24,7 +24,7 @@ const quickLinks = [
   },
   {
     id: "discord",
-    href: "#",
+    href: "https://discord.gg/T2CzJqQSWQ",
     title: "Community Discord",
     desc: "Chat with other users",
     icon: MessageCircle,

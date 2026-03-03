@@ -7,7 +7,7 @@ import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
 import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save, ToggleLeft, ToggleRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { updateUserRole, updateUserName } from "@/src/firebaseService";
+import { updateUserRole, updateUserName, signOutUser, onAuthChange } from "@/src/firebaseService";
 import { auth } from "@/src/firebase";
 import { reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
 
@@ -332,6 +332,23 @@ export function Navigation() {
     }
   }, [currentPath]);
 
+  // Listen to Firebase auth state changes to ensure sessions stay in sync
+  useEffect(() => {
+    const unsubscribe = onAuthChange((firebaseUser) => {
+      if (!firebaseUser) {
+        // Firebase user is signed out - clean up local state
+        const localAuth = localStorage.getItem('trailblazers-auth');
+        if (localAuth) {
+          localStorage.removeItem('trailblazers-auth');
+          setIsLoggedIn(false);
+          setAuthData(null);
+        }
+      }
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -348,7 +365,14 @@ export function Navigation() {
   const isPublicPage = (path: string) =>
     PUBLIC_PATHS.some((p) => p === '/' ? path === '/' : path.startsWith(p));
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // Sign out from Firebase first
+      await signOutUser();
+    } catch (error) {
+      console.error('Error signing out from Firebase:', error);
+    }
+    // Always clean up local state regardless of Firebase signout result
     localStorage.removeItem('trailblazers-auth');
     setIsLoggedIn(false);
     setAuthData(null);

@@ -41,6 +41,8 @@ import {
   subscribeToTransferRequests,
   subscribeToRejectedTransfers,
   restoreRejectedTransfer,
+  subscribeToPendingTransfersFromMe,
+  checkAndExpirePendingTransfers,
   getPlayerInventory,
 } from '@/src/firebaseService';
 import type { CampaignDoc, PlayerInventoryDoc, TransferRequest } from '@/src/firebaseService';
@@ -301,6 +303,34 @@ export default function VaultsPage() {
     });
 
     return () => unsubscribe();
+  }, [currentCampaignId, userId, userRole]);
+
+  // Subscribe to pending transfers from me (sender) to check for expired ones
+  // This ensures expiration works even if recipient is offline
+  useEffect(() => {
+    if (!currentCampaignId || !userId || userRole === 'dm') return;
+
+    const unsubscribe = subscribeToPendingTransfersFromMe(currentCampaignId, userId, () => {
+      // The callback doesn't need to do anything - the subscription itself
+      // handles marking expired requests (which then triggers the rejected/expired subscription)
+    });
+
+    return () => unsubscribe();
+  }, [currentCampaignId, userId, userRole]);
+
+  // Periodically check for expired transfers (since Firestore subscriptions don't trigger on time)
+  useEffect(() => {
+    if (!currentCampaignId || !userId || userRole === 'dm') return;
+
+    // Check immediately on mount
+    checkAndExpirePendingTransfers(currentCampaignId, userId);
+
+    // Then check every 2 seconds
+    const interval = setInterval(() => {
+      checkAndExpirePendingTransfers(currentCampaignId, userId);
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, [currentCampaignId, userId, userRole]);
 
   // Handle role toggle

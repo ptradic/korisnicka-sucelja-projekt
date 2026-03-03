@@ -4,7 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import { Package, ArrowRight, Check, X, AlertCircle, Clock } from 'lucide-react';
 import type { TransferRequest } from '@/src/firebaseService';
 
-const AUTO_REJECT_TIMEOUT = 10; // seconds
+const AUTO_REJECT_TIMEOUT = 10; // seconds (fallback)
+
+// Helper to calculate remaining time from server expiration
+function getRemainingSeconds(expiresAt: any): number {
+  if (!expiresAt) return AUTO_REJECT_TIMEOUT;
+  const expirationDate = expiresAt.toDate ? expiresAt.toDate() : new Date(expiresAt);
+  const remaining = Math.ceil((expirationDate.getTime() - Date.now()) / 1000);
+  return Math.max(0, remaining);
+}
 
 interface TransferRequestModalProps {
   request: TransferRequest;
@@ -24,33 +32,31 @@ const RARITY_COLORS: Record<string, string> = {
 export function TransferRequestModal({ request, onAccept, onReject }: TransferRequestModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState(AUTO_REJECT_TIMEOUT);
+  const [timeLeft, setTimeLeft] = useState(() => getRemainingSeconds(request.expiresAt));
   const hasAutoRejected = useRef(false);
 
-  // Reset state when request changes
+  // Reset state and calculate remaining time when request changes
   useEffect(() => {
     setIsProcessing(false);
     setError(null);
-    setTimeLeft(AUTO_REJECT_TIMEOUT);
+    setTimeLeft(getRemainingSeconds(request.expiresAt));
     hasAutoRejected.current = false;
-  }, [request.id]);
+  }, [request.id, request.expiresAt]);
 
-  // Auto-reject timer
+  // Auto-reject timer - synced with server expiration
   useEffect(() => {
     if (isProcessing) return;
 
     const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
+      const remaining = getRemainingSeconds(request.expiresAt);
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(interval);
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isProcessing, request.id]);
+  }, [isProcessing, request.id, request.expiresAt]);
 
   // Auto-reject when timer reaches 0
   useEffect(() => {

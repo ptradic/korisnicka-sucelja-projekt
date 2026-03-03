@@ -544,6 +544,8 @@ export function subscribeToPlayerInventory(
 // - Accept: Recipient adds item to their inventory, deletes request
 // - Reject: Recipient sets status to 'rejected', sender restores item and deletes request
 
+const TRANSFER_EXPIRATION_SECONDS = 10;
+
 export interface TransferRequest {
   id: string;
   campaignId: string;
@@ -558,7 +560,8 @@ export interface TransferRequest {
   toPlayerName: string;
   quantity: number;
   createdAt: Timestamp;
-  status: 'pending' | 'accepted' | 'rejected';
+  expiresAt: Timestamp; // Server-side expiration timestamp
+  status: 'pending' | 'accepted' | 'rejected' | 'expired';
 }
 
 export async function createTransferRequest(
@@ -591,6 +594,10 @@ export async function createTransferRequest(
   await updatePlayerInventory(campaignId, fromPlayerId, updatedInventory, senderInventory.currency);
   
   // Create the transfer request with full item data
+  // Calculate expiration time (TRANSFER_EXPIRATION_SECONDS from now)
+  const expirationDate = new Date(Date.now() + TRANSFER_EXPIRATION_SECONDS * 1000);
+  const expiresAt = Timestamp.fromDate(expirationDate);
+
   const transferRequest: TransferRequest = {
     id: requestId,
     campaignId,
@@ -605,6 +612,7 @@ export async function createTransferRequest(
     toPlayerName,
     quantity: 1,
     createdAt: serverTimestamp() as Timestamp,
+    expiresAt,
     status: 'pending',
   };
 
@@ -718,7 +726,8 @@ export async function restoreRejectedTransfer(
   
   const request = requestSnap.data() as TransferRequest;
   
-  if (request.status !== 'rejected') return;
+  // Handle both rejected and expired statuses
+  if (request.status !== 'rejected' && request.status !== 'expired') return;
   
   // Restore item to sender's inventory
   const senderInventory = await getPlayerInventory(campaignId, senderId);
@@ -743,6 +752,43 @@ export async function restoreRejectedTransfer(
   await deleteDoc(requestRef);
 }
 
+// Helper to check if a transfer request has expired
+function isTransferExpired(request: TransferRequest): boolean {
+  if (!request.expiresAt) return false; // Legacy requests without expiresAt
+  const now = new Date();
+  const expiresAt = request.expiresAt.toDate();
+  return now > expiresAt;
+}
+
+// Mark an expired transfer request as expired
+async function markTransferAsExpired(campaignId: string, requestId: string): Promise<void> {
+  const requestRef = doc(db, 'campaigns', campaignId, 'transferRequests', requestId);
+  try {
+    await updateDoc(requestRef, { status: 'expired' });
+  } catch (error) {
+    console.error('Failed to mark transfer as expired:', error);
+  }
+}
+
+// Actively check for and expire pending transfers from a player
+// This should be called periodically since Firestore subscriptions don't trigger on time changes
+export async function checkAndExpirePendingTransfers(
+  campaignId: string,
+  playerId: string
+): Promise<void> {
+  const collectionRef = collection(db, 'campaigns', campaignId, 'transferRequests');
+  const q = query(collectionRef, where('fromPlayerId', '==', playerId), where('status', '==', 'pending'));
+  
+  const snapshot = await getDocs(q);
+  
+  for (const docSnap of snapshot.docs) {
+    const request = docSnap.data() as TransferRequest;
+    if (isTransferExpired(request)) {
+      await markTransferAsExpired(campaignId, request.id);
+    }
+  }
+}
+
 export function subscribeToTransferRequests(
   campaignId: string,
   playerId: string,
@@ -751,31 +797,52 @@ export function subscribeToTransferRequests(
   const collectionRef = collection(db, 'campaigns', campaignId, 'transferRequests');
   const q = query(collectionRef, where('toPlayerId', '==', playerId), where('status', '==', 'pending'));
   
-  return onSnapshot(q, (snapshot) => {
+  return onSnapshot(q, async (snapshot) => {
     const requests: TransferRequest[] = [];
-    snapshot.forEach((doc) => {
-      requests.push(doc.data() as TransferRequest);
+    const expiredRequests: TransferRequest[] = [];
+    
+    snapshot.forEach((docSnap) => {
+      const request = docSnap.data() as TransferRequest;
+      if (isTransferExpired(request)) {
+        expiredRequests.push(request);
+      } else {
+        requests.push(request);
+      }
     });
+    
+    // Mark expired requests (they will be restored by sender's subscription)
+    for (const expired of expiredRequests) {
+      await markTransferAsExpired(campaignId, expired.id);
+    }
+    
     callback(requests);
   });
 }
 
-export function subscribeToRejectedTransfers(
+export function subscribeToRejectedOrExpiredTransfers(
   campaignId: string,
   playerId: string,
   callback: (requests: TransferRequest[]) => void
 ): () => void {
   const collectionRef = collection(db, 'campaigns', campaignId, 'transferRequests');
-  const q = query(collectionRef, where('fromPlayerId', '==', playerId), where('status', '==', 'rejected'));
+  // Query for both rejected and expired transfers from this player
+  const q = query(collectionRef, where('fromPlayerId', '==', playerId));
   
   return onSnapshot(q, (snapshot) => {
     const requests: TransferRequest[] = [];
-    snapshot.forEach((doc) => {
-      requests.push(doc.data() as TransferRequest);
+    snapshot.forEach((docSnap) => {
+      const request = docSnap.data() as TransferRequest;
+      // Include both rejected and expired status
+      if (request.status === 'rejected' || request.status === 'expired') {
+        requests.push(request);
+      }
     });
     callback(requests);
   });
 }
+
+// Keep backward compatibility alias
+export const subscribeToRejectedTransfers = subscribeToRejectedOrExpiredTransfers;
 
 export function subscribeToPendingTransfersFromMe(
   campaignId: string,
@@ -785,11 +852,24 @@ export function subscribeToPendingTransfersFromMe(
   const collectionRef = collection(db, 'campaigns', campaignId, 'transferRequests');
   const q = query(collectionRef, where('fromPlayerId', '==', playerId), where('status', '==', 'pending'));
   
-  return onSnapshot(q, (snapshot) => {
+  return onSnapshot(q, async (snapshot) => {
     const requests: TransferRequest[] = [];
-    snapshot.forEach((doc) => {
-      requests.push(doc.data() as TransferRequest);
+    const expiredRequests: TransferRequest[] = [];
+    
+    snapshot.forEach((docSnap) => {
+      const request = docSnap.data() as TransferRequest;
+      if (isTransferExpired(request)) {
+        expiredRequests.push(request);
+      } else {
+        requests.push(request);
+      }
     });
+    
+    // Sender can also mark expired requests (ensures expiration even if recipient is offline)
+    for (const expired of expiredRequests) {
+      await markTransferAsExpired(campaignId, expired.id);
+    }
+    
     callback(requests);
   });
 }

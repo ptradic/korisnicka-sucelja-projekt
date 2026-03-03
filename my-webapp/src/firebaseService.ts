@@ -403,6 +403,9 @@ export async function moveItemBetweenInventories(
 
   if (!item) throw new Error('Item not found');
 
+  // Always move exactly 1 unit
+  const moveQty = 1;
+
   // Now try to add to destination (this might fail due to permissions)
   try {
     if (toId === 'shared') {
@@ -413,10 +416,10 @@ export async function moveItemBetweenInventories(
       
       if (existingIndex >= 0) {
         // Stack items by increasing quantity
-        campaign.sharedLoot[existingIndex].quantity += item.quantity;
+        campaign.sharedLoot[existingIndex].quantity += moveQty;
       } else {
-        // Add as new item
-        campaign.sharedLoot.push(item);
+        // Add as new item with quantity 1
+        campaign.sharedLoot.push({ ...item, quantity: moveQty });
       }
       await updateSharedLoot(campaignId, campaign.sharedLoot);
     } else {
@@ -429,10 +432,10 @@ export async function moveItemBetweenInventories(
         
         if (existingIndex >= 0) {
           // Stack items by increasing quantity
-          toInventory.inventory[existingIndex].quantity += item.quantity;
+          toInventory.inventory[existingIndex].quantity += moveQty;
         } else {
-          // Add as new item
-          toInventory.inventory.push(item);
+          // Add as new item with quantity 1
+          toInventory.inventory.push({ ...item, quantity: moveQty });
         }
         await updatePlayerInventory(campaignId, toId, toInventory.inventory);
       } else {
@@ -444,11 +447,16 @@ export async function moveItemBetweenInventories(
     throw error;
   }
 
-  // Only now remove from source (after destination write succeeded)
+  // Only now remove/decrement from source (after destination write succeeded)
   if (sourceInventory) {
     const index = sourceInventory.findIndex((i) => i.id === itemId);
     if (index >= 0) {
-      sourceInventory.splice(index, 1);
+      if (sourceInventory[index].quantity > 1) {
+        // Decrement by 1 instead of removing
+        sourceInventory[index].quantity -= moveQty;
+      } else {
+        sourceInventory.splice(index, 1);
+      }
       
       if (fromId === 'shared') {
         await updateSharedLoot(campaignId, sourceInventory);

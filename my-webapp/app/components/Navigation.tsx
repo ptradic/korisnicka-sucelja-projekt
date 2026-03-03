@@ -7,7 +7,9 @@ import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
 import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save, ToggleLeft, ToggleRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { updateUserRole } from "@/src/firebaseService";
+import { updateUserRole, updateUserName } from "@/src/firebaseService";
+import { auth } from "@/src/firebase";
+import { reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
 
 type Page = {
   title: string;
@@ -63,10 +65,12 @@ function ProfileModal({
   auth,
   onClose,
   onSave,
+  onRoleToggle,
 }: {
   auth: AuthData;
   onClose: () => void;
-  onSave: (updated: { name: string; email: string; newPassword?: string }) => { success: boolean; error?: string };
+  onSave: (updated: { name: string; email: string; currentPassword?: string; newPassword?: string }) => Promise<{ success: boolean; error?: string }>;
+  onRoleToggle: () => void;
 }) {
   const [name, setName] = useState(auth.name);
   const [email, setEmail] = useState(auth.email);
@@ -79,13 +83,15 @@ function ProfileModal({
   const [changingPassword, setChangingPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const mouseDownOnBackdrop = useRef(false);
 
   const inputCls =
     "w-full px-3 py-2.5 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all text-sm";
   const inputErrCls =
     "w-full px-3 py-2.5 bg-white/70 border-2 border-red-400 rounded-lg text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-300/30 transition-all text-sm";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = "Name is required.";
@@ -97,26 +103,19 @@ function ProfileModal({
       if (!newPassword) errs.newPassword = "Enter a new password.";
       else if (newPassword.length < 6) errs.newPassword = "Min. 6 characters.";
       if (newPassword !== confirmPassword) errs.confirmPassword = "Passwords do not match.";
-
-      // Verify current password
-      if (!errs.currentPassword) {
-        const raw = localStorage.getItem("trailblazers-accounts");
-        const accounts = raw ? JSON.parse(raw) : {};
-        const account = accounts[auth.email.toLowerCase()];
-        if (!account || account.password !== currentPassword) {
-          errs.currentPassword = "Incorrect password.";
-        }
-      }
     }
 
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
-    const result = onSave({
+    setIsSubmitting(true);
+    const result = await onSave({
       name: name.trim(),
       email: email.trim().toLowerCase(),
+      currentPassword: changingPassword ? currentPassword : undefined,
       newPassword: changingPassword ? newPassword : undefined,
     });
+    setIsSubmitting(false);
 
     if (result.success) {
       setSuccessMsg("Profile updated!");
@@ -126,15 +125,24 @@ function ProfileModal({
       setConfirmPassword("");
       setTimeout(() => setSuccessMsg(""), 2500);
     } else if (result.error) {
-      setErrors({ general: result.error });
+      if (result.error.includes("password") || result.error.includes("credential")) {
+        setErrors({ currentPassword: result.error });
+      } else {
+        setErrors({ general: result.error });
+      }
     }
   };
 
   return (
-    <div className="fixed inset-0 z-200 flex items-center justify-center px-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-200 flex items-center justify-center px-4"
+      onMouseDown={() => { mouseDownOnBackdrop.current = true; }}
+      onClick={() => { if (mouseDownOnBackdrop.current) onClose(); }}
+    >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
         className="relative bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+        onMouseDown={(e) => { e.stopPropagation(); mouseDownOnBackdrop.current = false; }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -145,12 +153,19 @@ function ProfileModal({
           </button>
         </div>
 
-        {/* Role badge */}
-        <div className="mb-4 flex justify-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full text-xs font-semibold text-[#5C1A1A] capitalize">
-            <User className="w-3 h-3" />
-            {auth.userType === "dm" || auth.userType === "gm" ? "Game Master" : "Player"}
-          </span>
+        {/* Role switch */}
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => { onClose(); onRoleToggle(); }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5C1A1A]/10 hover:bg-[#5C1A1A]/20 border-2 border-[#5C1A1A]/30 hover:border-[#5C1A1A]/50 rounded-xl text-sm font-semibold text-[#5C1A1A] transition-all duration-200"
+          >
+            {auth.userType === "dm" || auth.userType === "gm" ? (
+              <><ToggleRight className="w-4 h-4" /> Switch to Player Mode</>
+            ) : (
+              <><ToggleLeft className="w-4 h-4" /> Switch to GM Mode</>
+            )}
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -271,10 +286,11 @@ function ProfileModal({
           {/* Save */}
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-3 border-[#3D1409]"
+            disabled={isSubmitting}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-3 border-[#3D1409] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
           >
             <Save className="w-4 h-4" />
-            Save Changes
+            {isSubmitting ? "Saving..." : "Save Changes"}
           </button>
         </form>
       </div>
@@ -291,6 +307,7 @@ export function Navigation() {
   const [authData, setAuthData] = useState<AuthData | null>(null);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [showLogoutToast, setShowLogoutToast] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Compute short initials from user name
@@ -326,13 +343,22 @@ export function Navigation() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Pages that are accessible without login
+  const PUBLIC_PATHS = ['/', '/guides', '/support', '/login'];
+  const isPublicPage = (path: string) =>
+    PUBLIC_PATHS.some((p) => p === '/' ? path === '/' : path.startsWith(p));
+
   const handleLogout = () => {
     localStorage.removeItem('trailblazers-auth');
     setIsLoggedIn(false);
     setAuthData(null);
     setIsOpen(false);
     setProfileDropdownOpen(false);
-    router.push('/');
+    setShowLogoutToast(true);
+    setTimeout(() => setShowLogoutToast(false), 4000);
+    if (!isPublicPage(currentPath ?? '')) {
+      router.push('/');
+    }
   };
 
   const handleRoleToggle = async () => {
@@ -363,52 +389,42 @@ export function Navigation() {
     }
   };
 
-  const handleProfileSave = (updated: { name: string; email: string; newPassword?: string }) => {
+  const handleProfileSave = async (updated: { name: string; email: string; currentPassword?: string; newPassword?: string }): Promise<{ success: boolean; error?: string }> => {
     if (!authData) return { success: false, error: "Not logged in." };
 
-    const raw = localStorage.getItem("trailblazers-accounts");
-    const accounts: Record<string, { name: string; userType: string; email: string; password: string }> = raw ? JSON.parse(raw) : {};
-    const oldEmail = authData.email.toLowerCase();
-    const account = accounts[oldEmail];
-    if (!account) return { success: false, error: "Account not found." };
+    try {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) return { success: false, error: "Session expired. Please log in again." };
 
-    // Check if new email conflicts with another account
-    const newEmail = updated.email.toLowerCase();
-    if (newEmail !== oldEmail && accounts[newEmail]) {
-      return { success: false, error: "Email already taken by another account." };
+      // Reauthenticate and change password if requested
+      if (updated.currentPassword && updated.newPassword) {
+        const credential = EmailAuthProvider.credential(firebaseUser.email!, updated.currentPassword);
+        try {
+          await reauthenticateWithCredential(firebaseUser, credential);
+        } catch {
+          return { success: false, error: "Incorrect current password." };
+        }
+        await updatePassword(firebaseUser, updated.newPassword);
+      }
+
+      // Update name in Firestore if changed
+      if (updated.name !== authData.name) {
+        await updateUserName(authData.uid!, updated.name);
+      }
+
+      // Update auth session in localStorage
+      const newAuth: AuthData = {
+        ...authData,
+        name: updated.name,
+        email: updated.email,
+      };
+      localStorage.setItem("trailblazers-auth", JSON.stringify(newAuth));
+      setAuthData(newAuth);
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || "Failed to update profile." };
     }
-
-    // Check if name conflicts
-    const nameTaken = Object.entries(accounts).some(
-      ([key, a]) => key !== oldEmail && a.name.toLowerCase() === updated.name.toLowerCase()
-    );
-    if (nameTaken) return { success: false, error: "Name already taken." };
-
-    // Update account
-    const updatedAccount = {
-      ...account,
-      name: updated.name,
-      email: newEmail,
-      password: updated.newPassword || account.password,
-    };
-
-    // If email changed, remove old key
-    if (newEmail !== oldEmail) {
-      delete accounts[oldEmail];
-    }
-    accounts[newEmail] = updatedAccount;
-    localStorage.setItem("trailblazers-accounts", JSON.stringify(accounts));
-
-    // Update auth session
-    const newAuth: AuthData = {
-      ...authData,
-      name: updated.name,
-      email: newEmail,
-    };
-    localStorage.setItem("trailblazers-auth", JSON.stringify(newAuth));
-    setAuthData(newAuth);
-
-    return { success: true };
   };
 
   const navPages = pages.filter(page => page.path !== '/login');
@@ -543,24 +559,6 @@ export function Navigation() {
                 <ul className="space-y-2">
                   <li className="w-full">
                     <button
-                      onClick={() => { setIsOpen(false); handleRoleToggle(); }}
-                      className="inline-flex w-full items-center gap-3 px-5 py-4 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 justify-start text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
-                    >
-                      {authData.userType === 'dm' || authData.userType === 'gm' ? (
-                        <>
-                          <ToggleRight className="w-5 h-5" />
-                          <span>Switch to Player Mode</span>
-                        </>
-                      ) : (
-                        <>
-                          <ToggleLeft className="w-5 h-5" />
-                          <span>Switch to DM Mode</span>
-                        </>
-                      )}
-                    </button>
-                  </li>
-                  <li className="w-full">
-                    <button
                       onClick={() => { setIsOpen(false); setProfileModalOpen(true); }}
                       className="inline-flex w-full items-center gap-3 px-5 py-4 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 justify-start text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
                     >
@@ -642,22 +640,6 @@ export function Navigation() {
                       {/* Actions */}
                       <div className="p-2">
                         <button
-                          onClick={() => { setProfileDropdownOpen(false); handleRoleToggle(); }}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#3D1409] hover:bg-white/80 transition-colors"
-                        >
-                          {authData.userType === 'dm' || authData.userType === 'gm' ? (
-                            <>
-                              <ToggleRight className="w-4 h-4 text-[#5C1A1A]" />
-                              Switch to Player
-                            </>
-                          ) : (
-                            <>
-                              <ToggleLeft className="w-4 h-4 text-[#5C1A1A]" />
-                              Switch to GM
-                            </>
-                          )}
-                        </button>
-                        <button
                           onClick={() => { setProfileDropdownOpen(false); setProfileModalOpen(true); }}
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#3D1409] hover:bg-white/80 transition-colors"
                         >
@@ -691,7 +673,16 @@ export function Navigation() {
           auth={authData}
           onClose={() => setProfileModalOpen(false)}
           onSave={handleProfileSave}
+          onRoleToggle={handleRoleToggle}
         />
+      )}
+
+      {/* Logout success toast */}
+      {showLogoutToast && (
+        <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-5 py-3.5 bg-[#F0F7EC] border-4 border-[#5C7A3B] rounded-xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 whitespace-nowrap" style={{ fontFamily: 'var(--font-archivo-black)' }}>
+          <CheckCircle2 className="w-5 h-5 text-[#5C7A3B] shrink-0" />
+          <p className="text-sm font-bold text-[#2D4A1A]">You have been successfully logged out.</p>
+        </div>
       )}
     </div>
   );

@@ -183,6 +183,8 @@ export function InventoryView({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isEditingMaxWeight, setIsEditingMaxWeight] = useState(false);
+  const [maxWeightEditValue, setMaxWeightEditValue] = useState('');
   const itemListRef = useRef<HTMLDivElement>(null);
 
   // Enable auto-scroll when dragging items near the top
@@ -285,13 +287,39 @@ export function InventoryView({
               {totalWeight.toFixed(1)}/
             </span>
             {onMaxWeightChange ? (
-              <input
-                type="number"
-                min="1"
-                value={maxWeight}
-                onChange={(e) => onMaxWeightChange(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-10 text-[10px] text-[#3D1409] bg-transparent border-b border-[#8B6F47]/50 outline-none tabular-nums text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
+              isEditingMaxWeight ? (
+                <input
+                  type="number"
+                  min="0"
+                  autoFocus
+                  value={maxWeightEditValue}
+                  onChange={(e) => setMaxWeightEditValue(e.target.value)}
+                  onBlur={() => {
+                    const parsed = parseInt(maxWeightEditValue);
+                    onMaxWeightChange(isNaN(parsed) ? 0 : Math.max(0, parsed));
+                    setIsEditingMaxWeight(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const parsed = parseInt(maxWeightEditValue);
+                      onMaxWeightChange(isNaN(parsed) ? 0 : Math.max(0, parsed));
+                      setIsEditingMaxWeight(false);
+                    }
+                    if (e.key === 'Escape') setIsEditingMaxWeight(false);
+                  }}
+                  className="w-10 text-[10px] text-[#3D1409] bg-white border border-[#8B6F47]/50 rounded outline-none tabular-nums text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              ) : (
+                <button
+                  onClick={() => {
+                    setMaxWeightEditValue((maxWeight ?? 0).toString());
+                    setIsEditingMaxWeight(true);
+                  }}
+                  className="w-10 text-[10px] text-[#3D1409] bg-transparent border-b border-[#8B6F47]/50 outline-none tabular-nums text-center cursor-text hover:bg-white/60 rounded transition-colors"
+                >
+                  {maxWeight ?? 0}
+                </button>
+              )
             ) : (
               <span className="text-[10px] text-[#3D1409] tabular-nums">{maxWeight}</span>
             )}

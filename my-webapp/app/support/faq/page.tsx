@@ -129,7 +129,7 @@ export default function FaqPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 sm:p-10 bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
+    <main className="flex min-h-screen flex-col items-center p-4 pt-24 sm:p-10 sm:pt-30 bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
       <div className="max-w-5xl w-full">
         {/* Back Button */}
         <Link

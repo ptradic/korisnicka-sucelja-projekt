@@ -18,6 +18,7 @@ import { InventoryView } from '@/app/components/InventoryView';
 import { AddItemModal } from '@/app/components/AddItemModal';
 import { ItemDetailsModal } from '@/app/components/ItemDetailsModal';
 import { CampaignIdModal } from '@/app/components/CampaignIdModal';
+import { TransferRequestModal, TransferSentToast } from '@/app/components/TransferRequestModal';
 import type { Item, Player, Currency, Campaign } from '@/app/types';
 import {
   onAuthChange,
@@ -34,8 +35,15 @@ import {
   subscribeToCampaign,
   subscribeToPlayerInventories,
   generateCampaignId,
+  createTransferRequest,
+  acceptTransferRequest,
+  rejectTransferRequest,
+  subscribeToTransferRequests,
+  subscribeToRejectedTransfers,
+  restoreRejectedTransfer,
+  getPlayerInventory,
 } from '@/src/firebaseService';
-import type { CampaignDoc, PlayerInventoryDoc } from '@/src/firebaseService';
+import type { CampaignDoc, PlayerInventoryDoc, TransferRequest } from '@/src/firebaseService';
 
 //  Template items (for adding new items) 
 const TEMPLATE_ITEMS: Item[] = [
@@ -194,6 +202,8 @@ export default function VaultsPage() {
   const [newCampaignId, setNewCampaignId] = useState<string | null>(null);
   const [newCampaignName, setNewCampaignName] = useState<string>('');
   const [showError, setShowError] = useState(false);
+  const [pendingTransferRequests, setPendingTransferRequests] = useState<TransferRequest[]>([]);
+  const [transferSentInfo, setTransferSentInfo] = useState<{ playerName: string; itemName: string } | null>(null);
 
   // Auth check and user data loading
   useEffect(() => {
@@ -260,6 +270,38 @@ export default function VaultsPage() {
       unsubscribeInventories();
     };
   }, [currentCampaignId]);
+
+  // Subscribe to transfer requests for current user (only for players, not DM)
+  useEffect(() => {
+    if (!currentCampaignId || !userId || userRole === 'dm') {
+      setPendingTransferRequests([]);
+      return;
+    }
+
+    const unsubscribe = subscribeToTransferRequests(currentCampaignId, userId, (requests) => {
+      setPendingTransferRequests(requests);
+    });
+
+    return () => unsubscribe();
+  }, [currentCampaignId, userId, userRole]);
+
+  // Subscribe to rejected transfers (as sender) and auto-restore items
+  useEffect(() => {
+    if (!currentCampaignId || !userId || userRole === 'dm') return;
+
+    const unsubscribe = subscribeToRejectedTransfers(currentCampaignId, userId, async (rejectedRequests) => {
+      // Auto-restore items for each rejected request
+      for (const request of rejectedRequests) {
+        try {
+          await restoreRejectedTransfer(currentCampaignId, request.id, userId);
+        } catch (error) {
+          console.error('Failed to restore rejected transfer:', error);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentCampaignId, userId, userRole]);
 
   // Handle role toggle
   const handleRoleToggle = async () => {
@@ -350,20 +392,73 @@ export default function VaultsPage() {
   const handleMoveItem = async (itemId: string, fromId: string | 'shared', toId: string | 'shared') => {
     if (!currentCampaignId) return;
 
-    try {
-      await moveItemBetweenInventories(
-        currentCampaignId, 
-        itemId, 
-        fromId, 
-        toId,
-        userId,
-        userRole === 'dm'
-      );
-    } catch (error) {
-      console.error('Failed to move item:', error);
-      setShowError(true);
-      setTimeout(() => setShowError(false), 3000);
+    // Check if this is a player-to-player transfer (not DM, not involving shared loot)
+    const isDM = userRole === 'dm';
+    const isPlayerToPlayer = !isDM && fromId !== 'shared' && toId !== 'shared' && fromId === userId && toId !== userId;
+
+    if (isPlayerToPlayer) {
+      // Create a transfer request instead of moving directly
+      try {
+        // Get the item details from the source inventory
+        const sourceInventory = playerInventories.find((inv) => inv.playerId === fromId);
+        const item = sourceInventory?.inventory.find((i) => i.id === itemId);
+        
+        if (!item) {
+          console.error('Item not found');
+          return;
+        }
+
+        // Get the recipient player name
+        const recipientInventory = playerInventories.find((inv) => inv.playerId === toId);
+        const recipientName = recipientInventory?.playerName || 'Unknown Player';
+        const senderName = sourceInventory?.playerName || userName;
+
+        await createTransferRequest(
+          currentCampaignId,
+          item,
+          fromId,
+          senderName,
+          toId,
+          recipientName
+        );
+
+        // Show toast notification
+        setTransferSentInfo({ playerName: recipientName, itemName: item.name });
+        setTimeout(() => setTransferSentInfo(null), 5000);
+      } catch (error) {
+        console.error('Failed to create transfer request:', error);
+        setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
+      }
+    } else {
+      // Direct move (DM, or to/from shared loot, or to own inventory)
+      try {
+        await moveItemBetweenInventories(
+          currentCampaignId, 
+          itemId, 
+          fromId, 
+          toId,
+          userId,
+          isDM
+        );
+      } catch (error) {
+        console.error('Failed to move item:', error);
+        setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
+      }
     }
+  };
+
+  // Handle accepting a transfer request
+  const handleAcceptTransfer = async (request: TransferRequest) => {
+    if (!currentCampaignId || !userId) return;
+    await acceptTransferRequest(currentCampaignId, request.id, userId);
+  };
+
+  // Handle rejecting a transfer request
+  const handleRejectTransfer = async (request: TransferRequest) => {
+    if (!currentCampaignId) return;
+    await rejectTransferRequest(currentCampaignId, request.id);
   };
 
   // Currency change
@@ -640,6 +735,24 @@ export default function VaultsPage() {
               <span className="text-sm font-medium">You aren't allowed to do that action</span>
             </div>
           </div>
+        )}
+
+        {/* Transfer Request Modal - show the first pending request */}
+        {pendingTransferRequests.length > 0 && (
+          <TransferRequestModal
+            request={pendingTransferRequests[0]}
+            onAccept={() => handleAcceptTransfer(pendingTransferRequests[0])}
+            onReject={() => handleRejectTransfer(pendingTransferRequests[0])}
+          />
+        )}
+
+        {/* Transfer Sent Toast */}
+        {transferSentInfo && (
+          <TransferSentToast
+            playerName={transferSentInfo.playerName}
+            itemName={transferSentInfo.itemName}
+            onDismiss={() => setTransferSentInfo(null)}
+          />
         )}
       </div>
     </DndProvider>

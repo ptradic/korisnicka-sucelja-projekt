@@ -136,12 +136,17 @@ export default function LoginPage() {
         router.push("/vaults");
       }
     } catch (error: any) {
+      console.error('Google sign-in error:', error.code, error.message);
       if (error.code === 'auth/popup-closed-by-user') {
         // User closed the popup, don't show error
       } else if (error.code === 'auth/popup-blocked') {
         setLoginError("Popup was blocked. Please allow popups for this site.");
+      } else if (error.code === 'auth/unauthorized-domain') {
+        setLoginError("This domain is not authorized. Please add it to Firebase Console.");
+      } else if (error.code === 'auth/operation-not-allowed') {
+        setLoginError("Google sign-in is not enabled. Please enable it in Firebase Console.");
       } else {
-        setLoginError("Google sign-in failed. Please try again.");
+        setLoginError(`Google sign-in failed: ${error.code || error.message || 'Unknown error'}`);
       }
     } finally {
       setIsGoogleLoading(false);

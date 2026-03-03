@@ -12,6 +12,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   getDocs,
@@ -534,5 +535,261 @@ export function subscribeToPlayerInventory(
     } else {
       callback(null);
     }
+  });
+}
+
+// ==================== Transfer Requests ====================
+// Uses "escrow" approach to work within Firebase security rules:
+// - Create: Sender removes item from their inventory, stores full item in request
+// - Accept: Recipient adds item to their inventory, deletes request
+// - Reject: Recipient sets status to 'rejected', sender restores item and deletes request
+
+export interface TransferRequest {
+  id: string;
+  campaignId: string;
+  itemId: string;
+  itemName: string;
+  itemCategory: string;
+  itemRarity: string;
+  itemData: Item; // Full item data for restoration
+  fromPlayerId: string;
+  fromPlayerName: string;
+  toPlayerId: string;
+  toPlayerName: string;
+  quantity: number;
+  createdAt: Timestamp;
+  status: 'pending' | 'accepted' | 'rejected';
+}
+
+export async function createTransferRequest(
+  campaignId: string,
+  item: Item,
+  fromPlayerId: string,
+  fromPlayerName: string,
+  toPlayerId: string,
+  toPlayerName: string
+): Promise<string> {
+  const requestId = `transfer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  // First, remove 1 unit of the item from sender's inventory (escrow)
+  const senderInventory = await getPlayerInventory(campaignId, fromPlayerId);
+  if (!senderInventory) throw new Error('Sender inventory not found');
+  
+  const itemIndex = senderInventory.inventory.findIndex((i) => i.id === item.id);
+  if (itemIndex < 0) throw new Error('Item not found in inventory');
+  
+  const updatedInventory = [...senderInventory.inventory];
+  const itemToTransfer = { ...updatedInventory[itemIndex], quantity: 1 };
+  
+  if (updatedInventory[itemIndex].quantity > 1) {
+    updatedInventory[itemIndex].quantity -= 1;
+  } else {
+    updatedInventory.splice(itemIndex, 1);
+  }
+  
+  // Update sender's inventory (sender has permission)
+  await updatePlayerInventory(campaignId, fromPlayerId, updatedInventory, senderInventory.currency);
+  
+  // Create the transfer request with full item data
+  const transferRequest: TransferRequest = {
+    id: requestId,
+    campaignId,
+    itemId: item.id,
+    itemName: item.name,
+    itemCategory: item.category,
+    itemRarity: item.rarity,
+    itemData: cleanItem(itemToTransfer),
+    fromPlayerId,
+    fromPlayerName,
+    toPlayerId,
+    toPlayerName,
+    quantity: 1,
+    createdAt: serverTimestamp() as Timestamp,
+    status: 'pending',
+  };
+
+  await setDoc(doc(db, 'campaigns', campaignId, 'transferRequests', requestId), transferRequest);
+  return requestId;
+}
+
+export async function acceptTransferRequest(
+  campaignId: string,
+  requestId: string,
+  recipientId: string
+): Promise<void> {
+  const requestRef = doc(db, 'campaigns', campaignId, 'transferRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) {
+    throw new Error('Transfer request not found');
+  }
+  
+  const request = requestSnap.data() as TransferRequest;
+  
+  if (request.status !== 'pending') {
+    throw new Error('Transfer request is no longer pending');
+  }
+
+  // Add item to recipient's inventory (recipient has permission for their own inventory)
+  const recipientInventory = await getPlayerInventory(campaignId, recipientId);
+  if (!recipientInventory) throw new Error('Recipient inventory not found');
+  
+  // Check if item already exists (stack by name, category, rarity)
+  const existingIndex = recipientInventory.inventory.findIndex(
+    (i) => i.name === request.itemData.name && 
+           i.category === request.itemData.category && 
+           i.rarity === request.itemData.rarity
+  );
+  
+  const updatedInventory = [...recipientInventory.inventory];
+  if (existingIndex >= 0) {
+    updatedInventory[existingIndex].quantity += request.quantity;
+  } else {
+    // Generate new ID for the item in recipient's inventory
+    const newItem: Item = {
+      ...request.itemData,
+      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      quantity: request.quantity,
+    };
+    updatedInventory.push(newItem);
+  }
+  
+  await updatePlayerInventory(campaignId, recipientId, updatedInventory, recipientInventory.currency);
+
+  // Delete the request after successful transfer
+  await deleteDoc(requestRef);
+}
+
+export async function rejectTransferRequest(
+  campaignId: string,
+  requestId: string
+): Promise<void> {
+  // Recipient sets status to 'rejected' - sender will restore item and delete
+  const requestRef = doc(db, 'campaigns', campaignId, 'transferRequests', requestId);
+  await updateDoc(requestRef, {
+    status: 'rejected',
+  });
+}
+
+export async function cancelTransferRequest(
+  campaignId: string,
+  requestId: string,
+  senderId: string
+): Promise<void> {
+  const requestRef = doc(db, 'campaigns', campaignId, 'transferRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) return;
+  
+  const request = requestSnap.data() as TransferRequest;
+  
+  // Restore item to sender's inventory
+  const senderInventory = await getPlayerInventory(campaignId, senderId);
+  if (senderInventory) {
+    const existingIndex = senderInventory.inventory.findIndex(
+      (i) => i.name === request.itemData.name && 
+             i.category === request.itemData.category && 
+             i.rarity === request.itemData.rarity
+    );
+    
+    const updatedInventory = [...senderInventory.inventory];
+    if (existingIndex >= 0) {
+      updatedInventory[existingIndex].quantity += request.quantity;
+    } else {
+      updatedInventory.push({ ...request.itemData, quantity: request.quantity });
+    }
+    
+    await updatePlayerInventory(campaignId, senderId, updatedInventory, senderInventory.currency);
+  }
+  
+  // Delete the request
+  await deleteDoc(requestRef);
+}
+
+export async function restoreRejectedTransfer(
+  campaignId: string,
+  requestId: string,
+  senderId: string
+): Promise<void> {
+  const requestRef = doc(db, 'campaigns', campaignId, 'transferRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) return;
+  
+  const request = requestSnap.data() as TransferRequest;
+  
+  if (request.status !== 'rejected') return;
+  
+  // Restore item to sender's inventory
+  const senderInventory = await getPlayerInventory(campaignId, senderId);
+  if (senderInventory) {
+    const existingIndex = senderInventory.inventory.findIndex(
+      (i) => i.name === request.itemData.name && 
+             i.category === request.itemData.category && 
+             i.rarity === request.itemData.rarity
+    );
+    
+    const updatedInventory = [...senderInventory.inventory];
+    if (existingIndex >= 0) {
+      updatedInventory[existingIndex].quantity += request.quantity;
+    } else {
+      updatedInventory.push({ ...request.itemData, quantity: request.quantity });
+    }
+    
+    await updatePlayerInventory(campaignId, senderId, updatedInventory, senderInventory.currency);
+  }
+  
+  // Delete the request
+  await deleteDoc(requestRef);
+}
+
+export function subscribeToTransferRequests(
+  campaignId: string,
+  playerId: string,
+  callback: (requests: TransferRequest[]) => void
+): () => void {
+  const collectionRef = collection(db, 'campaigns', campaignId, 'transferRequests');
+  const q = query(collectionRef, where('toPlayerId', '==', playerId), where('status', '==', 'pending'));
+  
+  return onSnapshot(q, (snapshot) => {
+    const requests: TransferRequest[] = [];
+    snapshot.forEach((doc) => {
+      requests.push(doc.data() as TransferRequest);
+    });
+    callback(requests);
+  });
+}
+
+export function subscribeToRejectedTransfers(
+  campaignId: string,
+  playerId: string,
+  callback: (requests: TransferRequest[]) => void
+): () => void {
+  const collectionRef = collection(db, 'campaigns', campaignId, 'transferRequests');
+  const q = query(collectionRef, where('fromPlayerId', '==', playerId), where('status', '==', 'rejected'));
+  
+  return onSnapshot(q, (snapshot) => {
+    const requests: TransferRequest[] = [];
+    snapshot.forEach((doc) => {
+      requests.push(doc.data() as TransferRequest);
+    });
+    callback(requests);
+  });
+}
+
+export function subscribeToPendingTransfersFromMe(
+  campaignId: string,
+  playerId: string,
+  callback: (requests: TransferRequest[]) => void
+): () => void {
+  const collectionRef = collection(db, 'campaigns', campaignId, 'transferRequests');
+  const q = query(collectionRef, where('fromPlayerId', '==', playerId), where('status', '==', 'pending'));
+  
+  return onSnapshot(q, (snapshot) => {
+    const requests: TransferRequest[] = [];
+    snapshot.forEach((doc) => {
+      requests.push(doc.data() as TransferRequest);
+    });
+    callback(requests);
   });
 }

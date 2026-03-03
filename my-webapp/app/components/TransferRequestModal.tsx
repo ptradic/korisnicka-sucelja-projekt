@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from 'react';
-import { Package, ArrowRight, Check, X, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Package, ArrowRight, Check, X, AlertCircle, Clock } from 'lucide-react';
 import type { TransferRequest } from '@/src/firebaseService';
+
+const AUTO_REJECT_TIMEOUT = 10; // seconds
 
 interface TransferRequestModalProps {
   request: TransferRequest;
@@ -22,6 +24,41 @@ const RARITY_COLORS: Record<string, string> = {
 export function TransferRequestModal({ request, onAccept, onReject }: TransferRequestModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(AUTO_REJECT_TIMEOUT);
+  const hasAutoRejected = useRef(false);
+
+  // Reset state when request changes
+  useEffect(() => {
+    setIsProcessing(false);
+    setError(null);
+    setTimeLeft(AUTO_REJECT_TIMEOUT);
+    hasAutoRejected.current = false;
+  }, [request.id]);
+
+  // Auto-reject timer
+  useEffect(() => {
+    if (isProcessing) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isProcessing, request.id]);
+
+  // Auto-reject when timer reaches 0
+  useEffect(() => {
+    if (timeLeft === 0 && !isProcessing && !hasAutoRejected.current) {
+      hasAutoRejected.current = true;
+      handleReject();
+    }
+  }, [timeLeft, isProcessing]);
 
   const handleAccept = async () => {
     setIsProcessing(true);
@@ -54,6 +91,14 @@ export function TransferRequestModal({ request, onAccept, onReject }: TransferRe
       
       {/* Modal */}
       <div className="relative bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        {/* Countdown timer */}
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full">
+          <Clock className="w-4 h-4 text-[#5C1A1A]" />
+          <span className={`text-sm font-bold ${timeLeft <= 2 ? 'text-red-600' : 'text-[#5C1A1A]'}`}>
+            {timeLeft}s
+          </span>
+        </div>
+
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-[#5C1A1A]/10 flex items-center justify-center">

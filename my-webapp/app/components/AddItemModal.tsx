@@ -480,7 +480,7 @@ export function AddItemModal({ onClose, onAdd, targetName, isDM, templateItems =
       }}
     >
       <div
-        className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl"
+        className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl overflow-hidden"
         style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', height: 'min(90vh, 700px)' }}
       >
         {/* GM gets tabs to switch between template picker and custom form */}

@@ -356,6 +356,8 @@ export default function VaultsPage() {
   // Campaign CRUD
   const handleSelectCampaign = (campaignId: string) => {
     setCurrentCampaignId(campaignId);
+    // Push a history entry so the browser back button returns to the vault list
+    window.history.pushState({ vault: campaignId }, '', '/vaults');
   };
 
   const handleCreateCampaign = async (info: { name: string; description: string; playerCount: number; password: string }) => {
@@ -417,6 +419,17 @@ export default function VaultsPage() {
     window.addEventListener('vaults-go-home', handler);
     return () => window.removeEventListener('vaults-go-home', handler);
   });
+
+  // Handle browser back button while inside a vault
+  useEffect(() => {
+    const handler = (e: PopStateEvent) => {
+      if (currentCampaignId) {
+        handleBackToHome();
+      }
+    };
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, [currentCampaignId]);
 
   // Item movement with Firebase
   const handleMoveItem = async (itemId: string, fromId: string | 'shared', toId: string | 'shared') => {

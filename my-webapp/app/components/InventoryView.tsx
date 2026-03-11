@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowDownAZ } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
@@ -70,7 +70,7 @@ function CoinDisplay({
       ) : (
         <button
           onClick={startEditing}
-          className="text-sm font-bold text-[#3D1409] tabular-nums hover:bg-white/60 rounded px-1.5 py-0.5 transition-colors cursor-text min-w-[1.5rem] text-center"
+          className="text-sm font-bold text-[#3D1409] tabular-nums hover:bg-white/60 rounded px-1.5 py-0.5 transition-colors cursor-text min-w-6 text-center"
         >
           {value}
         </button>
@@ -183,6 +183,7 @@ export function InventoryView({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortAZ, setSortAZ] = useState(false);
   const [isEditingMaxWeight, setIsEditingMaxWeight] = useState(false);
   const [maxWeightEditValue, setMaxWeightEditValue] = useState('');
   const itemListRef = useRef<HTMLDivElement>(null);
@@ -190,14 +191,16 @@ export function InventoryView({
   // Enable auto-scroll when dragging items near the top
   useAutoScroll(itemListRef, { scrollThreshold: 100, scrollSpeed: 10 });
 
-  const filteredItems = inventory.filter((item) => {
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesSearch =
-      searchQuery === '' ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.description || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredItems = inventory
+    .filter((item) => {
+      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      const matchesSearch =
+        searchQuery === '' ||
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .sort((a, b) => sortAZ ? a.name.localeCompare(b.name) : 0);
 
   const totalWeight = inventory.reduce((sum, item) => sum + item.weight * item.quantity, 0);
   const weightPercentage = maxWeight ? (totalWeight / maxWeight) * 100 : 0;
@@ -331,15 +334,28 @@ export function InventoryView({
         )}
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
-          <input
-            type="text"
-            placeholder="Search items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F] focus:ring-1 focus:ring-[#5C4A2F]/20"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
+            <input
+              type="text"
+              placeholder="Search items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F] focus:ring-1 focus:ring-[#5C4A2F]/20"
+            />
+          </div>
+          <button
+            onClick={() => setSortAZ((v) => !v)}
+            title={sortAZ ? 'Remove A–Z sort' : 'Sort A–Z'}
+            className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border-2 transition-colors ${
+              sortAZ
+                ? 'bg-[#5C1A1A] border-[#3D1409] text-white'
+                : 'bg-white/70 border-[#8B6F47]/60 text-[#5C4A2F] hover:border-[#5C4A2F]'
+            }`}
+          >
+            <ArrowDownAZ className="w-4 h-4" />
+          </button>
         </div>
       </div>
 

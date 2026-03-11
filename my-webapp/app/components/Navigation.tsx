@@ -703,7 +703,7 @@ export function Navigation() {
 
       {/* Logout success toast */}
       {showLogoutToast && (
-        <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-5 py-3.5 bg-[#F0F7EC] border-4 border-[#5C7A3B] rounded-xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 whitespace-nowrap" style={{ fontFamily: 'var(--font-archivo-black)' }}>
+        <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-9999 flex items-center gap-3 px-5 py-3.5 bg-[#F0F7EC] border-4 border-[#5C7A3B] rounded-xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 whitespace-nowrap" style={{ fontFamily: 'var(--font-archivo-black)' }}>
           <CheckCircle2 className="w-5 h-5 text-[#5C7A3B] shrink-0" />
           <p className="text-sm font-bold text-[#2D4A1A]">You have been successfully logged out.</p>
         </div>

@@ -20,6 +20,7 @@ import { ItemDetailsModal } from '@/app/components/ItemDetailsModal';
 import { CampaignIdModal } from '@/app/components/CampaignIdModal';
 import { TransferRequestModal, TransferSentToast } from '@/app/components/TransferRequestModal';
 import { ActionErrorToast } from '@/app/components/ActionErrorToast';
+import { VaultListSkeleton, VaultDetailSkeleton } from '@/app/components/skeletons/SkeletonLoader';
 import type { Item, Player, Currency, Campaign } from '@/app/types';
 import {
   onAuthChange,
@@ -808,14 +809,13 @@ export default function VaultsPage() {
 
   // Keep a single loading screen while auth or campaign restoration is in progress.
   if (isLoading || isCampaignsLoading || isRestoringCampaign) {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#8B6F47] border-t-[#5C1A1A] rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#3D1409] font-semibold">Loading your vault...</p>
-        </div>
-      </div>
-    );
+    // Show vault detail skeleton if we have a campaign ID in URL, are restoring a campaign, 
+    // or already have a current campaign (to prevent flicker on refresh)
+    if (requestedCampaignId || isRestoringCampaign || currentCampaignId) {
+      return <VaultDetailSkeleton />;
+    }
+    // Otherwise show vault list skeleton
+    return <VaultListSkeleton userType={userRole} />;
   }
 
   if (!isAuthenticated) return null;

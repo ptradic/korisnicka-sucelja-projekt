@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Package, Plus, Users, Calendar, Trash2, X, Scroll, Shield, ChevronRight, LogIn, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface Vault {
   id: string;
@@ -122,15 +123,11 @@ function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => vo
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (showDeleteConfirm) {
-      onDelete();
-    } else {
-      setShowDeleteConfirm(true);
-      setTimeout(() => setShowDeleteConfirm(false), 3000);
-    }
+    setShowDeleteConfirm(true);
   };
 
   return (
+    <>
     <div
       className="bg-[#F5EFE0] border-[3px] border-[#8B6F47] rounded-xl p-6 hover:border-[#5C4A2F] transition-all cursor-pointer shadow-md hover:shadow-lg group"
       style={{ boxShadow: '0 2px 4px rgba(61, 20, 9, 0.15)' }}
@@ -143,12 +140,8 @@ function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => vo
         </div>
         <button
           onClick={handleDelete}
-          className={`ml-2 p-2 rounded-lg transition-all border-2 ${
-            showDeleteConfirm
-              ? 'bg-[#8B3A3A] text-white border-[#6B2020]'
-              : 'text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#FFEBEE] border-transparent'
-          }`}
-          title={showDeleteConfirm ? 'Click again to confirm' : 'Delete vault'}
+          className="ml-2 p-2 rounded-lg transition-all border-2 text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#FFEBEE] border-transparent"
+          title="Delete vault"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -171,6 +164,16 @@ function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => vo
         </div>
       </div>
     </div>
+
+    {showDeleteConfirm && (
+      <ConfirmDeleteModal
+        title="Delete Vault"
+        message={`Are you sure you want to delete "${vault.name}"? This cannot be undone.`}
+        onConfirm={() => { setShowDeleteConfirm(false); onDelete(); }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+    )}
+    </>
   );
 }
 

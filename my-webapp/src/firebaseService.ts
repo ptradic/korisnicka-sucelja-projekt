@@ -17,6 +17,7 @@ import {
   where,
   getDocs,
   arrayUnion,
+  arrayRemove,
   onSnapshot,
   writeBatch,
   serverTimestamp,
@@ -221,6 +222,34 @@ export async function getCampaign(campaignId: string): Promise<CampaignDoc | nul
     return docSnap.data() as CampaignDoc;
   }
   return null;
+}
+
+export async function deleteCampaign(campaignId: string, dmId: string): Promise<void> {
+  const batch = writeBatch(db);
+
+  // Delete all playerInventories subcollection docs
+  const inventoriesSnap = await getDocs(collection(db, 'campaigns', campaignId, 'playerInventories'));
+  inventoriesSnap.forEach((d) => batch.delete(d.ref));
+
+  // Delete all transferRequests subcollection docs
+  const transfersSnap = await getDocs(collection(db, 'campaigns', campaignId, 'transferRequests'));
+  transfersSnap.forEach((d) => batch.delete(d.ref));
+
+  // Delete the campaign document itself
+  batch.delete(doc(db, 'campaigns', campaignId));
+
+  // Remove campaign from DM's own user doc (allowed by rules)
+  batch.update(doc(db, 'users', dmId), {
+    dmCampaigns: arrayRemove(campaignId),
+    updatedAt: serverTimestamp(),
+  });
+
+  // Note: We can't remove the campaign from players' user docs because
+  // security rules only allow users to update their own doc.
+  // getUserCampaigns already handles stale references gracefully —
+  // getCampaign returns null for deleted campaigns and they're skipped.
+
+  await batch.commit();
 }
 
 export async function joinCampaign(

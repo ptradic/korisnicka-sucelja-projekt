@@ -1,5 +1,5 @@
 import { useDrag } from 'react-dnd';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Star } from 'lucide-react';
 import type { Item } from '../types';
 
 interface ItemCardProps {
@@ -55,6 +55,12 @@ export function ItemCard({ item, ownerId, onClick }: ItemCardProps) {
         <span className="text-sm text-[#3D1409] font-medium truncate block">{item.name}</span>
         <span className="text-[11px] text-[#8B6F47]">{item.weight} lbs</span>
       </div>
+      {item.attunement && (
+        <Star
+          className={'w-4 h-4 shrink-0 ' + (item.attuned ? 'text-[#B8860B] fill-[#B8860B]' : 'text-[#8B6F47]/50')}
+          aria-label={item.attuned ? 'Attuned' : 'Requires attunement'}
+        />
+      )}
       {item.quantity > 1 && (
         <span className="text-xs text-[#8B6F47] bg-[#D9C7AA]/60 px-1.5 py-0.5 rounded tabular-nums shrink-0">
           x{item.quantity}

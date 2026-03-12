@@ -13,6 +13,7 @@ export interface Item {
   value?: number;
   notes?: string;
   attunement?: boolean;
+  attuned?: boolean;
   createdAt?: string;
 }
 

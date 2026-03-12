@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
-import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, StickyNote } from 'lucide-react';
+import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote } from 'lucide-react';
 import type { Item, Category, Rarity } from '../types';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface ItemDetailsModalProps {
   item: Item;
@@ -32,6 +33,7 @@ const rarityGradients: Record<string, string> = {
 
 export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const backdropMouseDown = useRef(false);
   const [formData, setFormData] = useState({
     name: item.name,
@@ -43,6 +45,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDeta
     value: item.value?.toString() || '',
     notes: item.notes || '',
     attunement: item.attunement || false,
+    attuned: item.attuned || false,
   });
 
   const handleSave = async () => {
@@ -56,11 +59,17 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDeta
       value: formData.value ? parseFloat(formData.value) : undefined,
       notes: formData.notes || undefined,
       attunement: formData.attunement,
+      attuned: formData.attunement ? formData.attuned : false,
     });
     setIsEditing(false);
   };
 
   const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteConfirm(false);
     onDelete();
   };
 
@@ -228,6 +237,21 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDeta
                     <span className="text-[#3D1409] text-sm font-semibold">Requires Attunement</span>
                   </label>
                 </div>
+
+                {formData.attunement && (
+                  <div className="col-span-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer p-2.5 bg-[#F3E5F5]/40 border-2 border-[#7E57A2]/30 rounded-xl hover:bg-[#F3E5F5]/60 transition-colors">
+                      <Star className={'w-4 h-4 ' + (formData.attuned ? 'text-[#B8860B] fill-[#B8860B]' : 'text-[#8B6F47]/50')} />
+                      <input
+                        type="checkbox"
+                        checked={formData.attuned}
+                        onChange={(e) => setFormData({ ...formData, attuned: e.target.checked })}
+                        className="w-4 h-4 rounded border-[#8B6F47] bg-white/70 text-[#5C1A1A] accent-[#5C1A1A]"
+                      />
+                      <span className="text-[#5E3A7C] text-sm font-semibold">Attuned</span>
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div className="border-t-2 border-[#DCC8A8]" />
@@ -298,11 +322,25 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDeta
                 </div>
               </div>
 
-              {/* Attunement badge */}
+              {/* Attunement badge with toggle */}
               {item.attunement && (
-                <div className="flex items-center gap-2 bg-[#F3E5F5]/70 border-2 border-[#7E57A2]/40 rounded-xl px-3.5 py-2.5">
-                  <Sparkles className="w-4 h-4 text-[#7E57A2]" />
-                  <span className="text-[#5E3A7C] text-sm font-semibold">Requires Attunement</span>
+                <div className="flex items-center justify-between bg-[#F3E5F5]/70 border-2 border-[#7E57A2]/40 rounded-xl px-3.5 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#7E57A2]" />
+                    <span className="text-[#5E3A7C] text-sm font-semibold">Requires Attunement</span>
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onUpdate({ attuned: !item.attuned }); }}
+                    className={'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer '
+                      + (item.attuned
+                        ? 'bg-[#7E57A2]/20 text-[#5E3A7C] hover:bg-[#7E57A2]/30'
+                        : 'bg-white/50 text-[#8B6F47] hover:bg-white/70')
+                    }
+                    title={item.attuned ? 'Click to unattune' : 'Click to attune'}
+                  >
+                    <Star className={'w-4 h-4 ' + (item.attuned ? 'text-[#B8860B] fill-[#B8860B]' : 'text-[#8B6F47]/60')} />
+                    <span className="text-xs font-semibold">{item.attuned ? 'Attuned' : 'Not Attuned'}</span>
+                  </button>
                 </div>
               )}
 
@@ -330,6 +368,15 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDeta
           )}
         </div>
       </div>
+
+      {showDeleteConfirm && (
+        <ConfirmDeleteModal
+          title="Delete Item"
+          message={`Are you sure you want to delete "${item.name}"? This cannot be undone.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   );
 }

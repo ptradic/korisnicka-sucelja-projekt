@@ -44,6 +44,7 @@ import {
   subscribeToPendingTransfersFromMe,
   checkAndExpirePendingTransfers,
   getPlayerInventory,
+  deleteCampaign,
 } from '@/src/firebaseService';
 import type { CampaignDoc, PlayerInventoryDoc, TransferRequest } from '@/src/firebaseService';
 
@@ -396,13 +397,18 @@ export default function VaultsPage() {
     }
   };
 
-  const handleDeleteCampaign = (campaignId: string) => {
-    // For now, just remove from local state
-    // TODO: Implement actual deletion in Firebase
-    setCampaigns(campaigns.filter((c) => c.id !== campaignId));
-    if (currentCampaignId === campaignId) {
-      setCurrentCampaignId(null);
-      setCurrentCampaign(null);
+  const handleDeleteCampaign = async (campaignId: string) => {
+    if (!userId) return;
+    try {
+      await deleteCampaign(campaignId, userId);
+      setCampaigns(campaigns.filter((c) => c.id !== campaignId));
+      if (currentCampaignId === campaignId) {
+        setCurrentCampaignId(null);
+        setCurrentCampaign(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete campaign:', error);
+      alert('Failed to delete vault. Please try again.');
     }
   };
 
@@ -701,7 +707,7 @@ export default function VaultsPage() {
                     const updatedShared = [...currentCampaign.sharedLoot];
                     updatedShared[sharedIndex] = updatedItem;
                     await updateSharedLoot(currentCampaignId, updatedShared);
-                    setSelectedItem(null);
+                    setSelectedItem(updatedItem);
                   }
                 } else {
                   const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
@@ -711,7 +717,7 @@ export default function VaultsPage() {
                       const updatedInventory = [...player.inventory];
                       updatedInventory[itemIndex] = updatedItem;
                       await updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight);
-                      setSelectedItem(null);
+                      setSelectedItem(updatedItem);
                     }
                   }
                 }

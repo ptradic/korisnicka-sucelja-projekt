@@ -5,15 +5,13 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/app/components/u
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Package, BookOpen, ChevronRight, Sparkles, ChevronDown, Zap, Archive, HelpCircle, GripVertical, CheckCircle2 } from "lucide-react";
+import { Package, BookOpen, ChevronRight, Sparkles, ChevronDown, Zap, Archive, HelpCircle, GripVertical } from "lucide-react";
 import { useScrollReveal } from "@/app/hooks/useScrollReveal";
 
 export default function HomePage() {
   const router = useRouter();
   const featuresRef = useScrollReveal<HTMLElement>();
-  const getStartedRef = useScrollReveal<HTMLElement>({ delay: 100 });
-  const aboutRef = useScrollReveal<HTMLElement>({ delay: 200 });
-  const [signInToast, setSignInToast] = useState(false);
+  const aboutRef = useScrollReveal<HTMLElement>({ delay: 100 });
 
   const handleManageVaults = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -22,20 +20,6 @@ export default function HomePage() {
       const parsed = JSON.parse(auth);
       if (parsed.isLoggedIn) {
         router.push('/vaults');
-        return;
-      }
-    }
-    router.push('/login');
-  };
-
-  const handleSignIn = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const auth = localStorage.getItem('trailblazers-auth');
-    if (auth) {
-      const parsed = JSON.parse(auth);
-      if (parsed.isLoggedIn) {
-        setSignInToast(true);
-        setTimeout(() => setSignInToast(false), 3000);
         return;
       }
     }
@@ -139,71 +123,6 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Get Started Section */}
-      <section ref={getStartedRef} className="scroll-reveal w-full max-w-5xl mb-16 px-4 sm:px-10">
-        <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Get Started</h2>
-        <div className="grid gap-6 sm:grid-cols-3">
-          <a href="/login" onClick={handleSignIn} className="group cursor-pointer relative">
-            <div className="h-full bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
-                  <Package className="w-6 h-6 text-white" />
-                </div>
-                <ChevronRight className="w-5 h-5 text-[#5C1A1A] group-hover:translate-x-1 transition-transform duration-300 mt-1" />
-              </div>
-              <h3 className="text-lg font-bold text-[#3D1409] group-hover:text-[#5C1A1A] mb-2 transition-colors">
-                Sign In
-              </h3>
-              <p className="text-sm text-[#5C4A2F] leading-relaxed">
-                Create an account or log in to start managing your vaults.
-              </p>
-            </div>
-
-            {/* Already logged in toast */}
-            {signInToast && (
-              <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-[#F5EFE0] border-2 border-[#5C1A1A] text-[#3D1409] px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 whitespace-nowrap animate-[fadeInUp_0.3s_ease-out] z-50">
-                <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-                <span className="text-sm font-semibold">You're already signed in!</span>
-              </div>
-            )}
-          </a>
-
-          <Link href="/guides" className="group">
-            <div className="h-full bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <ChevronRight className="w-5 h-5 text-[#5C1A1A] group-hover:translate-x-1 transition-transform duration-300 mt-1" />
-              </div>
-              <h3 className="text-lg font-bold text-[#3D1409] group-hover:text-[#5C1A1A] mb-2 transition-colors">
-                Quick Start
-              </h3>
-              <p className="text-sm text-[#5C4A2F] leading-relaxed">
-                Learn the basics and get your first vault running in minutes.
-              </p>
-            </div>
-          </Link>
-
-          <a href="/vaults" onClick={handleManageVaults} className="group cursor-pointer">
-            <div className="h-full bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
-                  <Archive className="w-6 h-6 text-white" />
-                </div>
-                <ChevronRight className="w-5 h-5 text-[#5C1A1A] group-hover:translate-x-1 transition-transform duration-300 mt-1" />
-              </div>
-              <h3 className="text-lg font-bold text-[#3D1409] group-hover:text-[#5C1A1A] mb-2 transition-colors">
-                Manage Vaults
-              </h3>
-              <p className="text-sm text-[#5C4A2F] leading-relaxed">
-                Create and manage your party's inventory vaults.
-              </p>
-            </div>
-          </a>
         </div>
       </section>
 

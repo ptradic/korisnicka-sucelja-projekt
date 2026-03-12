@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HelpCircle, ArrowLeft, Send, CheckCircle2, LogIn, X, MessageCircle } from "lucide-react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/app/components/ui/accordion";
+import { onAuthChange } from "@/src/firebaseService";
 
 /* ─── FAQ Data ─── */
 const faqCategories = [
@@ -100,16 +101,17 @@ export default function FaqPage() {
   // Check auth on mount
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   useEffect(() => {
-    try {
-      const auth = localStorage.getItem("trailblazers-auth");
-      if (auth) {
-        const parsed = JSON.parse(auth);
-        if (parsed.isLoggedIn) {
-          setIsLoggedIn(true);
-          setUserEmail(parsed.email || "");
-        }
+    const unsubscribe = onAuthChange((firebaseUser) => {
+      if (firebaseUser) {
+        setIsLoggedIn(true);
+        setUserEmail(firebaseUser.email || "");
+      } else {
+        setIsLoggedIn(false);
+        setUserEmail("");
       }
-    } catch { /* ignore */ }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleSubmitQuestion = (e: React.FormEvent) => {

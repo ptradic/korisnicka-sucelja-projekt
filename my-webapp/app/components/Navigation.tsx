@@ -7,7 +7,7 @@ import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
 import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save, ToggleLeft, ToggleRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { updateUserRole, updateUserName, signOutUser, onAuthChange } from "@/src/firebaseService";
+import { updateUserRole, updateUserName, signOutUser, onAuthChange, getUserDoc } from "@/src/firebaseService";
 import { auth } from "@/src/firebase";
 import { reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
 
@@ -18,12 +18,10 @@ type Page = {
 };
 
 type AuthData = {
-  isLoggedIn: boolean;
-  userType: string;
+  userType: 'dm' | 'player';
   name: string;
   email: string;
-  loginTime: string;
-  uid?: string;
+  uid: string;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -160,7 +158,7 @@ function ProfileModal({
             onClick={() => { onClose(); onRoleToggle(); }}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5C1A1A]/10 hover:bg-[#5C1A1A]/20 border-2 border-[#5C1A1A]/30 hover:border-[#5C1A1A]/50 rounded-xl text-sm font-semibold text-[#5C1A1A] transition-all duration-200"
           >
-            {auth.userType === "dm" || auth.userType === "gm" ? (
+            {auth.userType === "dm" ? (
               <><ToggleRight className="w-4 h-4" /> Switch to Player Mode</>
             ) : (
               <><ToggleLeft className="w-4 h-4" /> Switch to GM Mode</>
@@ -319,30 +317,21 @@ export function Navigation() {
       })()
     : "";
 
-  // Check auth state on mount and when path changes
+  // Keep auth state in sync with Firebase only.
   useEffect(() => {
-    const auth = localStorage.getItem('trailblazers-auth');
-    if (auth) {
-      const parsed = JSON.parse(auth);
-      setIsLoggedIn(!!parsed.isLoggedIn);
-      setAuthData(parsed);
-    } else {
-      setIsLoggedIn(false);
-      setAuthData(null);
-    }
-  }, [currentPath]);
-
-  // Listen to Firebase auth state changes to ensure sessions stay in sync
-  useEffect(() => {
-    const unsubscribe = onAuthChange((firebaseUser) => {
-      if (!firebaseUser) {
-        // Firebase user is signed out - clean up local state
-        const localAuth = localStorage.getItem('trailblazers-auth');
-        if (localAuth) {
-          localStorage.removeItem('trailblazers-auth');
-          setIsLoggedIn(false);
-          setAuthData(null);
-        }
+    const unsubscribe = onAuthChange(async (firebaseUser) => {
+      if (firebaseUser) {
+        const userDoc = await getUserDoc(firebaseUser.uid);
+        setIsLoggedIn(true);
+        setAuthData({
+          uid: firebaseUser.uid,
+          userType: userDoc?.role ?? 'player',
+          name: userDoc?.name ?? firebaseUser.displayName ?? 'Adventurer',
+          email: userDoc?.email ?? firebaseUser.email ?? '',
+        });
+      } else {
+        setIsLoggedIn(false);
+        setAuthData(null);
       }
     });
     
@@ -372,8 +361,6 @@ export function Navigation() {
     } catch (error) {
       console.error('Error signing out from Firebase:', error);
     }
-    // Always clean up local state regardless of Firebase signout result
-    localStorage.removeItem('trailblazers-auth');
     setIsLoggedIn(false);
     setAuthData(null);
     setIsOpen(false);
@@ -396,12 +383,11 @@ export function Navigation() {
     try {
       await updateUserRole(authData.uid, newRole);
       
-      const updatedAuth = {
+      const updatedAuth: AuthData = {
         ...authData,
         userType: newRole,
       };
       
-      localStorage.setItem('trailblazers-auth', JSON.stringify(updatedAuth));
       setAuthData(updatedAuth);
       
       // Reload after a short delay
@@ -436,13 +422,11 @@ export function Navigation() {
         await updateUserName(authData.uid!, updated.name);
       }
 
-      // Update auth session in localStorage
       const newAuth: AuthData = {
         ...authData,
         name: updated.name,
         email: updated.email,
       };
-      localStorage.setItem("trailblazers-auth", JSON.stringify(newAuth));
       setAuthData(newAuth);
 
       return { success: true };
@@ -571,7 +555,7 @@ export function Navigation() {
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-bold text-[#3D1409] truncate">{authData.name}</p>
                         <span className="inline-flex items-center px-1.5 py-0.5 bg-[#5C1A1A]/10 border border-[#5C1A1A]/30 rounded text-[10px] font-bold text-[#5C1A1A] uppercase shrink-0">
-                          {authData.userType === "dm" || authData.userType === "gm" ? "GM" : "Player"}
+                          {authData.userType === "dm" ? "GM" : "Player"}
                         </span>
                       </div>
                       <p className="text-xs text-[#5C4A2F] truncate">{authData.email}</p>
@@ -653,7 +637,7 @@ export function Navigation() {
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-bold text-[#3D1409] truncate">{authData.name}</p>
                               <span className="inline-flex items-center px-1.5 py-0.5 bg-[#5C1A1A]/10 border border-[#5C1A1A]/30 rounded text-[10px] font-bold text-[#5C1A1A] uppercase shrink-0">
-                                {authData.userType === "dm" || authData.userType === "gm" ? "GM" : "Player"}
+                                {authData.userType === "dm" ? "GM" : "Player"}
                               </span>
                             </div>
                             <p className="text-xs text-[#5C4A2F] truncate">{authData.email}</p>

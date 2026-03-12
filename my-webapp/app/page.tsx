@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Package, BookOpen, ChevronRight, Sparkles, ChevronDown, Zap, Archive, HelpCircle, GripVertical } from "lucide-react";
 import { useScrollReveal } from "@/app/hooks/useScrollReveal";
+import { auth } from "@/src/firebase";
 
 export default function HomePage() {
   const router = useRouter();
@@ -15,15 +16,7 @@ export default function HomePage() {
 
   const handleManageVaults = (e: React.MouseEvent) => {
     e.preventDefault();
-    const auth = localStorage.getItem('trailblazers-auth');
-    if (auth) {
-      const parsed = JSON.parse(auth);
-      if (parsed.isLoggedIn) {
-        router.push('/vaults');
-        return;
-      }
-    }
-    router.push('/login');
+    router.push(auth.currentUser ? '/vaults' : '/login');
   };
 
   return (

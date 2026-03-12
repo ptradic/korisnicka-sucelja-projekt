@@ -282,16 +282,6 @@ export default function VaultsPage() {
           setUserId(firebaseUser.uid);
           setUserName(userDoc.name);
           setUserRole(userDoc.role);
-          
-          // Update localStorage for compatibility
-          localStorage.setItem('trailblazers-auth', JSON.stringify({
-            isLoggedIn: true,
-            uid: firebaseUser.uid,
-            userType: userDoc.role === 'dm' ? 'gm' : 'player',
-            name: userDoc.name,
-            email: userDoc.email,
-            loginTime: new Date().toISOString(),
-          }));
           setIsLoading(false);
         } else {
           router.push('/login');
@@ -464,14 +454,6 @@ export default function VaultsPage() {
       setCurrentCampaignId(null);
       setCurrentCampaign(null);
       setPlayerInventories([]);
-      
-      // Update localStorage
-      const auth = localStorage.getItem('trailblazers-auth');
-      if (auth) {
-        const parsed = JSON.parse(auth);
-        parsed.userType = newRole;
-        localStorage.setItem('trailblazers-auth', JSON.stringify(parsed));
-      }
     } catch (error) {
       console.error('Failed to update role:', error);
       showActionError('Could not switch role', error, () => handleRoleToggle());

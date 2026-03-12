@@ -12,6 +12,7 @@ import { InventoryView } from '@/app/components/InventoryView';
 import { AddItemModal } from '@/app/components/AddItemModal';
 import { ItemDetailsModal } from '@/app/components/ItemDetailsModal';
 import type { Item, Player, VaultData, Currency } from '@/app/types';
+import { onAuthChange, getUserDoc } from '@/src/firebaseService';
 
 const VAULTS_KEY = 'trailblazers-vaults';
 
@@ -187,18 +188,23 @@ export default function VaultsPage() {
 
   // Auth check
   useEffect(() => {
-    const auth = localStorage.getItem('trailblazers-auth');
-    if (auth) {
-      const parsed = JSON.parse(auth);
-      if (parsed.isLoggedIn) {
-        setIsAuthenticated(true);
-        setUserType(parsed.userType || 'player');
-      } else {
+    const unsubscribe = onAuthChange(async (firebaseUser) => {
+      if (!firebaseUser) {
         router.push('/login');
+        return;
       }
-    } else {
-      router.push('/login');
-    }
+
+      const userDoc = await getUserDoc(firebaseUser.uid);
+      if (!userDoc) {
+        router.push('/login');
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setUserType(userDoc.role);
+    });
+
+    return () => unsubscribe();
   }, [router]);
 
   // Listen for "go back to vault list" event from Navigation

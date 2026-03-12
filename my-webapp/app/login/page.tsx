@@ -131,17 +131,6 @@ export default function LoginPage() {
       const userDoc = await getUserDoc(user.uid);
       
       if (userDoc) {
-        localStorage.setItem(
-          "trailblazers-auth",
-          JSON.stringify({
-            isLoggedIn: true,
-            uid: user.uid,
-            userType: userDoc.role,
-            name: userDoc.name,
-            email: userDoc.email,
-            loginTime: new Date().toISOString(),
-          })
-        );
         router.push("/vaults");
       }
     } catch (error: any) {
@@ -161,21 +150,10 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
     
     try {
-      const { user, isNewUser } = await signInWithGoogle();
+      const { user } = await signInWithGoogle();
       const userDoc = await getUserDoc(user.uid);
       
       if (userDoc) {
-        localStorage.setItem(
-          "trailblazers-auth",
-          JSON.stringify({
-            isLoggedIn: true,
-            uid: user.uid,
-            userType: userDoc.role,
-            name: userDoc.name,
-            email: userDoc.email,
-            loginTime: new Date().toISOString(),
-          })
-        );
         router.push("/vaults");
       }
     } catch (error: any) {
@@ -213,22 +191,11 @@ export default function LoginPage() {
     if (Object.keys(errors).length > 0) return;
 
     try {
-      const user = await signUpUser(signupEmail, signupPassword, signupName.trim(), userType!);
+      await signUpUser(signupEmail, signupPassword, signupName.trim(), userType!);
       setSignupSuccess(true);
 
       // Auto-login after short delay
       setTimeout(() => {
-        localStorage.setItem(
-          "trailblazers-auth",
-          JSON.stringify({
-            isLoggedIn: true,
-            uid: user.uid,
-            userType,
-            name: signupName.trim(),
-            email: signupEmail.toLowerCase(),
-            loginTime: new Date().toISOString(),
-          })
-        );
         router.push("/vaults");
       }, 1500);
     } catch (error: any) {

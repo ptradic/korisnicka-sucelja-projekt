@@ -34,7 +34,7 @@ export function ActionErrorToast({
                 <button
                   onClick={onRetry}
                   disabled={retrying}
-                  className="inline-flex items-center gap-2 rounded-xl border-2 border-[#6B2020] bg-[#8B3A3A] px-3 py-1.5 text-sm font-semibold text-white transition-all hover:bg-[#6B2020] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-primary !px-3 !py-1.5 text-sm from-[#8B3A3A] to-[#8B3A3A] hover:from-[#6B2020] hover:to-[#6B2020] border-[#6B2020] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <RotateCcw className={'w-4 h-4' + (retrying ? ' animate-spin' : '')} />
                   <span>{retrying ? 'Retrying...' : retryLabel}</span>
@@ -43,7 +43,7 @@ export function ActionErrorToast({
 
               <button
                 onClick={onDismiss}
-                className="inline-flex items-center rounded-xl border-2 border-[#D9C7AA] bg-white px-3 py-1.5 text-sm font-semibold text-[#3D1409] transition-all hover:border-[#8B6F47] hover:bg-[#F5EFE0]"
+                className="btn-secondary !px-3 !py-1.5 text-sm border-[#D9C7AA] bg-white hover:border-[#8B6F47] hover:bg-[#F5EFE0]"
               >
                 Dismiss
               </button>
@@ -52,7 +52,7 @@ export function ActionErrorToast({
 
           <button
             onClick={onDismiss}
-            className="rounded-lg p-1 text-[#8B6F47] transition-colors hover:bg-white hover:text-[#3D1409]"
+            className="btn-ghost rounded-lg !p-1 border-transparent text-[#8B6F47] hover:bg-white hover:text-[#3D1409]"
             aria-label="Dismiss error"
           >
             <X className="w-4 h-4" />

@@ -134,7 +134,7 @@ export default function FaqPage() {
         {/* Back Button */}
         <Link
           href="/support"
-          className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-xl bg-[#F5EFE0] border-3 border-[#8B6F47] hover:border-[#5C1A1A] text-[#3D1409] font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+          className="btn-secondary mb-8 px-4 py-2 text-[#3D1409]"
         >
           <ArrowLeft className="w-5 h-5" />
           Back to Support
@@ -228,7 +228,7 @@ export default function FaqPage() {
             />
             <button
               type="submit"
-              className="group flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-4 border-[#3D1409]"
+              className="btn-primary group"
             >
               <Send className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
               <span>Ask</span>
@@ -258,14 +258,14 @@ export default function FaqPage() {
               <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
                 <button
                   onClick={() => router.push("/login")}
-                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-4 border-[#3D1409]"
+                  className="btn-primary flex-1 px-5 py-3"
                 >
                   <LogIn className="w-4 h-4" />
                   Log In
                 </button>
                 <button
                   onClick={() => setShowLoginPrompt(false)}
-                  className="flex-1 px-5 py-3 rounded-xl bg-white/60 hover:bg-white border-3 border-[#8B6F47] hover:border-[#5C1A1A] text-[#3D1409] font-semibold transition-all duration-300 hover:shadow-md transform hover:-translate-y-0.5 active:scale-95"
+                  className="btn-secondary flex-1 px-5 py-3"
                 >
                   Cancel
                 </button>

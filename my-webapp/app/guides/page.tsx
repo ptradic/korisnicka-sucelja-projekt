@@ -163,7 +163,7 @@ export default function GuidesPage() {
         <div className="flex flex-wrap justify-center gap-3 fade-in-up delay-400">
           <Link
             href="/login"
-            className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-3 border-[#3D1409]"
+            className="btn-primary group"
           >
             <Wand2 className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
             Start Now
@@ -172,7 +172,7 @@ export default function GuidesPage() {
 
           <Link
             href="/support"
-            className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#F5EFE0] border-3 border-[#8B6F47] hover:border-[#5C1A1A] text-[#3D1409] font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300"
+            className="btn-secondary group text-[#3D1409] font-bold"
           >
             Need Help?
           </Link>
@@ -256,7 +256,7 @@ export default function GuidesPage() {
 
           <Link
             href="/the-secret-room-that-does-not-exist"
-            className="group inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-3 border-[#3D1409]"
+            className="btn-primary group gap-3"
           >
             <Wand2 className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
             Enter the Unknown

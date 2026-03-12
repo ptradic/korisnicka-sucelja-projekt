@@ -38,13 +38,13 @@ export function ConfirmDeleteModal({ title, message, onConfirm, onCancel }: Conf
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-2.5 bg-white/70 hover:bg-white border-3 border-[#8B6F47] hover:border-[#5C1A1A] text-[#3D1409] font-semibold rounded-xl transition-all duration-300 hover:shadow-md active:scale-95"
+            className="btn-secondary flex-1 px-4 py-2.5"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-linear-to-r from-[#8B3A3A] to-[#6B2020] hover:from-[#6B2020] hover:to-[#4A1515] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-3 border-[#6B2020]"
+            className="btn-primary flex-1 px-4 py-2.5 from-[#8B3A3A] to-[#6B2020] hover:from-[#6B2020] hover:to-[#4A1515] border-[#6B2020]"
           >
             Delete
           </button>

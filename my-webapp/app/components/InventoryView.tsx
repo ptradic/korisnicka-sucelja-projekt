@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowDownAZ } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowDownAZ, Filter } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
@@ -70,7 +70,7 @@ function CoinDisplay({
       ) : (
         <button
           onClick={startEditing}
-          className="text-sm font-bold text-[#3D1409] tabular-nums hover:bg-white/60 rounded px-1.5 py-0.5 transition-colors cursor-text min-w-6 text-center"
+          className="btn-ghost text-sm font-bold tabular-nums !px-1.5 !py-0.5 border-transparent text-[#3D1409] hover:bg-white/60 cursor-text min-w-6 text-center"
         >
           {value}
         </button>
@@ -113,7 +113,7 @@ function AddCoinsButton({
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="w-7 h-7 rounded-lg bg-[#D9C7AA] hover:bg-[#CDB89D] active:bg-[#C4B590] flex items-center justify-center transition-colors border border-[#8B6F47]/40"
+        className="btn-secondary w-7 h-7 !p-0 rounded-lg border-[#8B6F47]/40 bg-[#D9C7AA] hover:bg-[#CDB89D] active:bg-[#C4B590] shadow-none"
         title="Add or subtract coins"
       >
         <Coins className="w-3.5 h-3.5 text-[#B8860B]" />
@@ -149,13 +149,13 @@ function AddCoinsButton({
           <div className="flex gap-2">
             <button
               onClick={() => setOpen(false)}
-              className="flex-1 px-2 py-1.5 text-xs text-[#5C4A2F] bg-white/60 border border-[#8B6F47]/40 rounded-lg hover:bg-white transition-colors"
+              className="btn-secondary flex-1 !px-2 !py-1.5 rounded-lg text-xs text-[#5C4A2F] border-[#8B6F47]/40"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
-              className="flex-1 px-2 py-1.5 text-xs text-white bg-[#5C1A1A] hover:bg-[#4A1515] border border-[#3D1409] rounded-lg transition-colors font-semibold"
+              className="btn-primary flex-1 !px-2 !py-1.5 rounded-lg text-xs font-semibold"
             >
               Apply
             </button>
@@ -209,6 +209,14 @@ export function InventoryView({
     setSelectedCategory(category);
     setIsFilterOpen(false);
   };
+
+  const selectedFilterLabel =
+    selectedCategory === 'all'
+      ? 'All items'
+      : selectedCategory
+          .split(/[-_]/)
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
 
   return (
     <div className="h-full w-full min-w-0 flex flex-col min-h-0 max-w-full overflow-x-hidden">
@@ -318,7 +326,7 @@ export function InventoryView({
                     setMaxWeightEditValue((maxWeight ?? 0).toString());
                     setIsEditingMaxWeight(true);
                   }}
-                  className="w-10 text-[10px] text-[#3D1409] bg-transparent border-b border-[#8B6F47]/50 outline-none tabular-nums text-center cursor-text hover:bg-white/60 rounded transition-colors"
+                  className="btn-ghost w-10 text-[10px] !px-0 !py-0 border-transparent border-b border-[#8B6F47]/50 rounded text-[#3D1409] tabular-nums text-center cursor-text hover:bg-white/60"
                 >
                   {maxWeight ?? 0}
                 </button>
@@ -346,13 +354,23 @@ export function InventoryView({
             />
           </div>
           <button
+            onClick={() => setIsFilterOpen((o) => !o)}
+            title={isFilterOpen ? 'Close filters' : 'Open filters'}
+            className={`min-[940px]:hidden shrink-0 w-9 h-9 !p-0 rounded-lg ${
+              isFilterOpen || selectedCategory !== 'all'
+                ? 'btn-primary text-white border-[#3D1409]'
+                : 'btn-secondary text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+          <button
             onClick={() => setSortAZ((v) => !v)}
             title={sortAZ ? 'Remove A–Z sort' : 'Sort A–Z'}
-            className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border-2 transition-colors ${
-              sortAZ
-                ? 'bg-[#5C1A1A] border-[#3D1409] text-white'
-                : 'bg-white/70 border-[#8B6F47]/60 text-[#5C4A2F] hover:border-[#5C4A2F]'
-            }`}
+            className={sortAZ
+              ? 'btn-primary shrink-0 w-9 h-9 !p-0 rounded-lg text-white border-[#3D1409]'
+              : 'btn-secondary shrink-0 w-9 h-9 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
+            }
           >
             <ArrowDownAZ className="w-4 h-4" />
           </button>
@@ -360,43 +378,31 @@ export function InventoryView({
       </div>
 
       {/* Filters */}
-      <div className="bg-[#E8D5B7] border-b-2 border-[#8B6F47]/50 px-3 md:px-4 py-2">
-        <div className="hidden min-[940px]:block">
-          <CategoryFilter
-            selectedCategory={selectedCategory}
-            onCategoryChange={handleCategoryChange}
-            items={inventory}
-            className="mb-0"
-          />
-        </div>
-
-        <div className="min-[940px]:hidden relative">
-          <button
-            onClick={() => setIsFilterOpen((o) => !o)}
-            className="w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-md transition-all border-2 shadow-sm bg-[#F5EFE0] text-[#3D1409] border-[#8B6F47]/60 hover:border-[#5C4A2F] hover:bg-[#F0E8D5] text-xs"
-          >
-            <span>Filter</span>
-            <span className="text-[10px] text-[#5C4A2F]">
-              {selectedCategory === 'all' ? 'All' : selectedCategory}
-            </span>
-          </button>
-
-          {isFilterOpen && (
-            <div
-              className="absolute left-0 right-0 mt-2 z-20 rounded-lg border-2 border-[#8B6F47] bg-[#F5EFE0] p-2"
-              style={{ boxShadow: '0 8px 16px rgba(61, 20, 9, 0.2)' }}
-            >
-              <CategoryFilter
-                selectedCategory={selectedCategory}
-                onCategoryChange={handleCategoryChange}
-                items={inventory}
-                className="mb-0 overflow-x-visible"
-                listClassName="flex-col"
-              />
-            </div>
-          )}
-        </div>
+      <div className="hidden min-[940px]:block bg-[#E8D5B7] border-b-2 border-[#8B6F47]/50 px-3 md:px-4 py-2">
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onCategoryChange={handleCategoryChange}
+          items={inventory}
+          className="mb-0"
+        />
       </div>
+
+      {isFilterOpen && (
+        <div className="min-[940px]:hidden relative">
+          <div
+            className="absolute left-3 right-3 top-0 mt-2 z-20 rounded-lg border-2 border-[#8B6F47] bg-[#F5EFE0] p-2"
+            style={{ boxShadow: '0 8px 16px rgba(61, 20, 9, 0.2)' }}
+          >
+            <CategoryFilter
+              selectedCategory={selectedCategory}
+              onCategoryChange={handleCategoryChange}
+              items={inventory}
+              className="mb-0 overflow-x-visible"
+              listClassName="flex-col"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Item list */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5" ref={itemListRef}>
@@ -409,6 +415,9 @@ export function InventoryView({
           </div>
         ) : (
           <div className="space-y-2">
+            <p className="text-[11px] font-semibold text-[#8B6F47] px-1 pb-1">
+              {selectedFilterLabel}
+            </p>
             {filteredItems.map((item) => (
               <ItemCard
                 key={item.id}

@@ -44,18 +44,18 @@ export default function HomePage() {
         </h1>
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8 fade-in-up delay-300">
-          <button onClick={handleManageVaults} className="group cursor-pointer w-full sm:w-auto px-8 py-4 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409] flex items-center justify-center gap-2">
+          <button onClick={handleManageVaults} className="btn-primary group cursor-pointer w-full sm:w-auto text-lg">
             <Package className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
             Manage Vaults
             <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
           </button>
           
-          <Link href="/guides" className="group w-full sm:w-auto px-8 py-4 bg-[#F5EFE0] hover:bg-white text-[#5C1A1A] font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#8B6F47] hover:border-[#5C1A1A] flex items-center justify-center gap-2">
+          <Link href="/guides" className="btn-secondary group w-full sm:w-auto text-lg text-[#5C1A1A] font-bold">
             <Zap className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
             Quick Start
           </Link>
           
-          <Link href="/support" className="group w-full sm:w-auto px-8 py-4 bg-transparent hover:bg-[#F5EFE0]/50 text-[#5C1A1A] font-bold text-lg rounded-xl shadow-md hover:shadow-lg transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#8B6F47] hover:border-[#5C1A1A] flex items-center justify-center gap-2">
+          <Link href="/support" className="btn-ghost group w-full sm:w-auto text-lg text-[#5C1A1A] font-bold shadow-md hover:shadow-lg hover:-translate-y-1 active:scale-95 px-6 py-4 border-[#8B6F47] hover:border-[#5C1A1A] hover:bg-[#F5EFE0]/50">
             <HelpCircle className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
             Need Support
           </Link>

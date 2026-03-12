@@ -163,7 +163,7 @@ export function TransferRequestModal({ request, onAccept, onReject }: TransferRe
           <button
             onClick={handleReject}
             disabled={isProcessing}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border-3 border-[#8B6F47] hover:border-red-500 hover:bg-red-50 text-[#3D1409] font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-secondary flex-1 hover:border-red-500 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-5 h-5" />
             <span>Decline</span>
@@ -171,7 +171,7 @@ export function TransferRequestModal({ request, onAccept, onReject }: TransferRe
           <button
             onClick={handleAccept}
             disabled={isProcessing}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-semibold rounded-xl transition-all duration-200 border-3 border-[#3D1409] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isProcessing ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -224,7 +224,7 @@ export function TransferSentToast({ playerName, itemName, expiresAt, onDismiss }
         </div>
         <button
           onClick={onDismiss}
-          className="shrink-0 p-1 hover:bg-white/20 rounded transition-colors touch-manipulation"
+          className="btn-ghost shrink-0 !p-1 border-transparent text-white hover:text-white hover:bg-white/20 touch-manipulation"
         >
           <X className="w-4 h-4" />
         </button>
@@ -259,7 +259,7 @@ export function TransferExpiredToast({ playerName, itemName, isReceiver, onDismi
         </div>
         <button
           onClick={onDismiss}
-          className="shrink-0 p-1 hover:bg-white/20 rounded transition-colors touch-manipulation"
+          className="btn-ghost shrink-0 !p-1 border-transparent text-white hover:text-white hover:bg-white/20 touch-manipulation"
         >
           <X className="w-4 h-4" />
         </button>

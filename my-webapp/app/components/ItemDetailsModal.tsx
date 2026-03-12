@@ -259,13 +259,13 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDeta
               <div className="flex gap-3">
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="flex-1 px-4 py-2.5 bg-white/70 hover:bg-white border-3 border-[#8B6F47] hover:border-[#5C1A1A] text-[#3D1409] font-semibold rounded-xl transition-all duration-300 hover:shadow-md active:scale-95"
+                  className="btn-secondary flex-1 px-4 py-2.5"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
-                  className="flex-1 group px-4 py-2.5 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-3 border-[#3D1409] flex items-center justify-center gap-2"
+                  className="btn-primary flex-1 group px-4 py-2.5"
                 >
                   <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
                   Save Changes
@@ -359,7 +359,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDeta
 
               <button
                 onClick={handleDelete}
-                className="w-full px-4 py-2.5 bg-[#FFEBEE]/80 hover:bg-[#FFCDD2] border-3 border-[#8B3A3A]/60 hover:border-[#8B3A3A] text-[#6B2020] font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 hover:shadow-md active:scale-95"
+                className="btn-secondary w-full px-4 py-2.5 bg-[#FFEBEE]/80 hover:bg-[#FFCDD2] border-[#8B3A3A]/60 hover:border-[#8B3A3A] text-[#6B2020]"
               >
                 <Trash2 className="w-4 h-4" />
                 Delete Item

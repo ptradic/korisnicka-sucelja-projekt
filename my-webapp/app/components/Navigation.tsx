@@ -46,11 +46,11 @@ function processPage(page: Page, index: number, currentPath?: string, isMobile: 
         href={page.path}
         onClick={onClick}
         className={cn(
-          "inline-flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 whitespace-nowrap",
+          "btn-secondary inline-flex whitespace-nowrap rounded-lg px-4 py-2.5",
           isMobile ? "w-full justify-start px-5 py-4" : "justify-center",
           isActive 
-            ? "bg-linear-to-r from-[#5C1A1A] to-[#7A2424] text-white border-[#3D1409] shadow-lg" 
-            : "text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
+            ? "btn-primary text-white border-[#3D1409] shadow-lg" 
+            : "text-[#3D1409]"
         )}
       >
         {Icon && <Icon className={cn("w-5 h-5", !isMobile && "xl:block hidden")} />}
@@ -287,7 +287,7 @@ function ProfileModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-3 border-[#3D1409] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+            className="btn-primary w-full text-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
           >
             <Save className="w-4 h-4" />
             {isSubmitting ? "Saving..." : "Save Changes"}
@@ -584,7 +584,7 @@ export function Navigation() {
                   <li className="w-full">
                     <button
                       onClick={() => { setIsOpen(false); setProfileModalOpen(true); }}
-                      className="inline-flex w-full items-center gap-3 px-5 py-4 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 justify-start text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
+                      className="btn-secondary inline-flex w-full items-center gap-3 px-5 py-4 rounded-lg justify-start text-[#3D1409]"
                     >
                       <User className="w-5 h-5" />
                       <span>Edit Profile</span>
@@ -593,7 +593,7 @@ export function Navigation() {
                   <li className="w-full">
                     <button 
                       onClick={handleLogout}
-                      className="inline-flex w-full items-center gap-3 px-5 py-4 rounded-lg transition-all duration-300 font-semibold border-3 transform hover:-translate-y-0.5 active:scale-95 justify-start text-[#3D1409] bg-white/60 border-[#8B6F47] hover:bg-white hover:border-[#5C1A1A] hover:shadow-md"
+                      className="btn-secondary inline-flex w-full items-center gap-3 px-5 py-4 rounded-lg justify-start text-[#3D1409]"
                     >
                       <LogOut className="w-5 h-5" />
                       <span>Logout</span>

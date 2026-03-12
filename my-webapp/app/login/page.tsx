@@ -318,7 +318,7 @@ export default function LoginPage() {
               {/* Submit */}
               <button
                 type="submit"
-                className="group w-full flex items-center justify-center gap-2 px-6 py-4 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409]"
+                className="btn-primary group w-full text-lg"
               >
                 <LogIn className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 <span>Log In</span>
@@ -340,7 +340,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading}
-              className="group w-full flex items-center justify-center gap-3 px-6 py-4 bg-white hover:bg-gray-50 border-3 border-[#8B6F47] hover:border-[#5C1A1A] text-[#3D1409] font-semibold text-lg rounded-xl shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+              className="btn-secondary group w-full gap-3 text-lg"
             >
               {isGoogleLoading ? (
                 <div className="w-5 h-5 border-2 border-[#5C1A1A] border-t-transparent rounded-full animate-spin" />
@@ -362,7 +362,7 @@ export default function LoginPage() {
               </p>
               <button
                 onClick={() => setMode("signup")}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/60 hover:bg-white border-3 border-[#8B6F47] hover:border-[#5C1A1A] text-[#3D1409] font-semibold rounded-xl transition-all duration-300 hover:shadow-md transform hover:-translate-y-0.5 active:scale-95"
+                className="btn-secondary w-full"
               >
                 <UserPlus className="w-5 h-5" />
                 <span>Create an Account</span>
@@ -379,7 +379,7 @@ export default function LoginPage() {
             {/* Back to login */}
             <button
               onClick={() => setMode("login")}
-              className="flex items-center gap-1.5 text-sm font-semibold text-[#5C1A1A] hover:text-[#3D1409] mb-5 transition-colors group"
+              className="btn-ghost group mb-5 text-sm"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               Back to Log In
@@ -624,7 +624,7 @@ export default function LoginPage() {
               {/* Submit */}
               <button
                 type="submit"
-                className="group w-full flex items-center justify-center gap-2 px-6 py-4 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold text-base sm:text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 border-4 border-[#3D1409]"
+                className="btn-primary group w-full text-base sm:text-lg"
               >
                 <UserPlus className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
                 <span>{userType ? `Sign Up as ${userType === "dm" ? "Game Master" : "Player"}` : "Sign Up"}</span>

@@ -194,7 +194,7 @@ export default function SupportPage() {
                   <Link
                     key={link.id}
                     href={link.href}
-                    className="group inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 justify-center"
+                    className="btn-secondary group justify-center px-8 text-[#3D1409] font-bold text-lg"
                   >
                     <Icon className="w-5 h-5 text-[#5C1A1A] group-hover:rotate-12 transition-transform duration-300" />
                     <span className="font-bold text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
@@ -211,7 +211,7 @@ export default function SupportPage() {
                   href={link.href}
                   target={link.external ? "_blank" : undefined}
                   rel={link.external ? "noopener noreferrer" : undefined}
-                  className="group inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#F5EFE0] border-4 border-[#8B6F47] hover:border-[#5C1A1A] shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 justify-center"
+                  className="btn-secondary group justify-center px-8 text-[#3D1409] font-bold text-lg"
                 >
                   <Icon className="w-5 h-5 text-[#5C1A1A] group-hover:rotate-12 transition-transform duration-300" />
                   <span className="font-bold text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
@@ -367,7 +367,7 @@ export default function SupportPage() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button 
                 type="submit" 
-                className="group flex-1 px-6 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 border-4 border-[#3D1409]"
+                className="btn-primary group flex-1"
               >
                 <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 Send Feedback
@@ -375,7 +375,7 @@ export default function SupportPage() {
               <button 
                 type="button" 
                 onClick={() => { setFeedbackType(null); if (textareaRef.current) { textareaRef.current.style.height = '150px'; } const form = document.querySelector('form'); form?.reset(); }}
-                className="group px-6 py-3 rounded-xl bg-[#F5EFE0] hover:bg-white text-[#5C1A1A] font-bold shadow-md hover:shadow-lg transform hover:-translate-y-1 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 border-4 border-[#8B6F47] hover:border-[#5C1A1A]"
+                className="btn-secondary group text-[#5C1A1A] font-bold"
               >
                 <RotateCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
                 Reset Form

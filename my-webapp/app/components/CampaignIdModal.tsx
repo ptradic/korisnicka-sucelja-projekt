@@ -32,7 +32,7 @@ export function CampaignIdModal({ campaignId, campaignName, onClose }: CampaignI
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all duration-200"
+            className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -48,7 +48,7 @@ export function CampaignIdModal({ campaignId, campaignName, onClose }: CampaignI
               </div>
               <button
                 onClick={handleCopy}
-                className="p-3 bg-[#5C1A1A] hover:bg-[#3D1409] text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                className="btn-primary !p-3 rounded-lg"
                 title="Copy to clipboard"
               >
                 {copied ? <CheckCircle className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
@@ -65,7 +65,7 @@ export function CampaignIdModal({ campaignId, campaignName, onClose }: CampaignI
 
           <button
             onClick={onClose}
-            className="w-full px-6 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-4 border-[#3D1409]"
+            className="btn-primary w-full"
           >
             Got it!
           </button>

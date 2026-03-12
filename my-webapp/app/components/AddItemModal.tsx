@@ -134,7 +134,7 @@ function TemplateItemPicker({
             </p>
           </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all">
+        <button onClick={onClose} className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -160,10 +160,10 @@ function TemplateItemPicker({
           <button
             onClick={() => setUseDndApi(true)}
             className={
-              'flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border-2 ' +
+              'flex-1 text-xs rounded-lg ' +
               (useDndApi
-                ? 'bg-[#5C1A1A] text-white border-[#3D1409]'
-                : 'bg-white/60 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
+                ? 'btn-primary !px-3 !py-1.5'
+                : 'btn-secondary !px-3 !py-1.5 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
             }
           >
             D&D 5e Items
@@ -171,10 +171,10 @@ function TemplateItemPicker({
           <button
             onClick={() => setUseDndApi(false)}
             className={
-              'flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border-2 ' +
+              'flex-1 text-xs rounded-lg ' +
               (!useDndApi
-                ? 'bg-[#5C1A1A] text-white border-[#3D1409]'
-                : 'bg-white/60 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
+                ? 'btn-primary !px-3 !py-1.5'
+                : 'btn-secondary !px-3 !py-1.5 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
             }
           >
             Templates ({templateItems.length})
@@ -208,7 +208,7 @@ function TemplateItemPicker({
                 key={item.index}
                 onClick={() => handleSelectDndItem(item)}
                 disabled={loadingDetails === item.index}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-[#D4C4A8] bg-white/40 hover:bg-[#F5EFE0] hover:border-[#8B6F47] transition-all text-left group disabled:opacity-50 disabled:cursor-wait"
+                className="btn-secondary w-full flex items-center gap-3 !px-3 !py-2.5 rounded-lg border-[#D4C4A8] bg-white/40 hover:bg-[#F5EFE0] hover:border-[#8B6F47] text-left group disabled:opacity-50 disabled:cursor-wait shadow-none"
               >
                 <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#5C7A3B]" />
                 <div className="flex-1 min-w-0">
@@ -234,7 +234,7 @@ function TemplateItemPicker({
               <button
                 key={item.id}
                 onClick={() => onSelect(item)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-[#D4C4A8] bg-white/40 hover:bg-[#F5EFE0] hover:border-[#8B6F47] transition-all text-left group"
+                className="btn-secondary w-full flex items-center gap-3 !px-3 !py-2.5 rounded-lg border-[#D4C4A8] bg-white/40 hover:bg-[#F5EFE0] hover:border-[#8B6F47] text-left group shadow-none"
               >
                 <div className={'w-2.5 h-2.5 rounded-full shrink-0 ' + (rarityDots[item.rarity] || 'bg-[#A89A7C]')} />
                 <div className="flex-1 min-w-0">
@@ -321,7 +321,7 @@ function CustomItemForm({
             <p className="text-[#5C4A2F] text-xs">Add to {targetName}</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all">
+        <button onClick={onClose} className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -449,7 +449,7 @@ function CustomItemForm({
         <div className="flex gap-3 shrink-0">
           <button
             type="submit"
-            className="flex-1 group px-4 py-2.5 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-3 border-[#3D1409] flex items-center justify-center gap-2"
+            className="btn-primary flex-1 group px-4 py-2.5"
           >
             <Plus className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
             Create Item
@@ -489,10 +489,10 @@ export function AddItemModal({ onClose, onAdd, targetName, isDM, templateItems =
             <button
               onClick={() => setMode('pick')}
               className={
-                'flex-1 py-3 text-sm font-bold transition-all duration-300 ' +
+                'flex-1 text-sm py-3 ' +
                 (mode === 'pick'
-                  ? 'bg-[#F5EFE0] text-[#3D1409] border-b-3 border-[#5C1A1A] shadow-sm'
-                  : 'text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409]')
+                  ? 'btn-primary rounded-none'
+                  : 'btn-secondary rounded-none text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409] border-transparent shadow-none')
               }
             >
               Choose from List
@@ -500,10 +500,10 @@ export function AddItemModal({ onClose, onAdd, targetName, isDM, templateItems =
             <button
               onClick={() => setMode('custom')}
               className={
-                'flex-1 py-3 text-sm font-bold transition-all duration-300 ' +
+                'flex-1 text-sm py-3 ' +
                 (mode === 'custom'
-                  ? 'bg-[#F5EFE0] text-[#3D1409] border-b-3 border-[#5C1A1A] shadow-sm'
-                  : 'text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409]')
+                  ? 'btn-primary rounded-none'
+                  : 'btn-secondary rounded-none text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409] border-transparent shadow-none')
               }
             >
               Create Custom

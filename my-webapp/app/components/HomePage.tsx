@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Package, Plus, Users, Calendar, Trash2, X, Scroll, Shield, ChevronRight, LogIn, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface Vault {
   id: string;
@@ -35,7 +34,7 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
           {isDM ? (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="w-full bg-[#F5EFE0] border-4 border-[#8B6F47] border-dashed rounded-xl p-8 hover:bg-[#F0E8D5] hover:border-[#5C1A1A] transition-all duration-300 shadow-md hover:shadow-lg group"
+              className="btn-secondary w-full border-dashed p-8 hover:bg-[#F0E8D5] text-[#3D1409] group"
               style={{ boxShadow: '0 4px 6px -1px rgba(61, 20, 9, 0.15)' }}
             >
               <div className="flex flex-col items-center gap-4">
@@ -51,7 +50,7 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
           ) : (
             <button
               onClick={() => setShowJoinModal(true)}
-              className="w-full bg-[#F5EFE0] border-4 border-[#8B6F47] border-dashed rounded-xl p-8 hover:bg-[#F0E8D5] hover:border-[#5C1A1A] transition-all duration-300 shadow-md hover:shadow-lg group"
+              className="btn-secondary w-full border-dashed p-8 hover:bg-[#F0E8D5] text-[#3D1409] group"
               style={{ boxShadow: '0 4px 6px -1px rgba(61, 20, 9, 0.15)' }}
             >
               <div className="flex flex-col items-center gap-4">
@@ -76,7 +75,7 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
           </div>
 
           {vaults.length === 0 ? (
-            <div className="bg-[#F5EFE0] border-[3px] border-[#8B6F47] rounded-xl p-12 text-center">
+            <div className="btn-secondary !block p-12 text-center">
               <Package className="w-12 h-12 text-[#8B6F47] mx-auto mb-4" />
               <h3 className="text-[#3D1409] mb-2">No vaults yet</h3>
               <p className="text-[#5C4A2F] text-sm">Create your first campaign vault to get started</p>
@@ -123,13 +122,17 @@ function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => vo
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setShowDeleteConfirm(true);
+    if (showDeleteConfirm) {
+      onDelete();
+    } else {
+      setShowDeleteConfirm(true);
+      setTimeout(() => setShowDeleteConfirm(false), 3000);
+    }
   };
 
   return (
-    <>
     <div
-      className="bg-[#F5EFE0] border-[3px] border-[#8B6F47] rounded-xl p-6 hover:border-[#5C4A2F] transition-all cursor-pointer shadow-md hover:shadow-lg group"
+      className="btn-secondary !block p-6 text-left cursor-pointer group hover:border-[#5C4A2F]"
       style={{ boxShadow: '0 2px 4px rgba(61, 20, 9, 0.15)' }}
       onClick={onOpen}
     >
@@ -140,8 +143,12 @@ function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => vo
         </div>
         <button
           onClick={handleDelete}
-          className="ml-2 p-2 rounded-lg transition-all border-2 text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#FFEBEE] border-transparent"
-          title="Delete vault"
+          className={`btn-ghost ml-2 !p-2 rounded-lg border-2 ${
+            showDeleteConfirm
+              ? 'bg-[#8B3A3A] text-white border-[#6B2020] hover:text-white hover:bg-[#6B2020]'
+              : 'text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#FFEBEE] border-transparent'
+          }`}
+          title={showDeleteConfirm ? 'Click again to confirm' : 'Delete vault'}
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -164,16 +171,6 @@ function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => vo
         </div>
       </div>
     </div>
-
-    {showDeleteConfirm && (
-      <ConfirmDeleteModal
-        title="Delete Vault"
-        message={`Are you sure you want to delete "${vault.name}"? This cannot be undone.`}
-        onConfirm={() => { setShowDeleteConfirm(false); onDelete(); }}
-        onCancel={() => setShowDeleteConfirm(false)}
-      />
-    )}
-    </>
   );
 }
 
@@ -343,7 +340,7 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all duration-200"
+            className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -377,7 +374,7 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, playerCount: Math.max(1, formData.playerCount - 1) })}
-                className="w-9 h-9 rounded-xl bg-white/70 border-3 border-[#8B6F47] hover:border-[#5C1A1A] hover:bg-white text-[#3D1409] font-bold text-lg flex items-center justify-center transition-all duration-200 active:scale-95"
+                className="btn-secondary w-9 h-9 !p-0 text-[#3D1409] font-bold text-lg"
               >
                 −
               </button>
@@ -389,7 +386,7 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, playerCount: Math.min(10, formData.playerCount + 1) })}
-                className="w-9 h-9 rounded-xl bg-white/70 border-3 border-[#8B6F47] hover:border-[#5C1A1A] hover:bg-white text-[#3D1409] font-bold text-lg flex items-center justify-center transition-all duration-200 active:scale-95"
+                className="btn-secondary w-9 h-9 !p-0 text-[#3D1409] font-bold text-lg"
               >
                 +
               </button>
@@ -415,7 +412,7 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B6F47] hover:text-[#5C1A1A] transition-colors"
+                className="btn-ghost absolute right-3 top-1/2 -translate-y-1/2 !p-0 border-transparent text-[#8B6F47] hover:text-[#5C1A1A]"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -487,7 +484,7 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
           <div className="shrink-0">
             <button
               type="submit"
-              className="group w-full px-6 py-2 sm:py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-4 border-[#3D1409] flex items-center justify-center gap-2"
+              className="btn-primary group w-full py-2 sm:py-3"
             >
               <Shield className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
               Create Vault
@@ -550,7 +547,7 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all duration-200"
+            className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -598,7 +595,7 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B6F47] hover:text-[#5C1A1A] transition-colors"
+                className="btn-ghost absolute right-3 top-1/2 -translate-y-1/2 !p-0 border-transparent text-[#8B6F47] hover:text-[#5C1A1A]"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -629,7 +626,7 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
             <button
               type="submit"
               disabled={success || isLoading}
-              className="group w-full px-6 py-3 rounded-xl bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 transition-all duration-300 border-4 border-[#3D1409] flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
+              className="btn-primary group w-full disabled:opacity-60 disabled:pointer-events-none"
             >
               {isLoading ? (
                 <>

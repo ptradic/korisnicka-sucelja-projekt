@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Package, Plus, Users, Calendar, Trash2, X, Scroll, Shield, ChevronRight, LogIn, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface Vault {
   id: string;
@@ -122,55 +123,60 @@ function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => vo
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (showDeleteConfirm) {
-      onDelete();
-    } else {
-      setShowDeleteConfirm(true);
-      setTimeout(() => setShowDeleteConfirm(false), 3000);
-    }
+    setShowDeleteConfirm(true);
   };
 
   return (
-    <div
-      className="btn-secondary !block p-6 text-left cursor-pointer group hover:border-[#5C4A2F]"
-      style={{ boxShadow: '0 2px 4px rgba(61, 20, 9, 0.15)' }}
-      onClick={onOpen}
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1 min-w-0">
-          <h3 className="text-[#3D1409] truncate mb-1">{vault.name}</h3>
-          <p className="text-[#5C4A2F] text-sm line-clamp-2">{vault.description}</p>
+    <>
+      <div
+        className="btn-secondary !block p-6 text-left cursor-pointer group hover:border-[#5C4A2F]"
+        style={{ boxShadow: '0 2px 4px rgba(61, 20, 9, 0.15)' }}
+        onClick={onOpen}
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-[#3D1409] truncate mb-1">{vault.name}</h3>
+            <p className="text-[#5C4A2F] text-sm line-clamp-2">{vault.description}</p>
+          </div>
+          <button
+            onClick={handleDelete}
+            className="btn-ghost ml-2 !p-2 rounded-lg border-2 text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#FFEBEE] border-transparent"
+            title="Delete vault"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
-        <button
-          onClick={handleDelete}
-          className={`btn-ghost ml-2 !p-2 rounded-lg border-2 ${
-            showDeleteConfirm
-              ? 'bg-[#8B3A3A] text-white border-[#6B2020] hover:text-white hover:bg-[#6B2020]'
-              : 'text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#FFEBEE] border-transparent'
-          }`}
-          title={showDeleteConfirm ? 'Click again to confirm' : 'Delete vault'}
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-[#5C4A2F]">
+            <Users className="w-4 h-4" />
+            <span>{vault.playerCount} players</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-[#5C4A2F]">
+            <Calendar className="w-4 h-4" />
+            <span>Last accessed: {new Date(vault.lastAccessed).toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t-2 border-[#D9C7AA]">
+          <div className="text-[#5C1A1A] text-sm group-hover:text-[#3D1409] transition-colors">
+            Open Vault →
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm text-[#5C4A2F]">
-          <Users className="w-4 h-4" />
-          <span>{vault.playerCount} players</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-[#5C4A2F]">
-          <Calendar className="w-4 h-4" />
-          <span>Last accessed: {new Date(vault.lastAccessed).toLocaleDateString()}</span>
-        </div>
-      </div>
-
-      <div className="mt-4 pt-4 border-t-2 border-[#D9C7AA]">
-        <div className="text-[#5C1A1A] text-sm group-hover:text-[#3D1409] transition-colors">
-          Open Vault →
-        </div>
-      </div>
-    </div>
+      {showDeleteConfirm && (
+        <ConfirmDeleteModal
+          title="Delete Vault"
+          message={`Are you sure you want to delete "${vault.name}"? This cannot be undone.`}
+          onConfirm={() => {
+            setShowDeleteConfirm(false);
+            onDelete();
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+    </>
   );
 }
 

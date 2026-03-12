@@ -19,6 +19,48 @@ import { signUpUser, signInUser, signInWithGoogle, onAuthChange, getUserDoc } fr
 //  Helpers 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+type PasswordStrength = {
+  label: "Weak" | "Fair" | "Strong";
+  colorClass: string;
+  meterClass: string;
+  segments: number;
+};
+
+function getPasswordStrength(password: string): PasswordStrength {
+  let score = 0;
+
+  if (password.length >= 6) score += 1;
+  if (password.length >= 10) score += 1;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  if (score <= 2) {
+    return {
+      label: "Weak",
+      colorClass: "text-red-600",
+      meterClass: "bg-red-500",
+      segments: 1,
+    };
+  }
+
+  if (score <= 4) {
+    return {
+      label: "Fair",
+      colorClass: "text-amber-600",
+      meterClass: "bg-amber-500",
+      segments: 2,
+    };
+  }
+
+  return {
+    label: "Strong",
+    colorClass: "text-emerald-600",
+    meterClass: "bg-emerald-500",
+    segments: 3,
+  };
+}
+
 //  Main Component 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,6 +83,7 @@ export default function LoginPage() {
   const [showSignupConfirm, setShowSignupConfirm] = useState(false);
   const [signupErrors, setSignupErrors] = useState<Record<string, string>>({});
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const passwordStrength = getPasswordStrength(signupPassword);
 
   // Tutorial step  tracks which field the user is currently on
   const tutorialStep = !userType
@@ -494,6 +537,26 @@ export default function LoginPage() {
                     {showSignupPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {signupPassword && (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-[#5C4A2F]">Password strength</span>
+                      <span className={`text-xs font-semibold ${passwordStrength.colorClass}`}>
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[1, 2, 3].map((segment) => (
+                        <div
+                          key={segment}
+                          className={`h-1.5 rounded-full transition-colors duration-200 ${
+                            segment <= passwordStrength.segments ? passwordStrength.meterClass : "bg-[#D9C7AA]"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {signupErrors.password && (
                   <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" /> {signupErrors.password}

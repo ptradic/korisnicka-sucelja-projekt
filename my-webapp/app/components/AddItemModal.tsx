@@ -280,12 +280,64 @@ function CustomItemForm({
     attunement: false,
   });
 
+  const [errors, setErrors] = useState<{
+    name?: string;
+    quantity?: string;
+    weight?: string;
+    value?: string;
+  }>({});
+
+  const inputBaseClass =
+    'w-full px-3 py-2 bg-white/70 border-3 rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:ring-2 transition-all duration-300';
+
+  const inputClass = (hasError: boolean) =>
+    hasError
+      ? `${inputBaseClass} border-[#B44444] focus:border-[#8B3A3A] focus:ring-[#8B3A3A]/20`
+      : `${inputBaseClass} border-[#8B6F47] focus:border-[#5C1A1A] focus:ring-[#5C1A1A]/20`;
+
+  const validateForm = () => {
+    const nextErrors: {
+      name?: string;
+      quantity?: string;
+      weight?: string;
+      value?: string;
+    } = {};
+
+    if (!formData.name.trim()) {
+      nextErrors.name = 'Name is required';
+    }
+
+    if (!Number.isFinite(formData.quantity) || formData.quantity < 1) {
+      nextErrors.quantity = 'Quantity must be at least 1';
+    }
+
+    if (formData.weight === '') {
+      nextErrors.weight = 'Weight is required';
+    } else {
+      const parsedWeight = Number(formData.weight);
+      if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
+        nextErrors.weight = 'Weight must be 0 or greater';
+      }
+    }
+
+    if (formData.value !== '') {
+      const parsedValue = Number(formData.value);
+      if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+        nextErrors.value = 'Value must be a positive number';
+      }
+    }
+
+    return nextErrors;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.weight) return;
+    const nextErrors = validateForm();
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
     const item: Omit<Item, 'id'> = {
-      name: formData.name,
+      name: formData.name.trim(),
       category: formData.category,
       rarity: formData.rarity,
       quantity: formData.quantity,
@@ -337,11 +389,15 @@ function CustomItemForm({
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+            onChange={(e) => {
+              setFormData({ ...formData, name: e.target.value });
+              if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+            }}
+            className={inputClass(!!errors.name)}
             placeholder="e.g., Flaming Longsword"
-            required
+            aria-invalid={!!errors.name}
           />
+          {errors.name && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.name}</p>}
         </div>
 
         {/* Description - flexible height */}
@@ -397,11 +453,15 @@ function CustomItemForm({
               type="number"
               min="1"
               value={formData.quantity}
-              onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-              className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+              onChange={(e) => {
+                setFormData({ ...formData, quantity: parseInt(e.target.value, 10) || 1 });
+                if (errors.quantity) setErrors((prev) => ({ ...prev, quantity: undefined }));
+              }}
+              className={inputClass(!!errors.quantity)}
               placeholder="1"
-              required
+              aria-invalid={!!errors.quantity}
             />
+            {errors.quantity && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.quantity}</p>}
           </div>
           <div>
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
@@ -412,11 +472,15 @@ function CustomItemForm({
               step="0.1"
               min="0"
               value={formData.weight}
-              onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-              className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+              onChange={(e) => {
+                setFormData({ ...formData, weight: e.target.value });
+                if (errors.weight) setErrors((prev) => ({ ...prev, weight: undefined }));
+              }}
+              className={inputClass(!!errors.weight)}
               placeholder="0.0"
-              required
+              aria-invalid={!!errors.weight}
             />
+            {errors.weight && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.weight}</p>}
           </div>
           <div>
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Value (gp)</label>
@@ -424,10 +488,15 @@ function CustomItemForm({
               type="number"
               min="0"
               value={formData.value}
-              onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-              className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+              onChange={(e) => {
+                setFormData({ ...formData, value: e.target.value });
+                if (errors.value) setErrors((prev) => ({ ...prev, value: undefined }));
+              }}
+              className={inputClass(!!errors.value)}
               placeholder="0"
+              aria-invalid={!!errors.value}
             />
+            {errors.value && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.value}</p>}
           </div>
         </div>
 

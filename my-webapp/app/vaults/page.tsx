@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 // @ts-ignore
 import { DndProvider } from 'react-dnd-multi-backend';
 // @ts-ignore
@@ -190,6 +190,8 @@ function TouchDragPreview() {
 
 export default function VaultsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedCampaignId = searchParams.get('c');
   type VaultActionError = {
     title: string;
     description: string;
@@ -199,6 +201,7 @@ export default function VaultsPage() {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCampaignsLoading, setIsCampaignsLoading] = useState(true);
   const [userId, setUserId] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
   const [userRole, setUserRole] = useState<'dm' | 'player'>('player');
@@ -304,12 +307,15 @@ export default function VaultsPage() {
     if (!userId) return;
 
     const loadCampaigns = async () => {
+      setIsCampaignsLoading(true);
       try {
         const userCampaigns = await getUserCampaigns(userId, userRole);
         setCampaigns(userCampaigns);
       } catch (error) {
         console.error('Failed to load campaigns:', error);
         showActionError('Could not load vaults', error, () => loadCampaigns());
+      } finally {
+        setIsCampaignsLoading(false);
       }
     };
 
@@ -438,8 +444,8 @@ export default function VaultsPage() {
   // Campaign CRUD
   const handleSelectCampaign = (campaignId: string) => {
     setCurrentCampaignId(campaignId);
-    // Push a history entry so the browser back button returns to the vault list
-    window.history.pushState({ vault: campaignId }, '', '/vaults');
+    // Update URL with campaign ID for persistence and browser history
+    router.push(`/vaults?c=${campaignId}`, { scroll: false });
   };
 
   const handleCreateCampaign = async (info: { name: string; description: string; playerCount: number; password: string }) => {
@@ -498,6 +504,8 @@ export default function VaultsPage() {
     setCurrentCampaign(null);
     setPlayerInventories([]);
     setSelectedPlayerId('shared');
+    // Clear campaign ID from URL
+    router.push('/vaults', { scroll: false });
   };
 
   // Listen for "go back to vault list" event from Navigation
@@ -507,16 +515,29 @@ export default function VaultsPage() {
     return () => window.removeEventListener('vaults-go-home', handler);
   });
 
-  // Handle browser back button while inside a vault
+  // Sync state with URL changes (handles page load, refresh, browser back/forward)
   useEffect(() => {
-    const handler = (e: PopStateEvent) => {
-      if (currentCampaignId) {
-        handleBackToHome();
+    if (campaigns.length === 0) return; // Wait for campaigns to load
+    
+    const campaignIdFromUrl = requestedCampaignId;
+    
+    if (!campaignIdFromUrl && currentCampaignId) {
+      // URL has no campaign but state does - user navigated back
+      setCurrentCampaignId(null);
+      setCurrentCampaign(null);
+      setPlayerInventories([]);
+      setSelectedPlayerId('shared');
+    } else if (campaignIdFromUrl && campaignIdFromUrl !== currentCampaignId) {
+      // URL has campaign - either page load/refresh or navigation
+      const campaignExists = campaigns.some(c => c.id === campaignIdFromUrl);
+      if (campaignExists) {
+        setCurrentCampaignId(campaignIdFromUrl);
+      } else {
+        // Campaign not found, clear invalid URL param
+        router.replace('/vaults', { scroll: false });
       }
-    };
-    window.addEventListener('popstate', handler);
-    return () => window.removeEventListener('popstate', handler);
-  }, [currentCampaignId]);
+    }
+  }, [requestedCampaignId, campaigns, currentCampaignId, router]);
 
   // Item movement with Firebase
   const handleMoveItem = async (itemId: string, fromId: string | 'shared', toId: string | 'shared') => {
@@ -768,8 +789,11 @@ export default function VaultsPage() {
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId);
   const isShared = selectedPlayerId === 'shared';
   const isDM = userRole === 'dm';
-
-  if (!isAuthenticated) return null;
+  const isRestoringCampaign = Boolean(
+    requestedCampaignId &&
+    !currentCampaignId &&
+    (isCampaignsLoading || campaigns.some((campaign) => campaign.id === requestedCampaignId))
+  );
 
   // Convert campaigns to vault format for HomePage component
   const vaults = campaigns.map((c) => ({
@@ -782,17 +806,19 @@ export default function VaultsPage() {
     createdAt: c.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(),
   }));
 
-  // Show loading spinner while authenticating
-  if (isLoading) {
+  // Keep a single loading screen while auth or campaign restoration is in progress.
+  if (isLoading || isCampaignsLoading || isRestoringCampaign) {
     return (
       <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[#8B6F47] border-t-[#5C1A1A] rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#3D1409] font-semibold">Loading your vaults...</p>
+          <p className="text-[#3D1409] font-semibold">Loading your vault...</p>
         </div>
       </div>
     );
   }
+
+  if (!isAuthenticated) return null;
 
   if (!currentCampaignId) {
     return (

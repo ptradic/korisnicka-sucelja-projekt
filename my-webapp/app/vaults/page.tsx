@@ -217,7 +217,7 @@ export default function VaultsPage() {
   const [newCampaignId, setNewCampaignId] = useState<string | null>(null);
   const [newCampaignName, setNewCampaignName] = useState<string>('');
   const [pendingTransferRequests, setPendingTransferRequests] = useState<TransferRequest[]>([]);
-  const [transferSentInfo, setTransferSentInfo] = useState<{ playerName: string; itemName: string } | null>(null);
+  const [transferSentInfo, setTransferSentInfo] = useState<{ playerName: string; itemName: string; expiresAt: Date } | null>(null);
   const [actionError, setActionError] = useState<VaultActionError | null>(null);
   const [isRetryingAction, setIsRetryingAction] = useState(false);
 
@@ -574,9 +574,11 @@ export default function VaultsPage() {
           recipientName
         );
 
-        // Show toast notification
-        setTransferSentInfo({ playerName: recipientName, itemName: item.name });
-        setTimeout(() => setTransferSentInfo(null), 5000);
+        // Show toast notification with expiration time
+        const expiresAt = new Date(Date.now() + 10 * 1000); // 10 seconds from now
+        setTransferSentInfo({ playerName: recipientName, itemName: item.name, expiresAt });
+        // Auto-dismiss after expiration + 1 second buffer
+        setTimeout(() => setTransferSentInfo(null), 11000);
       } catch (error) {
         console.error('Failed to create transfer request:', error);
         showActionError('Could not send transfer request', error, () => handleMoveItem(itemId, fromId, toId));
@@ -941,6 +943,7 @@ export default function VaultsPage() {
           <TransferSentToast
             playerName={transferSentInfo.playerName}
             itemName={transferSentInfo.itemName}
+            expiresAt={transferSentInfo.expiresAt}
             onDismiss={() => setTransferSentInfo(null)}
           />
         )}

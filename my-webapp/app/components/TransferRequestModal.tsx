@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Package, ArrowRight, Check, X, AlertCircle, Clock } from 'lucide-react';
 import type { TransferRequest } from '@/src/firebaseService';
+import { useCountdown } from '@/app/hooks/useCountdown';
+import { Timestamp } from 'firebase/firestore';
 
 const AUTO_REJECT_TIMEOUT = 10; // seconds (fallback)
 
@@ -123,14 +125,14 @@ export function TransferRequestModal({ request, onAccept, onReject }: TransferRe
               <div className="w-10 h-10 rounded-full bg-[#5C1A1A] text-white flex items-center justify-center mx-auto mb-1 font-bold">
                 {request.fromPlayerName.charAt(0).toUpperCase()}
               </div>
-              <p className="text-xs font-semibold text-[#3D1409] max-w-[80px] truncate">{request.fromPlayerName}</p>
+              <p className="text-xs font-semibold text-[#3D1409] max-w-20 truncate">{request.fromPlayerName}</p>
             </div>
             <ArrowRight className="w-6 h-6 text-[#8B6F47]" />
             <div className="text-center">
               <div className="w-10 h-10 rounded-full bg-[#3D1409] text-white flex items-center justify-center mx-auto mb-1 font-bold">
                 {request.toPlayerName.charAt(0).toUpperCase()}
               </div>
-              <p className="text-xs font-semibold text-[#3D1409] max-w-[80px] truncate">{request.toPlayerName}</p>
+              <p className="text-xs font-semibold text-[#3D1409] max-w-20 truncate">{request.toPlayerName}</p>
               <p className="text-[10px] text-[#8B6F47]">(You)</p>
             </div>
           </div>
@@ -169,7 +171,7 @@ export function TransferRequestModal({ request, onAccept, onReject }: TransferRe
           <button
             onClick={handleAccept}
             disabled={isProcessing}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-semibold rounded-xl transition-all duration-200 border-3 border-[#3D1409] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] text-white font-semibold rounded-xl transition-all duration-200 border-3 border-[#3D1409] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isProcessing ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -188,20 +190,49 @@ export function TransferRequestModal({ request, onAccept, onReject }: TransferRe
 interface TransferSentToastProps {
   playerName: string;
   itemName: string;
+  expiresAt: Date;
   onDismiss: () => void;
 }
 
-export function TransferSentToast({ playerName, itemName, onDismiss }: TransferSentToastProps) {
+export function TransferSentToast({ playerName, itemName, expiresAt, onDismiss }: TransferSentToastProps) {
+  const expiresAtTimestamp = Timestamp.fromDate(expiresAt);
+  const { formattedTime, isExpired } = useCountdown(expiresAtTimestamp);
+
+  // Auto-dismiss when expired
+  useEffect(() => {
+    if (isExpired) {
+      const timer = setTimeout(() => {
+        onDismiss();
+      }, 1000); // Give 1 second to show "expired" state
+      return () => clearTimeout(timer);
+    }
+  }, [isExpired, onDismiss]);
+
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-[#5C1A1A] text-white px-5 py-3 rounded-xl shadow-xl border-2 border-[#3D1409] flex items-center gap-3">
+      <div className={`px-5 py-3 rounded-xl shadow-xl border-2 flex items-center gap-3 transition-colors ${
+        isExpired 
+          ? 'bg-[#8B6F47] border-[#6B5535] text-white'
+          : 'bg-[#5C1A1A] border-[#3D1409] text-white'
+      }`}>
         <Package className="w-5 h-5 shrink-0" />
-        <div>
-          <p className="text-sm font-semibold">Transfer Request Sent</p>
+        <div className="flex-1">
+          <p className="text-sm font-semibold">
+            {isExpired ? 'Transfer Request Expired' : 'Transfer Request Sent'}
+          </p>
           <p className="text-xs text-white/80">
-            Waiting for <span className="font-semibold">{playerName}</span> to accept <span className="font-semibold">{itemName}</span>
+            {isExpired 
+              ? `Request to ${playerName} for ${itemName} has expired`
+              : `Waiting for ${playerName} to accept ${itemName}`
+            }
           </p>
         </div>
+        {!isExpired && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-white/20 rounded text-xs font-mono">
+            <Clock className="w-3 h-3" />
+            {formattedTime}
+          </div>
+        )}
         <button
           onClick={onDismiss}
           className="ml-2 p-1 hover:bg-white/20 rounded transition-colors"

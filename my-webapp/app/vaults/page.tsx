@@ -473,7 +473,7 @@ export default function VaultsPage() {
       return false;
     } catch (error: any) {
       console.error('Failed to join campaign:', error);
-      showActionError('Could not join vault', error, () => handleJoinCampaign(campaignId, password));
+      showActionError('Could not join vault', error, async () => { await handleJoinCampaign(campaignId, password); });
       return false;
     }
   };

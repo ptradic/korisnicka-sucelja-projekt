@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-// @ts-ignore
 import { DndProvider } from 'react-dnd';
-// @ts-ignore
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { HomePage } from '@/app/components/HomePage';
 import { PlayerSidebar } from '@/app/components/PlayerSidebar';

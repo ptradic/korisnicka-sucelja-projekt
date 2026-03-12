@@ -2,15 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-// @ts-ignore
 import { DndProvider } from 'react-dnd-multi-backend';
-// @ts-ignore
 import { HTML5Backend } from 'react-dnd-html5-backend';
-// @ts-ignore
 import { TouchBackend } from 'react-dnd-touch-backend';
-// @ts-ignore
 import { MouseTransition, TouchTransition } from 'dnd-multi-backend';
-// @ts-ignore
 import { usePreview } from 'react-dnd-multi-backend';
 import { HomePage } from '@/app/components/HomePage';
 import { PlayerSidebar } from '@/app/components/PlayerSidebar';

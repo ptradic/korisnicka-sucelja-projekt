@@ -198,44 +198,68 @@ export function TransferSentToast({ playerName, itemName, expiresAt, onDismiss }
   const expiresAtTimestamp = Timestamp.fromDate(expiresAt);
   const { formattedTime, isExpired } = useCountdown(expiresAtTimestamp);
 
-  // Auto-dismiss when expired
+  // Auto-dismiss when expired (without showing expired state)
   useEffect(() => {
     if (isExpired) {
-      const timer = setTimeout(() => {
-        onDismiss();
-      }, 1000); // Give 1 second to show "expired" state
-      return () => clearTimeout(timer);
+      onDismiss();
     }
   }, [isExpired, onDismiss]);
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className={`px-5 py-3 rounded-xl shadow-xl border-2 flex items-center gap-3 transition-colors ${
-        isExpired 
-          ? 'bg-[#8B6F47] border-[#6B5535] text-white'
-          : 'bg-[#5C1A1A] border-[#3D1409] text-white'
-      }`}>
-        <Package className="w-5 h-5 shrink-0" />
-        <div className="flex-1">
-          <p className="text-sm font-semibold">
-            {isExpired ? 'Transfer Request Expired' : 'Transfer Request Sent'}
+    <div className="fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300 w-full max-w-sm sm:max-w-md px-4 sm:px-0">
+      <div className="px-3 sm:px-5 py-2 sm:py-3 rounded-xl shadow-xl border-2 flex items-start gap-2 sm:gap-3 transition-colors bg-[#5C1A1A] border-[#3D1409] text-white">
+        <Package className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 sm:mt-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-semibold leading-tight">
+            Transfer Sent
           </p>
-          <p className="text-xs text-white/80">
-            {isExpired 
-              ? `Request to ${playerName} for ${itemName} has expired`
-              : `Waiting for ${playerName} to accept ${itemName}`
+          <p className="text-xs text-white/80 leading-tight">
+            To {playerName}: {itemName}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/20 rounded text-xs font-mono shrink-0">
+          <Clock className="w-3 h-3" />
+          <span className="hidden sm:inline">{formattedTime}</span>
+          <span className="sm:hidden">{formattedTime.split(':')[1]}s</span>
+        </div>
+        <button
+          onClick={onDismiss}
+          className="shrink-0 p-1 hover:bg-white/20 rounded transition-colors touch-manipulation"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Toast notification for expired transfer requests
+interface TransferExpiredToastProps {
+  playerName: string;
+  itemName: string;
+  isReceiver?: boolean; // true if this user was meant to receive the item
+  onDismiss: () => void;
+}
+
+export function TransferExpiredToast({ playerName, itemName, isReceiver, onDismiss }: TransferExpiredToastProps) {
+  return (
+    <div className="fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300 w-full max-w-sm sm:max-w-md px-4 sm:px-0">
+      <div className="px-3 sm:px-5 py-2 sm:py-3 rounded-xl shadow-xl border-2 flex items-start gap-2 sm:gap-3 transition-colors bg-[#8B6F47] border-[#6B5535] text-white">
+        <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 sm:mt-0 text-orange-300" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-semibold leading-tight">
+            Transfer Expired
+          </p>
+          <p className="text-xs text-white/80 leading-tight">
+            {isReceiver 
+              ? `${itemName} from ${playerName} expired`
+              : `${itemName} to ${playerName} expired and returned`
             }
           </p>
         </div>
-        {!isExpired && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-white/20 rounded text-xs font-mono">
-            <Clock className="w-3 h-3" />
-            {formattedTime}
-          </div>
-        )}
         <button
           onClick={onDismiss}
-          className="ml-2 p-1 hover:bg-white/20 rounded transition-colors"
+          className="shrink-0 p-1 hover:bg-white/20 rounded transition-colors touch-manipulation"
         >
           <X className="w-4 h-4" />
         </button>

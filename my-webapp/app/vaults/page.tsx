@@ -18,7 +18,7 @@ import { InventoryView } from '@/app/components/InventoryView';
 import { AddItemModal } from '@/app/components/AddItemModal';
 import { ItemDetailsModal } from '@/app/components/ItemDetailsModal';
 import { CampaignIdModal } from '@/app/components/CampaignIdModal';
-import { TransferRequestModal, TransferSentToast } from '@/app/components/TransferRequestModal';
+import { TransferRequestModal, TransferSentToast, TransferExpiredToast } from '@/app/components/TransferRequestModal';
 import { ActionErrorToast } from '@/app/components/ActionErrorToast';
 import { VaultListSkeleton, VaultDetailSkeleton } from '@/app/components/skeletons/SkeletonLoader';
 import type { Item, Player, Currency, Campaign } from '@/app/types';
@@ -218,6 +218,7 @@ export default function VaultsPage() {
   const [newCampaignName, setNewCampaignName] = useState<string>('');
   const [pendingTransferRequests, setPendingTransferRequests] = useState<TransferRequest[]>([]);
   const [transferSentInfo, setTransferSentInfo] = useState<{ playerName: string; itemName: string; expiresAt: Date } | null>(null);
+  const [expiredTransferInfo, setExpiredTransferInfo] = useState<{ playerName: string; itemName: string; isReceiver: boolean } | null>(null);
   const [actionError, setActionError] = useState<VaultActionError | null>(null);
   const [isRetryingAction, setIsRetryingAction] = useState(false);
 
@@ -353,24 +354,59 @@ export default function VaultsPage() {
     }
 
     const unsubscribe = subscribeToTransferRequests(currentCampaignId, userId, (requests) => {
-      setPendingTransferRequests(requests);
+      setPendingTransferRequests(prevRequests => {
+        // Check for newly expired transfers (as receiver) before setting state
+        const currentRequestIds = prevRequests.map(r => r.id);
+        const newRequestIds = requests.map(r => r.id);
+        
+        // If we had a request that's no longer pending and we haven't seen it before,
+        // it might have expired while we were the intended receiver
+        const missingRequests = prevRequests.filter(prevReq => 
+          !newRequestIds.includes(prevReq.id) && 
+          Date.now() > prevReq.expiresAt.toMillis()
+        );
+        
+        // Show notification for expired transfers we were meant to receive
+        if (missingRequests.length > 0) {
+          const expiredReq = missingRequests[0]; // Show first expired request
+          setExpiredTransferInfo({ 
+            playerName: expiredReq.fromPlayerName, 
+            itemName: expiredReq.itemName, 
+            isReceiver: true 
+          });
+          setTimeout(() => setExpiredTransferInfo(null), 8000);
+        }
+        
+        return requests;
+      });
     });
 
     return () => unsubscribe();
   }, [currentCampaignId, userId, userRole]);
 
-  // Subscribe to rejected transfers (as sender) and auto-restore items
+  // Subscribe to rejected/expired transfers (as sender) and auto-restore items
   useEffect(() => {
     if (!currentCampaignId || !userId || userRole === 'dm') return;
 
-    const unsubscribe = subscribeToRejectedTransfers(currentCampaignId, userId, async (rejectedRequests) => {
-      // Auto-restore items for each rejected request
-      for (const request of rejectedRequests) {
+    const unsubscribe = subscribeToRejectedTransfers(currentCampaignId, userId, async (rejectedOrExpiredRequests) => {
+      // Process each request to handle rejected vs expired differently
+      for (const request of rejectedOrExpiredRequests) {
         try {
           await restoreRejectedTransfer(currentCampaignId, request.id, userId);
+          
+          // Show appropriate notification
+          if (request.status === 'expired') {
+            setExpiredTransferInfo({ 
+              playerName: request.toPlayerName, 
+              itemName: request.itemName, 
+              isReceiver: false 
+            });
+            setTimeout(() => setExpiredTransferInfo(null), 8000);
+          }
+          // Note: rejected transfers don't show notification as they're user-initiated
         } catch (error) {
-          console.error('Failed to restore rejected transfer:', error);
-          showActionError('Could not restore rejected transfer', error, () =>
+          console.error('Failed to restore rejected/expired transfer:', error);
+          showActionError('Could not restore transfer', error, () =>
             restoreRejectedTransfer(currentCampaignId, request.id, userId)
           );
         }
@@ -577,8 +613,8 @@ export default function VaultsPage() {
         // Show toast notification with expiration time
         const expiresAt = new Date(Date.now() + 10 * 1000); // 10 seconds from now
         setTransferSentInfo({ playerName: recipientName, itemName: item.name, expiresAt });
-        // Auto-dismiss after expiration + 1 second buffer
-        setTimeout(() => setTransferSentInfo(null), 11000);
+        // Auto-dismiss after expiration + extra time for mobile interaction
+        setTimeout(() => setTransferSentInfo(null), 13000);
       } catch (error) {
         console.error('Failed to create transfer request:', error);
         showActionError('Could not send transfer request', error, () => handleMoveItem(itemId, fromId, toId));
@@ -945,6 +981,16 @@ export default function VaultsPage() {
             itemName={transferSentInfo.itemName}
             expiresAt={transferSentInfo.expiresAt}
             onDismiss={() => setTransferSentInfo(null)}
+          />
+        )}
+
+        {/* Transfer Expired Toast */}
+        {expiredTransferInfo && (
+          <TransferExpiredToast
+            playerName={expiredTransferInfo.playerName}
+            itemName={expiredTransferInfo.itemName}
+            isReceiver={expiredTransferInfo.isReceiver}
+            onDismiss={() => setExpiredTransferInfo(null)}
           />
         )}
       </div>

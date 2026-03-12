@@ -19,6 +19,7 @@ import { AddItemModal } from '@/app/components/AddItemModal';
 import { ItemDetailsModal } from '@/app/components/ItemDetailsModal';
 import { CampaignIdModal } from '@/app/components/CampaignIdModal';
 import { TransferRequestModal, TransferSentToast } from '@/app/components/TransferRequestModal';
+import { ActionErrorToast } from '@/app/components/ActionErrorToast';
 import type { Item, Player, Currency, Campaign } from '@/app/types';
 import {
   onAuthChange,
@@ -189,6 +190,13 @@ function TouchDragPreview() {
 
 export default function VaultsPage() {
   const router = useRouter();
+  type VaultActionError = {
+    title: string;
+    description: string;
+    onRetry?: () => Promise<void> | void;
+    retryLabel?: string;
+  };
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string>('');
@@ -204,9 +212,60 @@ export default function VaultsPage() {
   const [dragOverPlayerId, setDragOverPlayerId] = useState<string | 'shared' | null>(null);
   const [newCampaignId, setNewCampaignId] = useState<string | null>(null);
   const [newCampaignName, setNewCampaignName] = useState<string>('');
-  const [showError, setShowError] = useState(false);
   const [pendingTransferRequests, setPendingTransferRequests] = useState<TransferRequest[]>([]);
   const [transferSentInfo, setTransferSentInfo] = useState<{ playerName: string; itemName: string } | null>(null);
+  const [actionError, setActionError] = useState<VaultActionError | null>(null);
+  const [isRetryingAction, setIsRetryingAction] = useState(false);
+
+  const getFirebaseErrorMessage = (error: unknown, fallback: string) => {
+    const message = error instanceof Error ? error.message : String(error ?? '');
+    const code = typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code ?? '')
+      : '';
+
+    if (code.includes('permission-denied') || message.includes('Missing or insufficient permissions')) {
+      return "You don't have permission to complete this action. Check your role or campaign ownership, then retry.";
+    }
+
+    if (
+      code.includes('unavailable') ||
+      code.includes('deadline-exceeded') ||
+      code.includes('network-request-failed') ||
+      /network|offline|timeout/i.test(message)
+    ) {
+      return 'Firebase could not be reached. Check your connection and retry the action.';
+    }
+
+    return message ? `${fallback} ${message}` : fallback;
+  };
+
+  const showActionError = (
+    title: string,
+    error: unknown,
+    onRetry?: () => Promise<void> | void,
+    retryLabel = 'Retry'
+  ) => {
+    setActionError({
+      title,
+      description: getFirebaseErrorMessage(error, 'The change was not saved.'),
+      onRetry,
+      retryLabel,
+    });
+  };
+
+  const handleRetryAction = async () => {
+    if (!actionError?.onRetry) return;
+
+    const retry = actionError.onRetry;
+    setIsRetryingAction(true);
+    setActionError(null);
+
+    try {
+      await retry();
+    } finally {
+      setIsRetryingAction(false);
+    }
+  };
 
   // Auth check and user data loading
   useEffect(() => {
@@ -245,11 +304,16 @@ export default function VaultsPage() {
     if (!userId) return;
 
     const loadCampaigns = async () => {
-      const userCampaigns = await getUserCampaigns(userId, userRole);
-      setCampaigns(userCampaigns);
+      try {
+        const userCampaigns = await getUserCampaigns(userId, userRole);
+        setCampaigns(userCampaigns);
+      } catch (error) {
+        console.error('Failed to load campaigns:', error);
+        showActionError('Could not load vaults', error, () => loadCampaigns());
+      }
     };
 
-    loadCampaigns();
+    void loadCampaigns();
   }, [userId, userRole]);
 
   // Subscribe to current campaign updates
@@ -299,6 +363,9 @@ export default function VaultsPage() {
           await restoreRejectedTransfer(currentCampaignId, request.id, userId);
         } catch (error) {
           console.error('Failed to restore rejected transfer:', error);
+          showActionError('Could not restore rejected transfer', error, () =>
+            restoreRejectedTransfer(currentCampaignId, request.id, userId)
+          );
         }
       }
     });
@@ -323,12 +390,21 @@ export default function VaultsPage() {
   useEffect(() => {
     if (!currentCampaignId || !userId || userRole === 'dm') return;
 
+    const runExpirationCheck = async () => {
+      try {
+        await checkAndExpirePendingTransfers(currentCampaignId, userId);
+      } catch (error) {
+        console.error('Failed to expire pending transfers:', error);
+        showActionError('Could not sync pending transfers', error, () => runExpirationCheck());
+      }
+    };
+
     // Check immediately on mount
-    checkAndExpirePendingTransfers(currentCampaignId, userId);
+    void runExpirationCheck();
 
     // Then check every 2 seconds
     const interval = setInterval(() => {
-      checkAndExpirePendingTransfers(currentCampaignId, userId);
+      void runExpirationCheck();
     }, 2000);
 
     return () => clearInterval(interval);
@@ -338,19 +414,24 @@ export default function VaultsPage() {
   const handleRoleToggle = async () => {
     if (!userId) return;
     const newRole = userRole === 'dm' ? 'player' : 'dm';
-    await updateUserRole(userId, newRole);
-    setUserRole(newRole);
-    setCampaigns([]);
-    setCurrentCampaignId(null);
-    setCurrentCampaign(null);
-    setPlayerInventories([]);
-    
-    // Update localStorage
-    const auth = localStorage.getItem('trailblazers-auth');
-    if (auth) {
-      const parsed = JSON.parse(auth);
-      parsed.userType = newRole;
-      localStorage.setItem('trailblazers-auth', JSON.stringify(parsed));
+    try {
+      await updateUserRole(userId, newRole);
+      setUserRole(newRole);
+      setCampaigns([]);
+      setCurrentCampaignId(null);
+      setCurrentCampaign(null);
+      setPlayerInventories([]);
+      
+      // Update localStorage
+      const auth = localStorage.getItem('trailblazers-auth');
+      if (auth) {
+        const parsed = JSON.parse(auth);
+        parsed.userType = newRole;
+        localStorage.setItem('trailblazers-auth', JSON.stringify(parsed));
+      }
+    } catch (error) {
+      console.error('Failed to update role:', error);
+      showActionError('Could not switch role', error, () => handleRoleToggle());
     }
   };
 
@@ -375,7 +456,7 @@ export default function VaultsPage() {
       }
     } catch (error) {
       console.error('Failed to create campaign:', error);
-      alert('Failed to create campaign. Please try again.');
+      showActionError('Could not create vault', error, () => handleCreateCampaign(info));
     }
   };
 
@@ -392,7 +473,7 @@ export default function VaultsPage() {
       return false;
     } catch (error: any) {
       console.error('Failed to join campaign:', error);
-      alert(error.message || 'Failed to join campaign. Please try again.');
+      showActionError('Could not join vault', error, () => handleJoinCampaign(campaignId, password));
       return false;
     }
   };
@@ -408,7 +489,7 @@ export default function VaultsPage() {
       }
     } catch (error) {
       console.error('Failed to delete campaign:', error);
-      alert('Failed to delete vault. Please try again.');
+      showActionError('Could not delete vault', error, () => handleDeleteCampaign(campaignId));
     }
   };
 
@@ -476,8 +557,7 @@ export default function VaultsPage() {
         setTimeout(() => setTransferSentInfo(null), 5000);
       } catch (error) {
         console.error('Failed to create transfer request:', error);
-        setShowError(true);
-        setTimeout(() => setShowError(false), 3000);
+        showActionError('Could not send transfer request', error, () => handleMoveItem(itemId, fromId, toId));
       }
     } else {
       // Direct move (DM, or to/from shared loot, or to own inventory)
@@ -492,8 +572,7 @@ export default function VaultsPage() {
         );
       } catch (error) {
         console.error('Failed to move item:', error);
-        setShowError(true);
-        setTimeout(() => setShowError(false), 3000);
+        showActionError('Could not move item', error, () => handleMoveItem(itemId, fromId, toId));
       }
     }
   };
@@ -501,13 +580,25 @@ export default function VaultsPage() {
   // Handle accepting a transfer request
   const handleAcceptTransfer = async (request: TransferRequest) => {
     if (!currentCampaignId || !userId) return;
-    await acceptTransferRequest(currentCampaignId, request.id, userId);
+    try {
+      await acceptTransferRequest(currentCampaignId, request.id, userId);
+    } catch (error) {
+      console.error('Failed to accept transfer:', error);
+      showActionError('Could not accept transfer', error, () => handleAcceptTransfer(request));
+      throw error;
+    }
   };
 
   // Handle rejecting a transfer request
   const handleRejectTransfer = async (request: TransferRequest) => {
     if (!currentCampaignId) return;
-    await rejectTransferRequest(currentCampaignId, request.id);
+    try {
+      await rejectTransferRequest(currentCampaignId, request.id);
+    } catch (error) {
+      console.error('Failed to reject transfer:', error);
+      showActionError('Could not reject transfer', error, () => handleRejectTransfer(request));
+      throw error;
+    }
   };
 
   // Currency change
@@ -521,6 +612,7 @@ export default function VaultsPage() {
       }
     } catch (error) {
       console.error('Failed to update currency:', error);
+      showActionError('Could not update currency', error, () => handleCurrencyChange(playerId, currency));
     }
   };
 
@@ -535,6 +627,130 @@ export default function VaultsPage() {
       }
     } catch (error) {
       console.error('Failed to update max weight:', error);
+      showActionError('Could not update carry limit', error, () => handleMaxWeightChange(playerId, newMax));
+    }
+  };
+
+  const handleAddItem = async (item: Omit<Item, 'id'>) => {
+    if (!currentCampaignId || !currentCampaign) return;
+
+    try {
+      if (isShared) {
+        const existingIndex = currentCampaign.sharedLoot.findIndex(
+          (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+        );
+
+        let updatedShared: Item[];
+        if (existingIndex >= 0) {
+          updatedShared = [...currentCampaign.sharedLoot];
+          updatedShared[existingIndex].quantity += item.quantity;
+        } else {
+          const newItem: Item = {
+            ...item,
+            id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          };
+          updatedShared = [...currentCampaign.sharedLoot, newItem];
+        }
+        await updateSharedLoot(currentCampaignId, updatedShared);
+      } else if (selectedPlayer) {
+        const existingIndex = selectedPlayer.inventory.findIndex(
+          (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+        );
+
+        let updatedInventory: Item[];
+        if (existingIndex >= 0) {
+          updatedInventory = [...selectedPlayer.inventory];
+          updatedInventory[existingIndex].quantity += item.quantity;
+        } else {
+          const newItem: Item = {
+            ...item,
+            id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          };
+          updatedInventory = [...selectedPlayer.inventory, newItem];
+        }
+        await updatePlayerInventory(currentCampaignId, selectedPlayerId as string, updatedInventory, selectedPlayer.currency);
+      }
+
+      setShowAddItemModal(false);
+    } catch (error) {
+      console.error('Failed to add item:', error);
+      showActionError('Could not add item', error, () => handleAddItem(item));
+    }
+  };
+
+  const handleUpdateSelectedItem = async (baseItem: Item, updates: Partial<Item>) => {
+    if (!currentCampaignId || !currentCampaign) return;
+
+    const updatedItem = { ...baseItem, ...updates };
+
+    try {
+      if (selectedPlayerId === 'shared') {
+        const sharedIndex = currentCampaign.sharedLoot.findIndex((i) => i.id === baseItem.id);
+        if (sharedIndex >= 0) {
+          const updatedShared = [...currentCampaign.sharedLoot];
+          updatedShared[sharedIndex] = updatedItem;
+          await updateSharedLoot(currentCampaignId, updatedShared);
+          setSelectedItem(updatedItem);
+        }
+      } else {
+        const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
+        if (player) {
+          const itemIndex = player.inventory.findIndex((i) => i.id === baseItem.id);
+          if (itemIndex >= 0) {
+            const updatedInventory = [...player.inventory];
+            updatedInventory[itemIndex] = updatedItem;
+            await updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight);
+            setSelectedItem(updatedItem);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to update item:', error);
+      showActionError('Could not update item', error, () => handleUpdateSelectedItem(baseItem, updates));
+    }
+  };
+
+  const handleDeleteSelectedItem = async (baseItem: Item) => {
+    if (!currentCampaignId || !currentCampaign) return;
+
+    try {
+      if (selectedPlayerId === 'shared') {
+        const sharedIndex = currentCampaign.sharedLoot.findIndex((i) => i.id === baseItem.id);
+        if (sharedIndex < 0) {
+          setSelectedItem(null);
+          return;
+        }
+        const updatedShared = [...currentCampaign.sharedLoot];
+        if (updatedShared[sharedIndex].quantity > 1) {
+          updatedShared[sharedIndex] = { ...updatedShared[sharedIndex], quantity: updatedShared[sharedIndex].quantity - 1 };
+        } else {
+          updatedShared.splice(sharedIndex, 1);
+        }
+        await updateSharedLoot(currentCampaignId, updatedShared);
+      } else {
+        const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
+        if (!player) {
+          setSelectedItem(null);
+          return;
+        }
+        const itemIndex = player.inventory.findIndex((i) => i.id === baseItem.id);
+        if (itemIndex < 0) {
+          setSelectedItem(null);
+          return;
+        }
+        const updatedInventory = [...player.inventory];
+        if (updatedInventory[itemIndex].quantity > 1) {
+          updatedInventory[itemIndex] = { ...updatedInventory[itemIndex], quantity: updatedInventory[itemIndex].quantity - 1 };
+        } else {
+          updatedInventory.splice(itemIndex, 1);
+        }
+        await updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight);
+      }
+
+      setSelectedItem(null);
+    } catch (error) {
+      console.error('Failed to delete item:', error);
+      showActionError('Could not delete item', error, () => handleDeleteSelectedItem(baseItem));
     }
   };
 
@@ -580,14 +796,26 @@ export default function VaultsPage() {
 
   if (!currentCampaignId) {
     return (
-      <HomePage
-        vaults={vaults}
-        userType={userRole === 'dm' ? 'dm' : 'player'}
-        onSelectVault={handleSelectCampaign}
-        onCreateVault={handleCreateCampaign}
-        onJoinVault={handleJoinCampaign}
-        onDeleteVault={handleDeleteCampaign}
-      />
+      <>
+        <HomePage
+          vaults={vaults}
+          userType={userRole === 'dm' ? 'dm' : 'player'}
+          onSelectVault={handleSelectCampaign}
+          onCreateVault={handleCreateCampaign}
+          onJoinVault={handleJoinCampaign}
+          onDeleteVault={handleDeleteCampaign}
+        />
+        {actionError && (
+          <ActionErrorToast
+            title={actionError.title}
+            description={actionError.description}
+            onDismiss={() => setActionError(null)}
+            onRetry={actionError.onRetry ? () => void handleRetryAction() : undefined}
+            retryLabel={actionError.retryLabel}
+            retrying={isRetryingAction}
+          />
+        )}
+      </>
     );
   }
 
@@ -637,57 +865,7 @@ export default function VaultsPage() {
             targetName={isShared ? 'Shared Loot' : (selectedPlayer?.name ?? 'Unknown')}
             isDM={isDM}
             templateItems={TEMPLATE_ITEMS}
-            onAdd={async (item: Omit<Item, 'id'>) => {
-              if (!currentCampaignId || !currentCampaign) return;
-
-              try {
-                if (isShared) {
-                  // Check if item already exists in shared loot
-                  const existingIndex = currentCampaign.sharedLoot.findIndex(
-                    (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
-                  );
-                  
-                  let updatedShared: Item[];
-                  if (existingIndex >= 0) {
-                    // Stack items by increasing quantity
-                    updatedShared = [...currentCampaign.sharedLoot];
-                    updatedShared[existingIndex].quantity += item.quantity;
-                  } else {
-                    // Add as new item
-                    const newItem: Item = {
-                      ...item,
-                      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    };
-                    updatedShared = [...currentCampaign.sharedLoot, newItem];
-                  }
-                  await updateSharedLoot(currentCampaignId, updatedShared);
-                } else if (selectedPlayer) {
-                  // Check if item already exists in player inventory
-                  const existingIndex = selectedPlayer.inventory.findIndex(
-                    (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
-                  );
-                  
-                  let updatedInventory: Item[];
-                  if (existingIndex >= 0) {
-                    // Stack items by increasing quantity
-                    updatedInventory = [...selectedPlayer.inventory];
-                    updatedInventory[existingIndex].quantity += item.quantity;
-                  } else {
-                    // Add as new item
-                    const newItem: Item = {
-                      ...item,
-                      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    };
-                    updatedInventory = [...selectedPlayer.inventory, newItem];
-                  }
-                  await updatePlayerInventory(currentCampaignId, selectedPlayerId as string, updatedInventory, selectedPlayer.currency);
-                }
-                setShowAddItemModal(false);
-              } catch (error) {
-                console.error('Failed to add item:', error);
-                alert('Failed to add item. Please try again.');
-              }
-            }}
+            onAdd={handleAddItem}
           />
         )}
 
@@ -695,72 +873,8 @@ export default function VaultsPage() {
           <ItemDetailsModal
             item={selectedItem}
             onClose={() => setSelectedItem(null)}
-            onUpdate={async (updates: Partial<Item>) => {
-              if (!currentCampaignId || !currentCampaign) return;
-
-              const updatedItem = { ...selectedItem, ...updates };
-
-              try {
-                if (selectedPlayerId === 'shared') {
-                  const sharedIndex = currentCampaign.sharedLoot.findIndex((i) => i.id === selectedItem.id);
-                  if (sharedIndex >= 0) {
-                    const updatedShared = [...currentCampaign.sharedLoot];
-                    updatedShared[sharedIndex] = updatedItem;
-                    await updateSharedLoot(currentCampaignId, updatedShared);
-                    setSelectedItem(updatedItem);
-                  }
-                } else {
-                  const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
-                  if (player) {
-                    const itemIndex = player.inventory.findIndex((i) => i.id === selectedItem.id);
-                    if (itemIndex >= 0) {
-                      const updatedInventory = [...player.inventory];
-                      updatedInventory[itemIndex] = updatedItem;
-                      await updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight);
-                      setSelectedItem(updatedItem);
-                    }
-                  }
-                }
-              } catch (error: any) {
-                console.error('Failed to update item:', error);
-                alert(`Failed to update item: ${error?.message || 'Please try again.'}`);
-              }
-            }}
-            onDelete={async () => {
-              if (!currentCampaignId || !currentCampaign) return;
-
-              try {
-                if (selectedPlayerId === 'shared') {
-                  // Remove one unit from shared loot
-                  const sharedIndex = currentCampaign.sharedLoot.findIndex((i) => i.id === selectedItem.id);
-                  if (sharedIndex < 0) { setSelectedItem(null); return; }
-                  const updatedShared = [...currentCampaign.sharedLoot];
-                  if (updatedShared[sharedIndex].quantity > 1) {
-                    updatedShared[sharedIndex] = { ...updatedShared[sharedIndex], quantity: updatedShared[sharedIndex].quantity - 1 };
-                  } else {
-                    updatedShared.splice(sharedIndex, 1);
-                  }
-                  await updateSharedLoot(currentCampaignId, updatedShared);
-                } else {
-                  // Remove one unit from the specific player's inventory
-                  const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
-                  if (!player) { setSelectedItem(null); return; }
-                  const itemIndex = player.inventory.findIndex((i) => i.id === selectedItem.id);
-                  if (itemIndex < 0) { setSelectedItem(null); return; }
-                  const updatedInventory = [...player.inventory];
-                  if (updatedInventory[itemIndex].quantity > 1) {
-                    updatedInventory[itemIndex] = { ...updatedInventory[itemIndex], quantity: updatedInventory[itemIndex].quantity - 1 };
-                  } else {
-                    updatedInventory.splice(itemIndex, 1);
-                  }
-                  await updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight);
-                }
-                setSelectedItem(null);
-              } catch (error: any) {
-                console.error('Failed to delete item:', error);
-                alert(`Failed to delete item: ${error?.message || 'Please try again.'}`);
-              }
-            }}
+            onUpdate={(updates: Partial<Item>) => handleUpdateSelectedItem(selectedItem, updates)}
+            onDelete={() => handleDeleteSelectedItem(selectedItem)}
           />
         )}
 
@@ -776,14 +890,15 @@ export default function VaultsPage() {
           />
         )}
 
-        {/* Error Toast Notification */}
-        {showError && (
-          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in duration-300">
-            <div className="bg-[#8B3A3A] text-white px-6 py-3 rounded-lg shadow-lg border border-[#6B2020] flex items-center gap-2">
-              <div className="w-2 h-2 bg-white rounded-full"></div>
-              <span className="text-sm font-medium">You aren't allowed to do that action</span>
-            </div>
-          </div>
+        {actionError && (
+          <ActionErrorToast
+            title={actionError.title}
+            description={actionError.description}
+            onDismiss={() => setActionError(null)}
+            onRetry={actionError.onRetry ? () => void handleRetryAction() : undefined}
+            retryLabel={actionError.retryLabel}
+            retrying={isRetryingAction}
+          />
         )}
 
         {/* Transfer Request Modal - show the first pending request */}

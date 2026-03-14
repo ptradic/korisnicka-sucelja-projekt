@@ -42,6 +42,7 @@ import {
   checkAndExpirePendingTransfers,
   getPlayerInventory,
   deleteCampaign,
+  updateCampaignSettings,
 } from '@/src/firebaseService';
 import type { CampaignDoc, PlayerInventoryDoc, TransferRequest } from '@/src/firebaseService';
 
@@ -513,6 +514,32 @@ export default function VaultsPage() {
     }
   };
 
+  const handleUpdateCampaignSettings = async (updates: { name: string; password: string }) => {
+    if (!currentCampaignId || !userId || !currentCampaign) return;
+
+    try {
+      await updateCampaignSettings(currentCampaignId, userId, updates);
+
+      setCurrentCampaign({
+        ...currentCampaign,
+        name: updates.name,
+        password: updates.password,
+      });
+
+      setCampaigns((prev) =>
+        prev.map((campaign) =>
+          campaign.id === currentCampaignId
+            ? { ...campaign, name: updates.name, password: updates.password }
+            : campaign
+        )
+      );
+    } catch (error) {
+      console.error('Failed to update vault settings:', error);
+      showActionError('Could not update vault settings', error, () => handleUpdateCampaignSettings(updates));
+      throw error;
+    }
+  };
+
   const handleBackToHome = () => {
     setCurrentCampaignId(null);
     setCurrentCampaign(null);
@@ -875,8 +902,10 @@ export default function VaultsPage() {
             sharedLootCount={currentCampaign?.sharedLoot.length || 0}
             campaignName={currentCampaign?.name ?? 'Campaign'}
             campaignId={currentCampaignId ?? undefined}
+            campaignPassword={currentCampaign?.password || ''}
             isDM={isDM}
             totalSlots={currentCampaign?.playerIds.length || players.length}
+            onUpdateCampaignSettings={isDM ? handleUpdateCampaignSettings : undefined}
           />
           <div className="flex-1 min-w-0">
             <InventoryView

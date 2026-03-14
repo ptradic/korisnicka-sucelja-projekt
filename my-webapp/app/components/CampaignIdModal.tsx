@@ -41,7 +41,7 @@ export function CampaignIdModal({ campaignId, campaignName, onClose }: CampaignI
         {/* Content */}
         <div className="p-6 space-y-4">
           <div className="bg-white/50 border-2 border-[#8B6F47] rounded-xl p-4">
-            <p className="text-[#3D1409] font-semibold mb-2 text-sm">Campaign ID</p>
+            <p className="text-[#3D1409] font-semibold mb-2 text-sm">Invite Code</p>
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-white border-2 border-[#8B6F47] rounded-lg px-4 py-3 font-mono text-2xl tracking-widest text-[#3D1409] text-center font-bold">
                 {campaignId}
@@ -58,7 +58,7 @@ export function CampaignIdModal({ campaignId, campaignName, onClose }: CampaignI
 
           <div className="bg-[#5C1A1A]/5 border-2 border-[#5C1A1A]/20 rounded-xl p-4">
             <p className="text-sm text-[#3D1409] leading-relaxed">
-              <span className="font-semibold">Share this ID with your players!</span> They'll need it to join your campaign. 
+              <span className="font-semibold">Share this invite code with your players!</span> They'll need it to join your campaign. 
               Make sure to also share the campaign password with them.
             </p>
           </div>

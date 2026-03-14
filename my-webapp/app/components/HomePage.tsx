@@ -524,7 +524,7 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
       setSuccess(true);
       setTimeout(() => onClose(), 1500);
     } else {
-      setError('Campaign not found or incorrect password. Please check the Campaign ID and try again.');
+      setError('Campaign not found or incorrect password. Please check the Invite Code and try again.');
     }
   };
 
@@ -548,7 +548,7 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
             </div>
             <div>
               <h2 className="text-xl font-extrabold text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Join Campaign</h2>
-              <p className="text-[#5C4A2F] text-sm mt-0.5">Enter the campaign ID and password from your GM</p>
+              <p className="text-[#5C4A2F] text-sm mt-0.5">Enter the invite code and password from your GM</p>
             </div>
           </div>
           <button
@@ -563,12 +563,12 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
         <div className="mx-6 border-t-2 border-[#DCC8A8]" />
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Campaign ID */}
+          {/* Invite Code */}
           <div>
             <label className="block text-[#3D1409] font-semibold text-sm mb-2">
-              Campaign ID <span className="text-[#8B3A3A]">*</span>
+              Invite Code <span className="text-[#8B3A3A]">*</span>
             </label>
-            <p className="text-[#5C4A2F] text-xs mb-2">Ask your GM for the 8-character campaign code</p>
+            <p className="text-[#5C4A2F] text-xs mb-2">Ask your GM for the 8-character invite code</p>
             <div className="relative">
               <Scroll className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B6F47]" />
               <input

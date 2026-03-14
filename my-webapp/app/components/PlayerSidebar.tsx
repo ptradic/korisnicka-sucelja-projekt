@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrop, useDragLayer } from 'react-dnd';
-import { Package, Users, User, Copy, Check } from 'lucide-react';
+import { Package, Users, User, Copy, Check, Settings, X, Eye, EyeOff, Save } from 'lucide-react';
 import type { Player } from '../types';
 
 interface PlayerSidebarProps {
@@ -13,8 +13,139 @@ interface PlayerSidebarProps {
   sharedLootCount: number;
   campaignName: string;
   campaignId?: string;
+  campaignPassword?: string;
   isDM?: boolean;
   totalSlots: number;
+  onUpdateCampaignSettings?: (updates: { name: string; password: string }) => Promise<void>;
+}
+
+function VaultSettingsModal({
+  campaignId,
+  initialName,
+  initialPassword,
+  onClose,
+  onSave,
+}: {
+  campaignId: string;
+  initialName: string;
+  initialPassword: string;
+  onClose: () => void;
+  onSave: (updates: { name: string; password: string }) => Promise<void>;
+}) {
+  const [name, setName] = useState(initialName);
+  const [password, setPassword] = useState(initialPassword);
+  const [copied, setCopied] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(campaignId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  const handleSave = async () => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError('Vault name is required.');
+      return;
+    }
+    if (!password.trim()) {
+      setError('Password is required.');
+      return;
+    }
+
+    setError('');
+    setSaving(true);
+    try {
+      await onSave({ name: trimmedName, password: password.trim() });
+      onClose();
+    } catch (e: any) {
+      setError(e?.message || 'Could not save vault settings.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-60">
+      <div
+        className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-md w-full shadow-2xl"
+        style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}
+      >
+        <div className="p-5 pb-3 flex items-start justify-between border-b-2 border-[#DCC8A8]">
+          <div>
+            <h2 className="text-lg font-extrabold text-[#3D1409]">Vault Settings</h2>
+            <p className="text-[#5C4A2F] text-xs">GM only</p>
+          </div>
+          <button onClick={onClose} className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="bg-white/50 border-2 border-[#8B6F47] rounded-xl p-3">
+            <label className="block text-[#3D1409] font-semibold text-sm mb-2">Invite Code</label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-white border-2 border-[#8B6F47] rounded-lg px-3 py-2 font-mono text-base tracking-widest text-[#3D1409] text-center font-bold">
+                {campaignId}
+              </div>
+              <button onClick={handleCopy} className="btn-primary !p-2.5 rounded-lg" title="Copy invite code">
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-[#5C4A2F] text-xs mt-2">
+              Give this invite code to players so they can join this vault.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-1">Vault Name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C1A1A]"
+              placeholder="Enter vault name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-1">Vault Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 pr-10 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C1A1A]"
+                placeholder="Enter vault password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#8B6F47] hover:text-[#5C1A1A]"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <p className="text-xs text-[#8B3A3A] bg-[#FFEBEE] border border-[#8B3A3A]/30 rounded-lg px-2 py-1.5">{error}</p>
+          )}
+
+          <div className="flex gap-2">
+            <button onClick={onClose} className="btn-secondary flex-1 text-sm !py-2">Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 text-sm !py-2 disabled:opacity-60">
+              <Save className="w-4 h-4" />
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /*  Compact pill for mobile horizontal bar  */
@@ -327,17 +458,12 @@ export function PlayerSidebar({
   sharedLootCount,
   campaignName,
   campaignId,
+  campaignPassword,
   isDM,
   totalSlots,
+  onUpdateCampaignSettings,
 }: PlayerSidebarProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopyId = () => {
-    if (!campaignId) return;
-    navigator.clipboard.writeText(campaignId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const { isDragging: isAnyDragging } = useDragLayer((monitor) => ({
     isDragging: monitor.isDragging(),
   }));
@@ -371,13 +497,14 @@ export function PlayerSidebar({
         {/* Campaign name */}
         <div className="flex items-center gap-2 mb-2">
           <h2 className="text-[#3D1409] text-sm font-bold truncate flex-1">{campaignName}</h2>
-          {isDM && campaignId && (
+          {isDM && campaignId && onUpdateCampaignSettings && (
             <button
-              onClick={handleCopyId}
-              title={copied ? 'Copied!' : 'Copy campaign ID'}
+              onClick={() => setShowSettingsModal(true)}
+              title="Vault settings"
               className="flex items-center gap-1 px-1.5 py-0.5 bg-white/60 hover:bg-white border border-[#8B6F47]/50 rounded text-[10px] font-bold text-[#5C1A1A] transition-all shrink-0"
             >
-              {copied ? <><Check className="w-3 h-3 text-green-600" /> <span className="text-green-600">Copied</span></> : <><Copy className="w-3 h-3" /> <span>ID</span></>}
+              <Settings className="w-3 h-3" />
+              <span>Settings</span>
             </button>
           )}
         </div>
@@ -417,13 +544,14 @@ export function PlayerSidebar({
             <h2 className="text-[#3D1409] text-sm font-bold truncate leading-tight flex-1">
               {campaignName}
             </h2>
-            {isDM && campaignId && (
+            {isDM && campaignId && onUpdateCampaignSettings && (
               <button
-                onClick={handleCopyId}
-                title={copied ? 'Copied!' : 'Copy campaign ID'}
+                onClick={() => setShowSettingsModal(true)}
+                title="Vault settings"
                 className="flex items-center gap-1 px-1.5 py-0.5 bg-white/60 hover:bg-white border border-[#8B6F47]/50 rounded text-[10px] font-bold text-[#5C1A1A] transition-all shrink-0"
               >
-                {copied ? <><Check className="w-3 h-3 text-green-600" /><span className="text-green-600">Copied</span></> : <><Copy className="w-3 h-3" /><span>ID</span></>}
+                <Settings className="w-3 h-3" />
+                <span>Settings</span>
               </button>
             )}
           </div>
@@ -474,6 +602,16 @@ export function PlayerSidebar({
           </div>
         </div>
       </div>
+
+      {showSettingsModal && isDM && campaignId && onUpdateCampaignSettings && (
+        <VaultSettingsModal
+          campaignId={campaignId}
+          initialName={campaignName}
+          initialPassword={campaignPassword || ''}
+          onClose={() => setShowSettingsModal(false)}
+          onSave={onUpdateCampaignSettings}
+        />
+      )}
     </>
   );
 }

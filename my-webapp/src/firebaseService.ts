@@ -224,6 +224,26 @@ export async function getCampaign(campaignId: string): Promise<CampaignDoc | nul
   return null;
 }
 
+export async function updateCampaignSettings(
+  campaignId: string,
+  dmId: string,
+  updates: { name: string; password: string }
+): Promise<void> {
+  const campaign = await getCampaign(campaignId);
+  if (!campaign) {
+    throw new Error('Campaign not found');
+  }
+  if (campaign.dmId !== dmId) {
+    throw new Error('Only the campaign DM can update vault settings.');
+  }
+
+  await updateDoc(doc(db, 'campaigns', campaignId), {
+    name: updates.name.trim(),
+    password: updates.password,
+    updatedAt: serverTimestamp(),
+  });
+}
+
 export async function deleteCampaign(campaignId: string, dmId: string): Promise<void> {
   const batch = writeBatch(db);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DndProvider } from 'react-dnd-multi-backend';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -217,6 +217,16 @@ export default function VaultsPage() {
   const [expiredTransferInfo, setExpiredTransferInfo] = useState<{ playerName: string; itemName: string; isReceiver: boolean } | null>(null);
   const [actionError, setActionError] = useState<VaultActionError | null>(null);
   const [isRetryingAction, setIsRetryingAction] = useState(false);
+  const [pendingWriteCount, setPendingWriteCount] = useState(0);
+
+  const trackWrite = useCallback(async <T,>(writeOperation: () => Promise<T>): Promise<T> => {
+    setPendingWriteCount((count) => count + 1);
+    try {
+      return await writeOperation();
+    } finally {
+      setPendingWriteCount((count) => Math.max(0, count - 1));
+    }
+  }, []);
 
   const getFirebaseErrorMessage = (error: unknown, fallback: string) => {
     const message = error instanceof Error ? error.message : String(error ?? '');
@@ -444,7 +454,7 @@ export default function VaultsPage() {
     if (!userId) return;
     const newRole = userRole === 'dm' ? 'player' : 'dm';
     try {
-      await updateUserRole(userId, newRole);
+      await trackWrite(() => updateUserRole(userId, newRole));
       setUserRole(newRole);
       setCampaigns([]);
       setCurrentCampaignId(null);
@@ -467,7 +477,7 @@ export default function VaultsPage() {
     if (!userId) return;
     
     try {
-      const campaignId = await createCampaign(userId, userName, info.name, info.description, info.password);
+      const campaignId = await trackWrite(() => createCampaign(userId, userName, info.name, info.description, info.password));
       const newCampaign = await getCampaign(campaignId);
       if (newCampaign) {
         setCampaigns([...campaigns, newCampaign]);
@@ -485,7 +495,7 @@ export default function VaultsPage() {
     if (!userId) return false;
     
     try {
-      await joinCampaign(campaignId, userId, userName, password);
+      await trackWrite(() => joinCampaign(campaignId, userId, userName, password));
       const campaign = await getCampaign(campaignId);
       if (campaign) {
         setCampaigns([...campaigns, campaign]);
@@ -502,7 +512,7 @@ export default function VaultsPage() {
   const handleDeleteCampaign = async (campaignId: string) => {
     if (!userId) return;
     try {
-      await deleteCampaign(campaignId, userId);
+      await trackWrite(() => deleteCampaign(campaignId, userId));
       setCampaigns(campaigns.filter((c) => c.id !== campaignId));
       if (currentCampaignId === campaignId) {
         setCurrentCampaignId(null);
@@ -518,7 +528,7 @@ export default function VaultsPage() {
     if (!currentCampaignId || !userId || !currentCampaign) return;
 
     try {
-      await updateCampaignSettings(currentCampaignId, userId, updates);
+      await trackWrite(() => updateCampaignSettings(currentCampaignId, userId, updates));
 
       setCurrentCampaign({
         ...currentCampaign,
@@ -605,14 +615,14 @@ export default function VaultsPage() {
         const recipientName = recipientInventory?.playerName || 'Unknown Player';
         const senderName = sourceInventory?.playerName || userName;
 
-        await createTransferRequest(
+        await trackWrite(() => createTransferRequest(
           currentCampaignId,
           item,
           fromId,
           senderName,
           toId,
           recipientName
-        );
+        ));
 
         // Show toast notification with expiration time
         const expiresAt = new Date(Date.now() + 10 * 1000); // 10 seconds from now
@@ -626,14 +636,14 @@ export default function VaultsPage() {
     } else {
       // Direct move (DM, or to/from shared loot, or to own inventory)
       try {
-        await moveItemBetweenInventories(
+        await trackWrite(() => moveItemBetweenInventories(
           currentCampaignId, 
           itemId, 
           fromId, 
           toId,
           userId,
           isDM
-        );
+        ));
       } catch (error) {
         console.error('Failed to move item:', error);
         showActionError('Could not move item', error, () => handleMoveItem(itemId, fromId, toId));
@@ -645,7 +655,7 @@ export default function VaultsPage() {
   const handleAcceptTransfer = async (request: TransferRequest) => {
     if (!currentCampaignId || !userId) return;
     try {
-      await acceptTransferRequest(currentCampaignId, request.id, userId);
+      await trackWrite(() => acceptTransferRequest(currentCampaignId, request.id, userId));
     } catch (error) {
       console.error('Failed to accept transfer:', error);
       showActionError('Could not accept transfer', error, () => handleAcceptTransfer(request));
@@ -657,7 +667,7 @@ export default function VaultsPage() {
   const handleRejectTransfer = async (request: TransferRequest) => {
     if (!currentCampaignId) return;
     try {
-      await rejectTransferRequest(currentCampaignId, request.id);
+      await trackWrite(() => rejectTransferRequest(currentCampaignId, request.id));
     } catch (error) {
       console.error('Failed to reject transfer:', error);
       showActionError('Could not reject transfer', error, () => handleRejectTransfer(request));
@@ -672,7 +682,7 @@ export default function VaultsPage() {
     try {
       const playerInv = playerInventories.find((p) => p.playerId === playerId);
       if (playerInv) {
-        await updatePlayerInventory(currentCampaignId, playerId, playerInv.inventory, currency);
+        await trackWrite(() => updatePlayerInventory(currentCampaignId, playerId, playerInv.inventory, currency));
       }
     } catch (error) {
       console.error('Failed to update currency:', error);
@@ -687,7 +697,7 @@ export default function VaultsPage() {
     try {
       const playerInv = playerInventories.find((p) => p.playerId === playerId);
       if (playerInv) {
-        await updatePlayerInventory(currentCampaignId, playerId, playerInv.inventory, playerInv.currency, newMax);
+        await trackWrite(() => updatePlayerInventory(currentCampaignId, playerId, playerInv.inventory, playerInv.currency, newMax));
       }
     } catch (error) {
       console.error('Failed to update max weight:', error);
@@ -715,7 +725,7 @@ export default function VaultsPage() {
           };
           updatedShared = [...currentCampaign.sharedLoot, newItem];
         }
-        await updateSharedLoot(currentCampaignId, updatedShared);
+        await trackWrite(() => updateSharedLoot(currentCampaignId, updatedShared));
       } else if (selectedPlayer) {
         const existingIndex = selectedPlayer.inventory.findIndex(
           (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
@@ -732,7 +742,7 @@ export default function VaultsPage() {
           };
           updatedInventory = [...selectedPlayer.inventory, newItem];
         }
-        await updatePlayerInventory(currentCampaignId, selectedPlayerId as string, updatedInventory, selectedPlayer.currency);
+        await trackWrite(() => updatePlayerInventory(currentCampaignId, selectedPlayerId as string, updatedInventory, selectedPlayer.currency));
       }
 
       setShowAddItemModal(false);
@@ -753,7 +763,7 @@ export default function VaultsPage() {
         if (sharedIndex >= 0) {
           const updatedShared = [...currentCampaign.sharedLoot];
           updatedShared[sharedIndex] = updatedItem;
-          await updateSharedLoot(currentCampaignId, updatedShared);
+          await trackWrite(() => updateSharedLoot(currentCampaignId, updatedShared));
           setSelectedItem(updatedItem);
         }
       } else {
@@ -763,7 +773,7 @@ export default function VaultsPage() {
           if (itemIndex >= 0) {
             const updatedInventory = [...player.inventory];
             updatedInventory[itemIndex] = updatedItem;
-            await updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight);
+            await trackWrite(() => updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight));
             setSelectedItem(updatedItem);
           }
         }
@@ -790,7 +800,7 @@ export default function VaultsPage() {
         } else {
           updatedShared.splice(sharedIndex, 1);
         }
-        await updateSharedLoot(currentCampaignId, updatedShared);
+        await trackWrite(() => updateSharedLoot(currentCampaignId, updatedShared));
       } else {
         const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
         if (!player) {
@@ -808,7 +818,7 @@ export default function VaultsPage() {
         } else {
           updatedInventory.splice(itemIndex, 1);
         }
-        await updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight);
+        await trackWrite(() => updatePlayerInventory(currentCampaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight));
       }
 
       setSelectedItem(null);
@@ -832,6 +842,7 @@ export default function VaultsPage() {
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId);
   const isShared = selectedPlayerId === 'shared';
   const isDM = userRole === 'dm';
+  const syncStatus: 'saving' | 'saved' = pendingWriteCount > 0 ? 'saving' : 'saved';
   const isRestoringCampaign = Boolean(
     requestedCampaignId &&
     !currentCampaignId &&
@@ -925,6 +936,7 @@ export default function VaultsPage() {
               currency={isShared ? undefined : selectedPlayer?.currency}
               onCurrencyChange={isShared ? undefined : (c: Currency) => handleCurrencyChange(selectedPlayerId, c)}
               isShared={isShared}
+              syncStatus={syncStatus}
             />
           </div>
         </div>

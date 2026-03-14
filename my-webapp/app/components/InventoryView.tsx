@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
@@ -18,6 +18,7 @@ interface InventoryViewProps {
   currency?: Currency;
   onCurrencyChange?: (currency: Currency) => void;
   isShared?: boolean;
+  syncStatus?: 'saving' | 'saved';
 }
 
 // Simple inline coin display — click to edit
@@ -179,6 +180,7 @@ export function InventoryView({
   currency,
   onCurrencyChange,
   isShared,
+  syncStatus = 'saved',
 }: InventoryViewProps) {
   type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
   type SortDirection = 'asc' | 'desc';
@@ -198,10 +200,12 @@ export function InventoryView({
   const [sortField, setSortField] = useState<SortField>('none');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const [showHelpOverlay, setShowHelpOverlay] = useState(false);
   const [isEditingMaxWeight, setIsEditingMaxWeight] = useState(false);
   const [maxWeightEditValue, setMaxWeightEditValue] = useState('');
   const itemListRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const helpSeenKey = 'vault-inventory-help-seen';
 
   // Enable auto-scroll when dragging items near the top
   useAutoScroll(itemListRef, { scrollThreshold: 100, scrollSpeed: 10 });
@@ -271,6 +275,27 @@ export function InventoryView({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem(helpSeenKey);
+      if (!seen) {
+        setShowHelpOverlay(true);
+      }
+    } catch {
+      // Ignore storage errors and keep default behavior.
+    }
+  }, []);
+
+  const closeHelpOverlay = (markSeen: boolean) => {
+    setShowHelpOverlay(false);
+    if (!markSeen) return;
+    try {
+      localStorage.setItem(helpSeenKey, '1');
+    } catch {
+      // Ignore storage errors.
+    }
+  };
+
   const selectedFilterLabel =
     selectedCategory === 'all'
       ? 'All items'
@@ -284,14 +309,31 @@ export function InventoryView({
       {/* Header */}
       <div className="bg-[#F5EFE0] border-b-[3px] border-[#3D1409] px-4 py-3 sm:px-5 sm:py-4 shadow-md">
         {/* Owner name + item count */}
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <div className="min-w-0">
+        <div className="relative flex items-start gap-2 mb-2">
+          <div className="min-w-0 pr-16">
             <h2 className="text-[#3D1409] text-base sm:text-lg font-bold truncate">
               {owner?.name || 'Unknown'}
             </h2>
             <span className="text-[#8B6F47] text-xs">
               {inventory.length} {inventory.length === 1 ? 'item' : 'items'}
             </span>
+          </div>
+          <div
+            className={
+              'absolute top-0 right-0 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-semibold ' +
+              (syncStatus === 'saving'
+                ? 'text-amber-700'
+                : 'text-emerald-700')
+            }
+            title={syncStatus === 'saving' ? 'Firebase write in progress' : 'All changes saved to Firebase'}
+          >
+            <span
+              className={
+                'w-1.5 h-1.5 rounded-full ' +
+                (syncStatus === 'saving' ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500')
+              }
+            />
+            {syncStatus === 'saving' ? 'Saving…' : 'Saved'}
           </div>
         </div>
 
@@ -500,6 +542,13 @@ export function InventoryView({
               </div>
             )}
           </div>
+          <button
+            onClick={() => setShowHelpOverlay(true)}
+            title="Inventory help"
+            className="btn-secondary shrink-0 w-9 h-9 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]"
+          >
+            <CircleHelp className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -564,6 +613,54 @@ export function InventoryView({
           <span>Add Item</span>
         </button>
       </div>
+
+      {showHelpOverlay && (
+        <div
+          className="fixed inset-0 z-60 bg-black/40 backdrop-blur-[1px] flex items-center justify-center p-4"
+          onClick={() => closeHelpOverlay(true)}
+        >
+          <div
+            className="w-full max-w-md bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl p-5 shadow-2xl"
+            style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2">
+                <CircleHelp className="w-5 h-5 text-[#5C1A1A]" />
+                <h3 className="text-[#3D1409] font-extrabold text-base">Quick Vault Help</h3>
+              </div>
+              <button
+                onClick={() => closeHelpOverlay(true)}
+                className="btn-ghost !p-1 border-transparent text-[#8B6F47] hover:text-[#3D1409]"
+                title="Close help"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-sm text-[#3D1409]">
+              <p><span className="font-semibold">Drag and drop:</span> drag any item card and drop it on a player in the sidebar.</p>
+              <p><span className="font-semibold">Shared loot:</span> drop items onto Shared Loot to make them available to everyone.</p>
+              <p><span className="font-semibold">Sort and filter:</span> use the sort and filter buttons near search to quickly find items.</p>
+            </div>
+
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => closeHelpOverlay(false)}
+                className="btn-secondary flex-1 text-sm !py-2"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => closeHelpOverlay(true)}
+                className="btn-primary flex-1 text-sm !py-2"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

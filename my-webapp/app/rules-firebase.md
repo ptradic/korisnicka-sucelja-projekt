@@ -51,9 +51,11 @@ service cloud.firestore {
           request.auth.uid == playerId
         );
 
-        // Delete: only DM
-        allow delete: if request.auth != null &&
-          request.auth.uid == get(/databases/$(database)/documents/campaigns/$(campaignId)).data.dmId;
+        // Delete: DM or the player whose inventory it is (for leave-vault flow)
+        allow delete: if request.auth != null && (
+          request.auth.uid == get(/databases/$(database)/documents/campaigns/$(campaignId)).data.dmId ||
+          request.auth.uid == playerId
+        );
       }
 
       // ===== TRANSFER REQUESTS SUBCOLLECTION =====

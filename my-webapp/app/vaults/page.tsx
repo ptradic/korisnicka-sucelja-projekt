@@ -42,6 +42,7 @@ import {
   checkAndExpirePendingTransfers,
   getPlayerInventory,
   deleteCampaign,
+  leaveCampaign,
   updateCampaignSettings,
 } from '@/src/firebaseService';
 import type { CampaignDoc, PlayerInventoryDoc, TransferRequest } from '@/src/firebaseService';
@@ -524,6 +525,26 @@ export default function VaultsPage() {
     }
   };
 
+  const handleLeaveCampaign = async (campaignId: string) => {
+    if (!userId) return;
+
+    try {
+      await trackWrite(() => leaveCampaign(campaignId, userId));
+      setCampaigns((prev) => prev.filter((campaign) => campaign.id !== campaignId));
+
+      if (currentCampaignId === campaignId) {
+        setCurrentCampaignId(null);
+        setCurrentCampaign(null);
+        setPlayerInventories([]);
+        setSelectedPlayerId('shared');
+        router.push('/vaults', { scroll: false });
+      }
+    } catch (error) {
+      console.error('Failed to leave campaign:', error);
+      showActionError('Could not leave vault', error, () => handleLeaveCampaign(campaignId), 'Try leaving again');
+    }
+  };
+
   const handleUpdateCampaignSettings = async (updates: { name: string; password: string }) => {
     if (!currentCampaignId || !userId || !currentCampaign) return;
 
@@ -883,6 +904,7 @@ export default function VaultsPage() {
           onCreateVault={handleCreateCampaign}
           onJoinVault={handleJoinCampaign}
           onDeleteVault={handleDeleteCampaign}
+          onLeaveVault={handleLeaveCampaign}
         />
         {actionError && (
           <ActionErrorToast

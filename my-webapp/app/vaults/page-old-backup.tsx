@@ -367,6 +367,7 @@ export default function VaultsPage() {
         onCreateVault={handleCreateVault}
         onJoinVault={handleJoinVault}
         onDeleteVault={handleDeleteVault}
+        onLeaveVault={handleDeleteVault}
       />
     );
   }

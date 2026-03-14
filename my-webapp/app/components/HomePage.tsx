@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Package, Plus, Users, Calendar, Trash2, X, Scroll, Shield, ChevronRight, LogIn, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Package, Plus, Users, Calendar, Trash2, X, Scroll, Shield, ChevronRight, LogIn, Lock, Eye, EyeOff, AlertCircle, LogOut } from 'lucide-react';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface Vault {
@@ -18,10 +18,11 @@ interface HomePageProps {
   onJoinVault: (campaignId: string, password: string) => Promise<boolean>;
   vaults: Vault[];
   onDeleteVault: (vaultId: string) => void;
+  onLeaveVault: (vaultId: string) => void;
   userType: string;
 }
 
-export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, onDeleteVault, userType }: HomePageProps) {
+export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, onDeleteVault, onLeaveVault, userType }: HomePageProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const isDM = userType === 'dm';
@@ -87,8 +88,9 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
                 <VaultCard
                   key={vault.id}
                   vault={vault}
+                  isDM={isDM}
                   onOpen={() => onSelectVault(vault.id)}
-                  onDelete={() => onDeleteVault(vault.id)}
+                  onAction={() => (isDM ? onDeleteVault(vault.id) : onLeaveVault(vault.id))}
                 />
               ))}
             </div>
@@ -118,7 +120,7 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
   );
 }
 
-function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => void; onDelete: () => void }) {
+function VaultCard({ vault, isDM, onOpen, onAction }: { vault: Vault; isDM: boolean; onOpen: () => void; onAction: () => void }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -141,9 +143,9 @@ function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => vo
           <button
             onClick={handleDelete}
             className="btn-ghost ml-2 !p-2 rounded-lg border-2 text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#FFEBEE] border-transparent"
-            title="Delete vault"
+            title={isDM ? 'Delete vault' : 'Leave vault'}
           >
-            <Trash2 className="w-4 h-4" />
+            {isDM ? <Trash2 className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
           </button>
         </div>
 
@@ -167,11 +169,16 @@ function VaultCard({ vault, onOpen, onDelete }: { vault: Vault; onOpen: () => vo
 
       {showDeleteConfirm && (
         <ConfirmDeleteModal
-          title="Delete Vault"
-          message={`Are you sure you want to delete "${vault.name}"? This cannot be undone.`}
+          title={isDM ? 'Delete Vault' : 'Leave Vault'}
+          message={
+            isDM
+              ? `Are you sure you want to delete "${vault.name}"? This cannot be undone.`
+              : `Are you sure you want to leave "${vault.name}"? You will be removed from this vault, but the vault and other players will remain.`
+          }
+          confirmLabel={isDM ? 'Delete' : 'Leave'}
           onConfirm={() => {
             setShowDeleteConfirm(false);
-            onDelete();
+            onAction();
           }}
           onCancel={() => setShowDeleteConfirm(false)}
         />

@@ -6,9 +6,10 @@ interface ConfirmDeleteModalProps {
   message?: string;
   onConfirm: () => void;
   onCancel: () => void;
+  confirmLabel?: string;
 }
 
-export function ConfirmDeleteModal({ title, message, onConfirm, onCancel }: ConfirmDeleteModalProps) {
+export function ConfirmDeleteModal({ title, message, onConfirm, onCancel, confirmLabel = 'Delete' }: ConfirmDeleteModalProps) {
   const backdropMouseDown = useRef(false);
 
   return (
@@ -46,7 +47,7 @@ export function ConfirmDeleteModal({ title, message, onConfirm, onCancel }: Conf
             onClick={onConfirm}
             className="btn-primary flex-1 px-4 py-2.5 from-[#8B3A3A] to-[#6B2020] hover:from-[#6B2020] hover:to-[#4A1515] border-[#6B2020]"
           >
-            Delete
+            {confirmLabel}
           </button>
         </div>
       </div>

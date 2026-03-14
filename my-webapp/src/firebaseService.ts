@@ -272,6 +272,49 @@ export async function deleteCampaign(campaignId: string, dmId: string): Promise<
   await batch.commit();
 }
 
+export async function leaveCampaign(campaignId: string, playerId: string): Promise<void> {
+  const campaign = await getCampaign(campaignId);
+  if (!campaign) {
+    throw new Error('Campaign not found');
+  }
+
+  if (campaign.dmId === playerId) {
+    throw new Error('DM cannot leave their own campaign. Delete the vault instead.');
+  }
+
+  if (!campaign.playerIds.includes(playerId)) {
+    throw new Error('You are not a member of this campaign.');
+  }
+
+  const batch = writeBatch(db);
+
+  // Remove player membership from campaign.
+  batch.update(doc(db, 'campaigns', campaignId), {
+    playerIds: arrayRemove(playerId),
+    updatedAt: serverTimestamp(),
+  });
+
+  // Remove campaign from the player's user document.
+  batch.update(doc(db, 'users', playerId), {
+    playerCampaigns: arrayRemove(campaignId),
+    updatedAt: serverTimestamp(),
+  });
+
+  // Remove the player's inventory document from this campaign.
+  batch.delete(doc(db, 'campaigns', campaignId, 'playerInventories', playerId));
+
+  // Remove transfer requests where this player is sender or recipient.
+  const transfersSnap = await getDocs(collection(db, 'campaigns', campaignId, 'transferRequests'));
+  transfersSnap.forEach((transferDoc) => {
+    const transfer = transferDoc.data() as TransferRequest;
+    if (transfer.fromPlayerId === playerId || transfer.toPlayerId === playerId) {
+      batch.delete(transferDoc.ref);
+    }
+  });
+
+  await batch.commit();
+}
+
 export async function joinCampaign(
   campaignId: string,
   playerId: string,

@@ -1,5 +1,5 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowDownAZ, Filter } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
 import { useAutoScroll } from '../hooks/useAutoScroll';
@@ -180,13 +180,28 @@ export function InventoryView({
   onCurrencyChange,
   isShared,
 }: InventoryViewProps) {
+  type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
+  type SortDirection = 'asc' | 'desc';
+
+  const rarityRank: Record<Item['rarity'], number> = {
+    common: 0,
+    uncommon: 1,
+    rare: 2,
+    'very rare': 3,
+    legendary: 4,
+    artifact: 5,
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [sortAZ, setSortAZ] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('none');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const [isEditingMaxWeight, setIsEditingMaxWeight] = useState(false);
   const [maxWeightEditValue, setMaxWeightEditValue] = useState('');
   const itemListRef = useRef<HTMLDivElement>(null);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
 
   // Enable auto-scroll when dragging items near the top
   useAutoScroll(itemListRef, { scrollThreshold: 100, scrollSpeed: 10 });
@@ -200,7 +215,26 @@ export function InventoryView({
         (item.description || '').toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     })
-    .sort((a, b) => sortAZ ? a.name.localeCompare(b.name) : 0);
+    .sort((a, b) => {
+      if (sortField === 'none') return 0;
+
+      let baseCompare = 0;
+
+      if (sortField === 'name') {
+        baseCompare = a.name.localeCompare(b.name);
+      } else if (sortField === 'rarity') {
+        const diff = rarityRank[a.rarity] - rarityRank[b.rarity];
+        baseCompare = diff !== 0 ? diff : a.name.localeCompare(b.name);
+      } else if (sortField === 'weight') {
+        const diff = a.weight - b.weight;
+        baseCompare = diff !== 0 ? diff : a.name.localeCompare(b.name);
+      } else {
+        const valueDiff = (a.value || 0) - (b.value || 0);
+        baseCompare = valueDiff !== 0 ? valueDiff : a.name.localeCompare(b.name);
+      }
+
+      return sortDirection === 'asc' ? baseCompare : -baseCompare;
+    });
 
   const totalWeight = inventory.reduce((sum, item) => sum + item.weight * item.quantity, 0);
   const weightPercentage = maxWeight ? (totalWeight / maxWeight) * 100 : 0;
@@ -209,6 +243,33 @@ export function InventoryView({
     setSelectedCategory(category);
     setIsFilterOpen(false);
   };
+
+  const handleSortSelect = (field: SortField, direction: SortDirection = 'asc') => {
+    setSortField(field);
+    setSortDirection(direction);
+    setIsSortMenuOpen(false);
+  };
+
+  const toggleSortField = (field: Exclude<SortField, 'none'>) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    setSortField(field);
+    setSortDirection('asc');
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
+        setIsSortMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const selectedFilterLabel =
     selectedCategory === 'all'
@@ -364,16 +425,81 @@ export function InventoryView({
           >
             <Filter className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setSortAZ((v) => !v)}
-            title={sortAZ ? 'Remove A–Z sort' : 'Sort A–Z'}
-            className={sortAZ
-              ? 'btn-primary shrink-0 w-9 h-9 !p-0 rounded-lg text-white border-[#3D1409]'
-              : 'btn-secondary shrink-0 w-9 h-9 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
-            }
-          >
-            <ArrowDownAZ className="w-4 h-4" />
-          </button>
+          <div className="relative shrink-0" ref={sortMenuRef}>
+            <button
+              onClick={() => setIsSortMenuOpen((v) => !v)}
+              title="Sort options"
+              className={sortField !== 'none' || isSortMenuOpen
+                ? 'btn-primary w-9 h-9 !p-0 rounded-lg text-white border-[#3D1409]'
+                : 'btn-secondary w-9 h-9 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
+              }
+            >
+              <ArrowUpDown className="w-4 h-4" />
+            </button>
+
+            {isSortMenuOpen && (
+              <div
+                className="absolute right-0 top-full mt-2 z-30 min-w-[170px] bg-[#F5EFE0] border-2 border-[#8B6F47] rounded-lg p-1.5"
+                style={{ boxShadow: '0 8px 16px rgba(61, 20, 9, 0.2)' }}
+              >
+                <button
+                  onClick={() => handleSortSelect('none', 'asc')}
+                  className={
+                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    (sortField === 'none'
+                      ? 'bg-[#5C1A1A] text-white'
+                      : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                  }
+                >
+                  No sorting
+                </button>
+                <button
+                  onClick={() => toggleSortField('name')}
+                  className={
+                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    (sortField === 'name'
+                      ? 'bg-[#5C1A1A] text-white'
+                      : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                  }
+                >
+                  Name ({sortField === 'name' && sortDirection === 'desc' ? 'Z-A' : 'A-Z'})
+                </button>
+                <button
+                  onClick={() => toggleSortField('rarity')}
+                  className={
+                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    (sortField === 'rarity'
+                      ? 'bg-[#5C1A1A] text-white'
+                      : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                  }
+                >
+                  Rarity ({sortField === 'rarity' && sortDirection === 'desc' ? 'Artifact to Common' : 'Common to Artifact'})
+                </button>
+                <button
+                  onClick={() => toggleSortField('weight')}
+                  className={
+                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    (sortField === 'weight'
+                      ? 'bg-[#5C1A1A] text-white'
+                      : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                  }
+                >
+                  Weight ({sortField === 'weight' && sortDirection === 'desc' ? 'High to Low' : 'Low to High'})
+                </button>
+                <button
+                  onClick={() => toggleSortField('value')}
+                  className={
+                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    (sortField === 'value'
+                      ? 'bg-[#5C1A1A] text-white'
+                      : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                  }
+                >
+                  Value ({sortField === 'value' && sortDirection === 'desc' ? 'High to Low' : 'Low to High'})
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

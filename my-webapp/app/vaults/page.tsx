@@ -43,6 +43,7 @@ import {
   getPlayerInventory,
   deleteCampaign,
   leaveCampaign,
+  deletePlayerInventoryDoc,
   updateCampaignSettings,
 } from '@/src/firebaseService';
 import type { CampaignDoc, PlayerInventoryDoc, TransferRequest } from '@/src/firebaseService';
@@ -450,6 +451,23 @@ export default function VaultsPage() {
     return () => clearInterval(interval);
   }, [currentCampaignId, userId, userRole]);
 
+  // DM cleanup: remove stale inventory docs for users no longer in campaign.playerIds.
+  useEffect(() => {
+    if (!currentCampaignId || userRole !== 'dm' || !currentCampaign) return;
+
+    const staleInventories = playerInventories.filter(
+      (inventoryDoc) => !currentCampaign.playerIds.includes(inventoryDoc.playerId)
+    );
+
+    if (staleInventories.length === 0) return;
+
+    staleInventories.forEach((inventoryDoc) => {
+      void trackWrite(() => deletePlayerInventoryDoc(currentCampaignId, inventoryDoc.playerId)).catch((error) => {
+        console.error('Failed to clean stale player inventory:', error);
+      });
+    });
+  }, [currentCampaignId, currentCampaign, playerInventories, userRole, trackWrite]);
+
   // Handle role toggle
   const handleRoleToggle = async () => {
     if (!userId) return;
@@ -849,8 +867,12 @@ export default function VaultsPage() {
     }
   };
 
+  const activePlayerInventories = currentCampaign
+    ? playerInventories.filter((inventoryDoc) => currentCampaign.playerIds.includes(inventoryDoc.playerId))
+    : playerInventories;
+
   // Convert PlayerInventoryDoc to Player for UI components
-  const players: Player[] = playerInventories.map((inv) => ({
+  const players: Player[] = activePlayerInventories.map((inv) => ({
     id: inv.playerId,
     name: inv.playerName,
     color: inv.color,
@@ -864,6 +886,14 @@ export default function VaultsPage() {
   const isShared = selectedPlayerId === 'shared';
   const isDM = userRole === 'dm';
   const syncStatus: 'saving' | 'saved' = pendingWriteCount > 0 ? 'saving' : 'saved';
+
+  useEffect(() => {
+    if (selectedPlayerId === 'shared') return;
+    const stillExists = players.some((player) => player.id === selectedPlayerId);
+    if (!stillExists) {
+      setSelectedPlayerId('shared');
+    }
+  }, [selectedPlayerId, players]);
   const isRestoringCampaign = Boolean(
     requestedCampaignId &&
     !currentCampaignId &&

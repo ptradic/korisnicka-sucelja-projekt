@@ -430,6 +430,10 @@ export async function getAllPlayerInventories(campaignId: string): Promise<Playe
   return inventories;
 }
 
+export async function deletePlayerInventoryDoc(campaignId: string, playerId: string): Promise<void> {
+  await deleteDoc(doc(db, 'campaigns', campaignId, 'playerInventories', playerId));
+}
+
 export async function updatePlayerInventory(
   campaignId: string,
   playerId: string,

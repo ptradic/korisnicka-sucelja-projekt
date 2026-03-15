@@ -288,31 +288,50 @@ export async function leaveCampaign(campaignId: string, playerId: string): Promi
 
   const batch = writeBatch(db);
 
-  // Remove player membership from campaign.
+  // Core leave operation must succeed even if optional cleanup is blocked by rules.
   batch.update(doc(db, 'campaigns', campaignId), {
     playerIds: arrayRemove(playerId),
     updatedAt: serverTimestamp(),
   });
 
-  // Remove campaign from the player's user document.
   batch.update(doc(db, 'users', playerId), {
     playerCampaigns: arrayRemove(campaignId),
     updatedAt: serverTimestamp(),
   });
 
-  // Remove the player's inventory document from this campaign.
-  batch.delete(doc(db, 'campaigns', campaignId, 'playerInventories', playerId));
-
-  // Remove transfer requests where this player is sender or recipient.
-  const transfersSnap = await getDocs(collection(db, 'campaigns', campaignId, 'transferRequests'));
-  transfersSnap.forEach((transferDoc) => {
-    const transfer = transferDoc.data() as TransferRequest;
-    if (transfer.fromPlayerId === playerId || transfer.toPlayerId === playerId) {
-      batch.delete(transferDoc.ref);
-    }
-  });
-
   await batch.commit();
+
+  // Best-effort cleanup: if permissions are stricter in deployed rules, leaving still works.
+  try {
+    await deleteDoc(doc(db, 'campaigns', campaignId, 'playerInventories', playerId));
+  } catch {
+    // Ignore cleanup failure.
+  }
+
+  try {
+    const transferRefs = new Map<string, ReturnType<typeof doc>>();
+    const fromQuery = query(
+      collection(db, 'campaigns', campaignId, 'transferRequests'),
+      where('fromPlayerId', '==', playerId)
+    );
+    const toQuery = query(
+      collection(db, 'campaigns', campaignId, 'transferRequests'),
+      where('toPlayerId', '==', playerId)
+    );
+
+    const [fromSnap, toSnap] = await Promise.all([getDocs(fromQuery), getDocs(toQuery)]);
+
+    fromSnap.forEach((transferDoc) => {
+      transferRefs.set(transferDoc.id, transferDoc.ref);
+    });
+    toSnap.forEach((transferDoc) => {
+      transferRefs.set(transferDoc.id, transferDoc.ref);
+    });
+
+    await Promise.all(Array.from(transferRefs.values()).map((ref) => deleteDoc(ref)));
+  } catch {
+    // Ignore cleanup failure.
+  }
 }
 
 export async function joinCampaign(

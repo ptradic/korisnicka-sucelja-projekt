@@ -191,10 +191,12 @@ interface TransferSentToastProps {
   playerName: string;
   itemName: string;
   expiresAt: Date;
+  onCancel?: () => Promise<void> | void;
   onDismiss: () => void;
 }
 
-export function TransferSentToast({ playerName, itemName, expiresAt, onDismiss }: TransferSentToastProps) {
+export function TransferSentToast({ playerName, itemName, expiresAt, onCancel, onDismiss }: TransferSentToastProps) {
+  const [isCancelling, setIsCancelling] = useState(false);
   const expiresAtTimestamp = Timestamp.fromDate(expiresAt);
   const { formattedTime, isExpired } = useCountdown(expiresAtTimestamp);
 
@@ -204,6 +206,17 @@ export function TransferSentToast({ playerName, itemName, expiresAt, onDismiss }
       onDismiss();
     }
   }, [isExpired, onDismiss]);
+
+  const handleCancel = async () => {
+    if (!onCancel || isCancelling) return;
+    setIsCancelling(true);
+    try {
+      await onCancel();
+      onDismiss();
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   return (
     <div className="fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300 w-full max-w-sm sm:max-w-md px-4 sm:px-0">
@@ -222,6 +235,15 @@ export function TransferSentToast({ playerName, itemName, expiresAt, onDismiss }
           <span className="hidden sm:inline">{formattedTime}</span>
           <span className="sm:hidden">{formattedTime.split(':')[1]}s</span>
         </div>
+        {onCancel && (
+          <button
+            onClick={handleCancel}
+            disabled={isCancelling}
+            className="btn-ghost shrink-0 px-2 py-1 border-transparent text-white hover:text-white hover:bg-white/20 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isCancelling ? '...' : 'Cancel'}
+          </button>
+        )}
         <button
           onClick={onDismiss}
           className="btn-ghost shrink-0 !p-1 border-transparent text-white hover:text-white hover:bg-white/20 touch-manipulation"

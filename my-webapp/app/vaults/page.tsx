@@ -33,6 +33,7 @@ import {
   subscribeToPlayerInventories,
   generateCampaignId,
   createTransferRequest,
+  cancelTransferRequest,
   acceptTransferRequest,
   rejectTransferRequest,
   subscribeToTransferRequests,
@@ -215,7 +216,7 @@ export default function VaultsPage() {
   const [newCampaignId, setNewCampaignId] = useState<string | null>(null);
   const [newCampaignName, setNewCampaignName] = useState<string>('');
   const [pendingTransferRequests, setPendingTransferRequests] = useState<TransferRequest[]>([]);
-  const [transferSentInfo, setTransferSentInfo] = useState<{ playerName: string; itemName: string; expiresAt: Date } | null>(null);
+  const [transferSentInfo, setTransferSentInfo] = useState<{ requestId: string; playerName: string; itemName: string; expiresAt: Date } | null>(null);
   const [expiredTransferInfo, setExpiredTransferInfo] = useState<{ playerName: string; itemName: string; isReceiver: boolean } | null>(null);
   const [actionError, setActionError] = useState<VaultActionError | null>(null);
   const [isRetryingAction, setIsRetryingAction] = useState(false);
@@ -654,7 +655,7 @@ export default function VaultsPage() {
         const recipientName = recipientInventory?.playerName || 'Unknown Player';
         const senderName = sourceInventory?.playerName || userName;
 
-        await trackWrite(() => createTransferRequest(
+        const requestId = await trackWrite(() => createTransferRequest(
           currentCampaignId,
           item,
           fromId,
@@ -665,7 +666,7 @@ export default function VaultsPage() {
 
         // Show toast notification with expiration time
         const expiresAt = new Date(Date.now() + 10 * 1000); // 10 seconds from now
-        setTransferSentInfo({ playerName: recipientName, itemName: item.name, expiresAt });
+        setTransferSentInfo({ requestId, playerName: recipientName, itemName: item.name, expiresAt });
         // Auto-dismiss after expiration + extra time for mobile interaction
         setTimeout(() => setTransferSentInfo(null), 13000);
       } catch (error) {
@@ -710,6 +711,17 @@ export default function VaultsPage() {
     } catch (error) {
       console.error('Failed to reject transfer:', error);
       showActionError('Could not reject transfer', error, () => handleRejectTransfer(request));
+      throw error;
+    }
+  };
+
+  const handleCancelSentTransfer = async (requestId: string) => {
+    if (!currentCampaignId || !userId) return;
+    try {
+      await trackWrite(() => cancelTransferRequest(currentCampaignId, requestId, userId));
+    } catch (error) {
+      console.error('Failed to cancel transfer:', error);
+      showActionError('Could not cancel transfer', error, () => handleCancelSentTransfer(requestId), 'Try cancelling again');
       throw error;
     }
   };
@@ -1050,6 +1062,7 @@ export default function VaultsPage() {
             playerName={transferSentInfo.playerName}
             itemName={transferSentInfo.itemName}
             expiresAt={transferSentInfo.expiresAt}
+            onCancel={() => handleCancelSentTransfer(transferSentInfo.requestId)}
             onDismiss={() => setTransferSentInfo(null)}
           />
         )}

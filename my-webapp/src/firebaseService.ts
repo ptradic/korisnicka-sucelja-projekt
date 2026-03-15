@@ -805,6 +805,14 @@ export async function cancelTransferRequest(
   if (!requestSnap.exists()) return;
   
   const request = requestSnap.data() as TransferRequest;
+
+  if (request.fromPlayerId !== senderId) {
+    throw new Error('Only the sender can cancel this transfer request.');
+  }
+
+  if (request.status !== 'pending') {
+    return;
+  }
   
   // Restore item to sender's inventory
   const senderInventory = await getPlayerInventory(campaignId, senderId);

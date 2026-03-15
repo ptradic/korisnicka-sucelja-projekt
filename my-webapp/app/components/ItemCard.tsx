@@ -6,6 +6,10 @@ interface ItemCardProps {
   item: Item;
   ownerId: string | 'shared';
   onClick: () => void;
+  bulkSelectEnabled?: boolean;
+  isSelected?: boolean;
+  selectedItemIds?: string[];
+  onToggleSelect?: (itemId: string) => void;
 }
 
 const rarityColors: Record<string, { text: string; dot: string; bg: string; border: string }> = {
@@ -17,16 +21,28 @@ const rarityColors: Record<string, { text: string; dot: string; bg: string; bord
   artifact: { text: 'text-[#6B2020]', dot: 'bg-[#8B3A3A]', bg: 'hover:bg-[#FFEBEE]', border: 'border-[#8B3A3A]/30' },
 };
 
-export function ItemCard({ item, ownerId, onClick }: ItemCardProps) {
+export function ItemCard({
+  item,
+  ownerId,
+  onClick,
+  bulkSelectEnabled = false,
+  isSelected = false,
+  selectedItemIds = [],
+  onToggleSelect,
+}: ItemCardProps) {
+  const dragIds = bulkSelectEnabled && isSelected && selectedItemIds.length > 0
+    ? selectedItemIds
+    : [item.id];
+
   const [{ isDragging }, drag] = useDrag(
     () => ({
       type: 'INVENTORY_ITEM',
-      item: { id: item.id, ownerId, name: item.name, rarity: item.rarity },
+      item: { id: item.id, ids: dragIds, ownerId, name: item.name, rarity: item.rarity },
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
       }),
     }),
-    [item.id, ownerId, item.name, item.rarity],
+    [item.id, ownerId, item.name, item.rarity, dragIds.join('|')],
   );
 
   const colors = rarityColors[item.rarity] || rarityColors.common;
@@ -34,7 +50,13 @@ export function ItemCard({ item, ownerId, onClick }: ItemCardProps) {
   return (
     <div
       ref={drag as any}
-      onClick={onClick}
+      onClick={() => {
+        if (bulkSelectEnabled && onToggleSelect) {
+          onToggleSelect(item.id);
+          return;
+        }
+        onClick();
+      }}
       // touch-action:pan-y lets the browser scroll vertically on a quick swipe.
       // React-dnd still receives all touch events; with delayTouchStart it waits
       // before committing to a drag, so a quick swipe stays a scroll.
@@ -43,9 +65,20 @@ export function ItemCard({ item, ownerId, onClick }: ItemCardProps) {
         'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all border bg-white/40 select-none ' +
         colors.border + ' ' +
         colors.bg +
+        (isSelected ? ' ring-2 ring-[#5C1A1A] bg-[#F5E6D2]' : '') +
         (isDragging ? ' opacity-40 scale-95' : ' hover:shadow-sm')
       }
     >
+      {bulkSelectEnabled && (
+        <div
+          className={
+            'w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center ' +
+            (isSelected ? 'bg-[#5C1A1A] border-[#3D1409] text-white' : 'bg-white border-[#8B6F47]/60')
+          }
+        >
+          {isSelected && <span className="text-[10px] leading-none">✓</span>}
+        </div>
+      )}
       {/* Grip icon — visual hint that the card is draggable */}
       <div className="shrink-0 p-0.5 -ml-0.5">
         <GripVertical className="w-4 h-4 text-[#8B6F47]/40" />

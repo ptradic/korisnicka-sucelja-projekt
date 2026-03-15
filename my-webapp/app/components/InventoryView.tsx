@@ -12,7 +12,7 @@ interface InventoryViewProps {
   isDM: boolean;
   onAddItem: () => void;
   onItemClick: (item: Item) => void;
-  onMoveItem: (itemId: string, fromId: string, toId: string) => void;
+  onMoveItem: (itemIds: string[], fromId: string, toId: string) => void;
   maxWeight?: number;
   onMaxWeightChange?: (newMax: number) => void;
   currency?: Currency;
@@ -201,6 +201,8 @@ export function InventoryView({
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const [showHelpOverlay, setShowHelpOverlay] = useState(false);
+  const [bulkSelectEnabled, setBulkSelectEnabled] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [isEditingMaxWeight, setIsEditingMaxWeight] = useState(false);
   const [maxWeightEditValue, setMaxWeightEditValue] = useState('');
   const itemListRef = useRef<HTMLDivElement>(null);
@@ -247,6 +249,33 @@ export function InventoryView({
     setSelectedCategory(category);
     setIsFilterOpen(false);
   };
+
+  const toggleBulkSelect = () => {
+    setBulkSelectEnabled((enabled) => {
+      if (enabled) {
+        setSelectedItemIds([]);
+      }
+      return !enabled;
+    });
+  };
+
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItemIds((prev) =>
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+    );
+  };
+
+  useEffect(() => {
+    if (!bulkSelectEnabled) return;
+    const visibleItemIds = new Set(filteredItems.map((item) => item.id));
+    setSelectedItemIds((prev) => {
+      const next = prev.filter((id) => visibleItemIds.has(id));
+      if (next.length === prev.length) {
+        return prev;
+      }
+      return next;
+    });
+  }, [bulkSelectEnabled, filteredItems]);
 
   const handleSortSelect = (field: SortField, direction: SortDirection = 'asc') => {
     setSortField(field);
@@ -550,6 +579,7 @@ export function InventoryView({
             <CircleHelp className="w-4 h-4" />
           </button>
         </div>
+
       </div>
 
       {/* Filters */}
@@ -590,15 +620,47 @@ export function InventoryView({
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold text-[#8B6F47] px-1 pb-1">
-              {selectedFilterLabel}
-            </p>
+            <div className="flex items-center justify-between gap-2 px-1 pb-1">
+              <p className="text-[11px] font-semibold text-[#8B6F47]">
+                {selectedFilterLabel}
+              </p>
+              <div className="flex items-center gap-2">
+                {bulkSelectEnabled && (
+                  <span className="text-[11px] text-[#5C4A2F] whitespace-nowrap">
+                    {selectedItemIds.length} selected
+                  </span>
+                )}
+                {bulkSelectEnabled && selectedItemIds.length > 0 && (
+                  <button
+                    onClick={() => setSelectedItemIds([])}
+                    className="btn-ghost h-7 px-2 text-[11px] border-transparent text-[#8B6F47] hover:text-[#3D1409]"
+                  >
+                    Clear
+                  </button>
+                )}
+                <button
+                  onClick={toggleBulkSelect}
+                  className={
+                    bulkSelectEnabled
+                      ? 'btn-primary h-7 px-2.5 text-[11px] border-[#3D1409]'
+                      : 'btn-secondary h-7 px-2.5 text-[11px] border-[#8B6F47]/60 text-[#5C4A2F]'
+                  }
+                  title="Toggle bulk select"
+                >
+                  {bulkSelectEnabled ? 'Bulk On' : 'Bulk Select'}
+                </button>
+              </div>
+            </div>
             {filteredItems.map((item) => (
               <ItemCard
                 key={item.id}
                 item={item}
                 ownerId={ownerId}
                 onClick={() => onItemClick(item)}
+                bulkSelectEnabled={bulkSelectEnabled}
+                isSelected={selectedItemIds.includes(item.id)}
+                selectedItemIds={selectedItemIds}
+                onToggleSelect={toggleItemSelection}
               />
             ))}
           </div>

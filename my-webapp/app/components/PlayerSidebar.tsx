@@ -7,7 +7,7 @@ interface PlayerSidebarProps {
   players: Player[];
   selectedPlayerId: string | 'shared';
   onSelectPlayer: (playerId: string | 'shared') => void;
-  onMoveItem: (itemId: string, fromId: string | 'shared', toId: string | 'shared') => void;
+  onMoveItem: (itemIds: string[], fromId: string | 'shared', toId: string | 'shared') => void;
   dragOverPlayerId: string | 'shared' | null;
   onDragOverChange: (playerId: string | 'shared' | null) => void;
   sharedLootCount: number;
@@ -160,17 +160,17 @@ function PlayerPill({
   player: Player;
   isSelected: boolean;
   onClick: () => void;
-  onDrop: (itemId: string, fromId: string) => void;
+  onDrop: (itemIds: string[], fromId: string) => void;
   isBeingDraggedOver: boolean;
   isAnyDragging: boolean;
 }) {
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
       accept: 'INVENTORY_ITEM',
-      drop: (dragItem: { id: string; ownerId: string }) => {
-        onDrop(dragItem.id, dragItem.ownerId);
+      drop: (dragItem: { id: string; ids?: string[]; ownerId: string }) => {
+        onDrop(dragItem.ids && dragItem.ids.length > 0 ? dragItem.ids : [dragItem.id], dragItem.ownerId);
       },
-      canDrop: (dragItem: { id: string; ownerId: string }) => dragItem.ownerId !== player.id,
+      canDrop: (dragItem: { id: string; ids?: string[]; ownerId: string }) => dragItem.ownerId !== player.id,
       collect: (monitor) => ({
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop(),
@@ -222,7 +222,7 @@ function SharedPill({
 }: {
   isSelected: boolean;
   onClick: () => void;
-  onDrop: (itemId: string, fromId: string) => void;
+  onDrop: (itemIds: string[], fromId: string) => void;
   itemCount: number;
   isBeingDraggedOver: boolean;
   isAnyDragging: boolean;
@@ -230,10 +230,10 @@ function SharedPill({
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
       accept: 'INVENTORY_ITEM',
-      drop: (dragItem: { id: string; ownerId: string }) => {
-        onDrop(dragItem.id, dragItem.ownerId);
+      drop: (dragItem: { id: string; ids?: string[]; ownerId: string }) => {
+        onDrop(dragItem.ids && dragItem.ids.length > 0 ? dragItem.ids : [dragItem.id], dragItem.ownerId);
       },
-      canDrop: (dragItem: { id: string; ownerId: string }) => dragItem.ownerId !== 'shared',
+      canDrop: (dragItem: { id: string; ids?: string[]; ownerId: string }) => dragItem.ownerId !== 'shared',
       collect: (monitor) => ({
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop(),
@@ -289,7 +289,7 @@ function PlayerSlot({
   player: Player;
   isSelected: boolean;
   onClick: () => void;
-  onDrop: (itemId: string, fromId: string) => void;
+  onDrop: (itemIds: string[], fromId: string) => void;
   isBeingDraggedOver: boolean;
 }) {
   const currentWeight = player.inventory.reduce((sum, item) => sum + item.weight * item.quantity, 0);
@@ -298,10 +298,10 @@ function PlayerSlot({
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
       accept: 'INVENTORY_ITEM',
-      drop: (dragItem: { id: string; ownerId: string }) => {
-        onDrop(dragItem.id, dragItem.ownerId);
+      drop: (dragItem: { id: string; ids?: string[]; ownerId: string }) => {
+        onDrop(dragItem.ids && dragItem.ids.length > 0 ? dragItem.ids : [dragItem.id], dragItem.ownerId);
       },
-      canDrop: (dragItem: { id: string; ownerId: string }) => dragItem.ownerId !== player.id,
+      canDrop: (dragItem: { id: string; ids?: string[]; ownerId: string }) => dragItem.ownerId !== player.id,
       collect: (monitor) => ({
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop(),
@@ -390,17 +390,17 @@ function SharedLootSlot({
 }: {
   isSelected: boolean;
   onClick: () => void;
-  onDrop: (itemId: string, fromId: string) => void;
+  onDrop: (itemIds: string[], fromId: string) => void;
   itemCount: number;
   isBeingDraggedOver: boolean;
 }) {
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
       accept: 'INVENTORY_ITEM',
-      drop: (dragItem: { id: string; ownerId: string }) => {
-        onDrop(dragItem.id, dragItem.ownerId);
+      drop: (dragItem: { id: string; ids?: string[]; ownerId: string }) => {
+        onDrop(dragItem.ids && dragItem.ids.length > 0 ? dragItem.ids : [dragItem.id], dragItem.ownerId);
       },
-      canDrop: (dragItem: { id: string; ownerId: string }) => dragItem.ownerId !== 'shared',
+      canDrop: (dragItem: { id: string; ids?: string[]; ownerId: string }) => dragItem.ownerId !== 'shared',
       collect: (monitor) => ({
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop(),
@@ -469,8 +469,8 @@ export function PlayerSidebar({
   }));
 
   const handleDrop = useCallback(
-    (toId: string | 'shared') => (itemId: string, fromId: string) => {
-      onMoveItem(itemId, fromId, toId);
+    (toId: string | 'shared') => (itemIds: string[], fromId: string) => {
+      onMoveItem(itemIds, fromId, toId);
       onDragOverChange(null);
     },
     [onMoveItem, onDragOverChange],

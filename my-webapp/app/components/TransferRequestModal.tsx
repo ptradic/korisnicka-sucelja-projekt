@@ -189,13 +189,13 @@ export function TransferRequestModal({ request, onAccept, onReject }: TransferRe
 // Toast notification for sent transfer requests
 interface TransferSentToastProps {
   playerName: string;
-  itemName: string;
+  itemLabel: string;
   expiresAt: Date;
   onCancel?: () => Promise<void> | void;
   onDismiss: () => void;
 }
 
-export function TransferSentToast({ playerName, itemName, expiresAt, onCancel, onDismiss }: TransferSentToastProps) {
+export function TransferSentToast({ playerName, itemLabel, expiresAt, onCancel, onDismiss }: TransferSentToastProps) {
   const [isCancelling, setIsCancelling] = useState(false);
   const expiresAtTimestamp = Timestamp.fromDate(expiresAt);
   const { formattedTime, isExpired } = useCountdown(expiresAtTimestamp);
@@ -227,7 +227,7 @@ export function TransferSentToast({ playerName, itemName, expiresAt, onCancel, o
             Transfer Sent
           </p>
           <p className="text-xs text-white/80 leading-tight">
-            To {playerName}: {itemName}
+            To {playerName}: {itemLabel}
           </p>
         </div>
         <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/20 rounded text-xs font-mono shrink-0">

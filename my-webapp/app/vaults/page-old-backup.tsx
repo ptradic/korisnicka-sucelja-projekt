@@ -286,51 +286,57 @@ export default function VaultsPage() {
   };
 
   //  Item move (drag & drop) — uses functional update to avoid stale closures
-  const handleMoveItem = (itemId: string, fromId: string | 'shared', toId: string | 'shared') => {
+  const handleMoveItem = (itemIds: string[], fromId: string | 'shared', toId: string | 'shared') => {
     setVaultData((prev) => {
-      let item: Item | undefined;
+      let next = prev;
 
-      const updatedPlayers = prev.players.map((p) => {
-        if (p.id === fromId) {
-          const idx = p.inventory.findIndex((i) => i.id === itemId);
+      for (const itemId of itemIds) {
+        let item: Item | undefined;
+
+        const updatedPlayers = next.players.map((p) => {
+          if (p.id === fromId) {
+            const idx = p.inventory.findIndex((i) => i.id === itemId);
+            if (idx !== -1) {
+              item = p.inventory[idx];
+              return { ...p, inventory: p.inventory.filter((i) => i.id !== itemId) };
+            }
+          }
+          return p;
+        });
+
+        let updatedShared = [...next.sharedLoot];
+        if (fromId === 'shared') {
+          const idx = updatedShared.findIndex((i) => i.id === itemId);
           if (idx !== -1) {
-            item = p.inventory[idx];
-            return { ...p, inventory: p.inventory.filter((i) => i.id !== itemId) };
+            item = updatedShared[idx];
+            updatedShared = updatedShared.filter((i) => i.id !== itemId);
           }
         }
-        return p;
-      });
 
-      let updatedShared = [...prev.sharedLoot];
-      if (fromId === 'shared') {
-        const idx = updatedShared.findIndex((i) => i.id === itemId);
-        if (idx !== -1) {
-          item = updatedShared[idx];
-          updatedShared = updatedShared.filter((i) => i.id !== itemId);
-        }
+        if (!item) continue;
+
+        // Stack at destination: merge into existing item with same name/category/rarity
+        const stackInto = (items: Item[], movedItem: Item): Item[] => {
+          const existingIdx = items.findIndex(
+            (i) => i.name.toLowerCase() === movedItem.name.toLowerCase() && i.category === movedItem.category && i.rarity === movedItem.rarity
+          );
+          if (existingIdx !== -1) {
+            const updated = [...items];
+            updated[existingIdx] = { ...updated[existingIdx], quantity: updated[existingIdx].quantity + movedItem.quantity };
+            return updated;
+          }
+          return [...items, movedItem];
+        };
+
+        const finalPlayers = updatedPlayers.map((p) =>
+          p.id === toId ? { ...p, inventory: stackInto(p.inventory, item!) } : p
+        );
+        if (toId === 'shared') updatedShared = stackInto(updatedShared, item);
+
+        next = { ...next, players: finalPlayers, sharedLoot: updatedShared };
       }
 
-      if (!item) return prev;
-
-      // Stack at destination: merge into existing item with same name/category/rarity
-      const stackInto = (items: Item[], movedItem: Item): Item[] => {
-        const existingIdx = items.findIndex(
-          (i) => i.name.toLowerCase() === movedItem.name.toLowerCase() && i.category === movedItem.category && i.rarity === movedItem.rarity
-        );
-        if (existingIdx !== -1) {
-          const updated = [...items];
-          updated[existingIdx] = { ...updated[existingIdx], quantity: updated[existingIdx].quantity + movedItem.quantity };
-          return updated;
-        }
-        return [...items, movedItem];
-      };
-
-      const finalPlayers = updatedPlayers.map((p) =>
-        p.id === toId ? { ...p, inventory: stackInto(p.inventory, item!) } : p
-      );
-      if (toId === 'shared') updatedShared = stackInto(updatedShared, item);
-
-      return { ...prev, players: finalPlayers, sharedLoot: updatedShared };
+      return next;
     });
   };
 

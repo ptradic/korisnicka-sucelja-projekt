@@ -216,7 +216,7 @@ export default function VaultsPage() {
   const [newCampaignId, setNewCampaignId] = useState<string | null>(null);
   const [newCampaignName, setNewCampaignName] = useState<string>('');
   const [pendingTransferRequests, setPendingTransferRequests] = useState<TransferRequest[]>([]);
-  const [transferSentInfo, setTransferSentInfo] = useState<{ requestId: string; playerName: string; itemName: string; expiresAt: Date } | null>(null);
+  const [transferSentInfo, setTransferSentInfo] = useState<{ requestIds: string[]; playerName: string; itemLabel: string; expiresAt: Date } | null>(null);
   const [expiredTransferInfo, setExpiredTransferInfo] = useState<{ playerName: string; itemName: string; isReceiver: boolean } | null>(null);
   const [actionError, setActionError] = useState<VaultActionError | null>(null);
   const [isRetryingAction, setIsRetryingAction] = useState(false);
@@ -631,8 +631,9 @@ export default function VaultsPage() {
   }, [requestedCampaignId, campaigns, currentCampaignId, router]);
 
   // Item movement with Firebase
-  const handleMoveItem = async (itemId: string, fromId: string | 'shared', toId: string | 'shared') => {
+  const handleMoveItem = async (itemIds: string[], fromId: string | 'shared', toId: string | 'shared') => {
     if (!currentCampaignId) return;
+    if (itemIds.length === 0) return;
 
     // Check if this is a player-to-player transfer (not DM, not involving shared loot)
     const isDM = userRole === 'dm';
@@ -643,10 +644,8 @@ export default function VaultsPage() {
       try {
         // Get the item details from the source inventory
         const sourceInventory = playerInventories.find((inv) => inv.playerId === fromId);
-        const item = sourceInventory?.inventory.find((i) => i.id === itemId);
-        
-        if (!item) {
-          console.error('Item not found');
+        if (!sourceInventory) {
+          console.error('Source inventory not found');
           return;
         }
 
@@ -655,38 +654,58 @@ export default function VaultsPage() {
         const recipientName = recipientInventory?.playerName || 'Unknown Player';
         const senderName = sourceInventory?.playerName || userName;
 
-        const requestId = await trackWrite(() => createTransferRequest(
-          currentCampaignId,
-          item,
-          fromId,
-          senderName,
-          toId,
-          recipientName
-        ));
+        const requestIds: string[] = [];
+        const movedNames: string[] = [];
+        for (const itemId of itemIds) {
+          const item = sourceInventory.inventory.find((inventoryItem) => inventoryItem.id === itemId);
+          if (!item) continue;
+
+          const requestId = await trackWrite(() => createTransferRequest(
+            currentCampaignId,
+            item,
+            fromId,
+            senderName,
+            toId,
+            recipientName
+          ));
+          requestIds.push(requestId);
+          movedNames.push(item.name);
+        }
+
+        if (requestIds.length === 0) {
+          console.error('No items could be prepared for transfer');
+          return;
+        }
+
+        const itemLabel = movedNames.length === 1
+          ? movedNames[0]
+          : `${movedNames.length} items`;
 
         // Show toast notification with expiration time
         const expiresAt = new Date(Date.now() + 10 * 1000); // 10 seconds from now
-        setTransferSentInfo({ requestId, playerName: recipientName, itemName: item.name, expiresAt });
+        setTransferSentInfo({ requestIds, playerName: recipientName, itemLabel, expiresAt });
         // Auto-dismiss after expiration + extra time for mobile interaction
         setTimeout(() => setTransferSentInfo(null), 13000);
       } catch (error) {
         console.error('Failed to create transfer request:', error);
-        showActionError('Could not send transfer request', error, () => handleMoveItem(itemId, fromId, toId));
+        showActionError('Could not send transfer request', error, () => handleMoveItem(itemIds, fromId, toId));
       }
     } else {
       // Direct move (DM, or to/from shared loot, or to own inventory)
       try {
-        await trackWrite(() => moveItemBetweenInventories(
-          currentCampaignId, 
-          itemId, 
-          fromId, 
-          toId,
-          userId,
-          isDM
-        ));
+        for (const itemId of itemIds) {
+          await trackWrite(() => moveItemBetweenInventories(
+            currentCampaignId,
+            itemId,
+            fromId,
+            toId,
+            userId,
+            isDM
+          ));
+        }
       } catch (error) {
         console.error('Failed to move item:', error);
-        showActionError('Could not move item', error, () => handleMoveItem(itemId, fromId, toId));
+        showActionError('Could not move item', error, () => handleMoveItem(itemIds, fromId, toId));
       }
     }
   };
@@ -715,13 +734,15 @@ export default function VaultsPage() {
     }
   };
 
-  const handleCancelSentTransfer = async (requestId: string) => {
+  const handleCancelSentTransfer = async (requestIds: string[]) => {
     if (!currentCampaignId || !userId) return;
     try {
-      await trackWrite(() => cancelTransferRequest(currentCampaignId, requestId, userId));
+      for (const requestId of requestIds) {
+        await trackWrite(() => cancelTransferRequest(currentCampaignId, requestId, userId));
+      }
     } catch (error) {
       console.error('Failed to cancel transfer:', error);
-      showActionError('Could not cancel transfer', error, () => handleCancelSentTransfer(requestId), 'Try cancelling again');
+      showActionError('Could not cancel transfer', error, () => handleCancelSentTransfer(requestIds), 'Try cancelling again');
       throw error;
     }
   };
@@ -1060,9 +1081,9 @@ export default function VaultsPage() {
         {transferSentInfo && (
           <TransferSentToast
             playerName={transferSentInfo.playerName}
-            itemName={transferSentInfo.itemName}
+            itemLabel={transferSentInfo.itemLabel}
             expiresAt={transferSentInfo.expiresAt}
-            onCancel={() => handleCancelSentTransfer(transferSentInfo.requestId)}
+            onCancel={() => handleCancelSentTransfer(transferSentInfo.requestIds)}
             onDismiss={() => setTransferSentInfo(null)}
           />
         )}

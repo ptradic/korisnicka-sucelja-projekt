@@ -4,6 +4,7 @@ import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import type { Item, Category, Currency } from '../types';
+import { normalizeCategory } from '../types';
 
 interface InventoryViewProps {
   inventory: Item[];
@@ -216,9 +217,12 @@ export function InventoryView({
   // Enable auto-scroll when dragging items near the top
   useAutoScroll(itemListRef, { scrollThreshold: 100, scrollSpeed: 10 });
 
-  const filteredItems = inventory
+  const visibleItems = inventory.filter((item) => normalizeCategory(item.category) !== 'hidden');
+
+  const filteredItems = visibleItems
     .filter((item) => {
-      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      const mappedCategory = normalizeCategory(item.category);
+      const matchesCategory = selectedCategory === 'all' || mappedCategory === selectedCategory;
       const matchesSearch =
         searchQuery === '' ||
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -246,7 +250,7 @@ export function InventoryView({
       return sortDirection === 'asc' ? baseCompare : -baseCompare;
     });
 
-  const totalWeight = inventory.reduce((sum, item) => sum + item.weight * item.quantity, 0);
+  const totalWeight = visibleItems.reduce((sum, item) => sum + item.weight * item.quantity, 0);
   const weightPercentage = maxWeight ? (totalWeight / maxWeight) * 100 : 0;
 
   const handleCategoryChange = (category: Category | 'all') => {
@@ -391,10 +395,12 @@ export function InventoryView({
   const selectedFilterLabel =
     selectedCategory === 'all'
       ? 'All items'
-      : selectedCategory
-          .split(/[-_]/)
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
+      : selectedCategory === 'wealth-valuables'
+        ? 'Wealth & Valuables'
+        : selectedCategory
+            .split(/[-_]/)
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
 
   return (
     <div className="h-full w-full min-w-0 flex flex-col min-h-0 max-w-full overflow-x-hidden">
@@ -407,7 +413,7 @@ export function InventoryView({
               {owner?.name || 'Unknown'}
             </h2>
             <span className="text-[#8B6F47] text-xs">
-              {inventory.length} {inventory.length === 1 ? 'item' : 'items'}
+              {visibleItems.length} {visibleItems.length === 1 ? 'item' : 'items'}
             </span>
           </div>
           <div
@@ -650,7 +656,7 @@ export function InventoryView({
         <CategoryFilter
           selectedCategory={selectedCategory}
           onCategoryChange={handleCategoryChange}
-          items={inventory}
+          items={visibleItems}
           className="mb-0"
         />
       </div>
@@ -664,7 +670,7 @@ export function InventoryView({
             <CategoryFilter
               selectedCategory={selectedCategory}
               onCategoryChange={handleCategoryChange}
-              items={inventory}
+              items={visibleItems}
               className="mb-0 overflow-x-visible"
               listClassName="flex-col"
             />
@@ -678,7 +684,7 @@ export function InventoryView({
           <div className="text-center py-12">
             <div className="text-[#5C4A2F] text-base mb-1">No items found</div>
             <div className="text-[#8B6F47] text-sm">
-              {inventory.length === 0 ? 'This inventory is empty' : 'Try a different filter'}
+              {visibleItems.length === 0 ? 'This inventory is empty' : 'Try a different filter'}
             </div>
           </div>
         ) : (

@@ -25,8 +25,16 @@ interface DnDItemListItem {
   editionKey?: string;
 }
 
-const categories: Category[] = ['weapon', 'armor', 'potion', 'magic', 'treasure', 'misc'];
+const categories: Category[] = ['weapons', 'armor', 'consumables', 'magic-gear', 'adventuring-gear', 'wealth-valuables'];
 const rarities: Rarity[] = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'];
+
+const formatCategoryLabel = (category: string) => {
+  if (category === 'wealth-valuables') return 'Wealth & Valuables';
+  return category
+    .split(/[-_]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
 
 const rarityColors: Record<string, string> = {
   common: 'text-[#5C4A2F]',
@@ -503,15 +511,25 @@ function CustomItemForm({
   onClose: () => void;
   targetName: string;
 }) {
+  const normalizeGpValue = (value: number): { value: number; valueUnit: 'gp' | 'sp' | 'cp' } => {
+    if (value > 0 && value < 1) {
+      if (value < 0.1) {
+        return { value: Number((value * 100).toFixed(2)), valueUnit: 'cp' };
+      }
+      return { value: Number((value * 10).toFixed(2)), valueUnit: 'sp' };
+    }
+
+    return { value: Number(value.toFixed(2)), valueUnit: 'gp' };
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: 'misc' as Category,
+    category: 'adventuring-gear' as Category,
     rarity: 'common' as Rarity,
     quantity: 1,
     weight: '',
     value: '',
-    notes: '',
     attunement: false,
   });
 
@@ -546,9 +564,7 @@ function CustomItemForm({
       nextErrors.quantity = 'Quantity must be at least 1';
     }
 
-    if (formData.weight === '') {
-      nextErrors.weight = 'Weight is required';
-    } else {
+    if (formData.weight !== '') {
       const parsedWeight = Number(formData.weight);
       if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
         nextErrors.weight = 'Weight must be 0 or greater';
@@ -557,8 +573,8 @@ function CustomItemForm({
 
     if (formData.value !== '') {
       const parsedValue = Number(formData.value);
-      if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
-        nextErrors.value = 'Value must be a positive number';
+      if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+        nextErrors.value = 'Value must be 0 or greater';
       }
     }
 
@@ -577,7 +593,7 @@ function CustomItemForm({
       category: formData.category,
       rarity: formData.rarity,
       quantity: formData.quantity,
-      weight: parseFloat(formData.weight),
+      weight: formData.weight === '' ? 0 : Number(formData.weight),
       attunement: formData.attunement,
       createdAt: new Date().toISOString(),
     };
@@ -586,13 +602,14 @@ function CustomItemForm({
     if (formData.description.trim()) {
       item.description = formData.description;
     }
-    if (formData.value) {
-      item.value = parseFloat(formData.value);
+    const parsedValue = formData.value === '' ? 0 : Number(formData.value);
+    if (Number.isFinite(parsedValue) && parsedValue > 0) {
+      const normalizedValue = normalizeGpValue(parsedValue);
+      item.value = normalizedValue.value;
+      item.valueUnit = normalizedValue.valueUnit;
+    } else {
+      item.valueUnknown = true;
     }
-    if (formData.notes.trim()) {
-      item.notes = formData.notes;
-    }
-
     await onCreate(item);
     onClose();
   };
@@ -647,8 +664,8 @@ function CustomItemForm({
           />
         </div>
 
-        {/* Category + Rarity */}
-        <div className="grid grid-cols-2 gap-2 shrink-0">
+        {/* Category + Rarity + Attunement */}
+        <div className="grid grid-cols-3 gap-2 shrink-0">
           <div>
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Category <span className="text-[#8B3A3A]">*</span>
@@ -659,7 +676,7 @@ function CustomItemForm({
               className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
             >
               {categories.map((cat) => (
-                <option key={cat} value={cat} className="capitalize">{cat}</option>
+                <option key={cat} value={cat}>{formatCategoryLabel(cat)}</option>
               ))}
             </select>
           </div>
@@ -676,6 +693,18 @@ function CustomItemForm({
                 <option key={rar} value={rar} className="capitalize">{rar}</option>
               ))}
             </select>
+          </div>
+
+          <div className="pt-6">
+            <label className="flex h-[42px] items-center gap-2.5 cursor-pointer px-3 bg-white/40 border-2 border-[#DCC8A8] rounded-xl hover:bg-white/60 transition-colors">
+              <input
+                type="checkbox"
+                checked={formData.attunement}
+                onChange={(e) => setFormData({ ...formData, attunement: e.target.checked })}
+                className="w-4 h-4 rounded border-[#8B6F47] bg-white/70 text-[#5C1A1A] accent-[#5C1A1A]"
+              />
+              <span className="text-[#3D1409] text-sm font-semibold">Requires Attunement</span>
+            </label>
           </div>
         </div>
 
@@ -699,10 +728,9 @@ function CustomItemForm({
             />
             {errors.quantity && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.quantity}</p>}
           </div>
+
           <div>
-            <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
-              Weight (lbs) <span className="text-[#8B3A3A]">*</span>
-            </label>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Weight (lbs)</label>
             <input
               type="number"
               step="0.1"
@@ -718,35 +746,24 @@ function CustomItemForm({
             />
             {errors.weight && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.weight}</p>}
           </div>
+
           <div>
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Value (gp)</label>
-            <input
-              type="number"
-              min="0"
-              value={formData.value}
-              onChange={(e) => {
-                setFormData({ ...formData, value: e.target.value });
-                if (errors.value) setErrors((prev) => ({ ...prev, value: undefined }));
-              }}
-              className={inputClass(!!errors.value)}
-              placeholder="0"
-              aria-invalid={!!errors.value}
-            />
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.value}
+                onChange={(e) => {
+                  setFormData({ ...formData, value: e.target.value });
+                  if (errors.value) setErrors((prev) => ({ ...prev, value: undefined }));
+                }}
+                className={inputClass(!!errors.value)}
+                placeholder="Not estimated"
+                aria-invalid={!!errors.value}
+              />
             {errors.value && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.value}</p>}
           </div>
-        </div>
-
-        {/* Attunement */}
-        <div className="shrink-0">
-          <label className="flex items-center gap-2.5 cursor-pointer p-2 bg-white/40 border-2 border-[#DCC8A8] rounded-xl hover:bg-white/60 transition-colors">
-            <input
-              type="checkbox"
-              checked={formData.attunement}
-              onChange={(e) => setFormData({ ...formData, attunement: e.target.checked })}
-              className="w-4 h-4 rounded border-[#8B6F47] bg-white/70 text-[#5C1A1A] accent-[#5C1A1A]"
-            />
-            <span className="text-[#3D1409] text-sm font-semibold">Requires Attunement</span>
-          </label>
         </div>
 
         <div className="border-t-2 border-[#DCC8A8] shrink-0" />

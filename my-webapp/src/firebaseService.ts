@@ -50,6 +50,8 @@ function getItemStackSignature(item: Item): string {
     description: item.description ?? '',
     weight: Number.isFinite(item.weight) ? item.weight : 0,
     value: item.value ?? null,
+    valueUnit: item.valueUnit ?? null,
+    valueUnknown: Boolean(item.valueUnknown),
     notes: item.notes ?? '',
     attunement: Boolean(item.attunement),
     attuned: Boolean(item.attuned),

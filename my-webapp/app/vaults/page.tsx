@@ -76,7 +76,7 @@ const HTML5toTouch = {
 };
 
 type StackComparableItem = Pick<Item, 'name' | 'category' | 'rarity' | 'weight'> &
-  Partial<Pick<Item, 'description' | 'value' | 'notes' | 'attunement' | 'attuned' | 'sourcebook'>>;
+  Partial<Pick<Item, 'description' | 'value' | 'valueUnit' | 'valueUnknown' | 'notes' | 'attunement' | 'attuned' | 'sourcebook'>>;
 
 function getItemStackSignature(item: StackComparableItem): string {
   return JSON.stringify({
@@ -86,6 +86,8 @@ function getItemStackSignature(item: StackComparableItem): string {
     description: item.description ?? '',
     weight: Number.isFinite(item.weight) ? item.weight : 0,
     value: item.value ?? null,
+    valueUnit: item.valueUnit ?? null,
+    valueUnknown: Boolean(item.valueUnknown),
     notes: item.notes ?? '',
     attunement: Boolean(item.attunement),
     attuned: Boolean(item.attuned),

@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { Item, Category, Rarity } from '../types';
+import type { Item, Category, Rarity, ValueUnit } from '../types';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface ItemDetailsModalProps {
@@ -13,8 +13,16 @@ interface ItemDetailsModalProps {
   showDeleteAction?: boolean;
 }
 
-const categories: Category[] = ['weapon', 'armor', 'potion', 'magic', 'treasure', 'misc'];
+const categories: Category[] = ['weapons', 'armor', 'consumables', 'magic-gear', 'adventuring-gear', 'wealth-valuables'];
 const rarities: Rarity[] = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'];
+
+const formatCategoryLabel = (category: string) => {
+  if (category === 'wealth-valuables') return 'Wealth & Valuables';
+  return category
+    .split(/[-_]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
 
 const rarityColors: Record<string, string> = {
   common: 'text-[#5C4A2F]',
@@ -34,10 +42,36 @@ const rarityGradients: Record<string, string> = {
   artifact: 'from-[#6B2020] to-[#8B3A3A]',
 };
 
+function normalizeValueUnit(value: number, valueUnit: ValueUnit): { value: number; valueUnit: ValueUnit } {
+  if (valueUnit === 'gp' && value > 0 && value < 1) {
+    if (value < 0.1) {
+      return { value: Number((value * 100).toFixed(2)), valueUnit: 'cp' };
+    }
+    return { value: Number((value * 10).toFixed(2)), valueUnit: 'sp' };
+  }
+
+  return { value: Number(value.toFixed(2)), valueUnit };
+}
+
+function toGpValue(value: number, valueUnit: ValueUnit): number {
+  if (valueUnit === 'sp') return Number((value / 10).toFixed(4));
+  if (valueUnit === 'cp') return Number((value / 100).toFixed(4));
+  return value;
+}
+
+function getValueColor(valueUnit: ValueUnit): string {
+  if (valueUnit === 'sp') return 'text-[#7A869A]';
+  if (valueUnit === 'cp') return 'text-[#7A3E2A]';
+  return 'text-[#B8860B]';
+}
+
 export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const backdropMouseDown = useRef(false);
+  const initialGpValue = item.value && item.value > 0
+    ? toGpValue(item.value, (item.valueUnit || 'gp') as ValueUnit)
+    : null;
   const [formData, setFormData] = useState({
     name: item.name,
     description: item.description,
@@ -45,22 +79,29 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
     rarity: item.rarity,
     quantity: item.quantity,
     weight: item.weight.toString(),
-    value: item.value?.toString() || '',
-    notes: item.notes || '',
+    value: initialGpValue ? initialGpValue.toString() : '',
     attunement: item.attunement || false,
     attuned: item.attuned || false,
   });
 
   const handleSave = async () => {
+    const parsedValue = formData.value ? parseFloat(formData.value) : 0;
+    const hasEstimatedValue = Number.isFinite(parsedValue) && parsedValue > 0;
+    const parsedWeight = formData.weight === '' ? 0 : Number(formData.weight);
+    const normalizedValue = hasEstimatedValue
+      ? normalizeValueUnit(parsedValue, 'gp')
+      : null;
+
     await onUpdate({
       name: formData.name,
       description: formData.description,
       category: formData.category,
       rarity: formData.rarity,
       quantity: formData.quantity,
-      weight: parseFloat(formData.weight),
-      value: formData.value ? parseFloat(formData.value) : undefined,
-      notes: formData.notes || undefined,
+      weight: Number.isFinite(parsedWeight) && parsedWeight >= 0 ? parsedWeight : 0,
+      value: normalizedValue ? normalizedValue.value : undefined,
+      valueUnit: normalizedValue ? normalizedValue.valueUnit : undefined,
+      valueUnknown: hasEstimatedValue ? undefined : true,
       attunement: formData.attunement,
       attuned: formData.attunement ? formData.attuned : false,
     });
@@ -75,6 +116,10 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
     setShowDeleteConfirm(false);
     onDelete();
   };
+
+  const displayValue = item.value && item.value > 0
+    ? normalizeValueUnit(item.value, (item.valueUnit || 'gp') as ValueUnit)
+    : null;
 
   const gradient = rarityGradients[item.rarity] || rarityGradients.common;
 
@@ -98,21 +143,28 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
               <Package className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-1.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] font-extrabold focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
-                />
-              ) : (
-                <h2 className="text-lg font-extrabold text-[#3D1409] truncate">{item.name}</h2>
-              )}
-              <p className={`text-xs mt-0.5 capitalize ${rarityColors[item.rarity]}`}>
-                {item.rarity} {item.category}
-                {item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
-              </p>
-              <p className="text-[10px] mt-1 text-[#5C4A2F] uppercase tracking-wide">Sourcebook: {item.sourcebook || 'unknown'}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-3 py-1.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] font-extrabold focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                    />
+                  ) : (
+                    <h2 className="text-lg font-extrabold text-[#3D1409] truncate">{item.name}</h2>
+                  )}
+                </div>
+
+                <div className="shrink-0 text-right leading-tight pt-0.5">
+                  <p className={`text-sm font-extrabold capitalize ${rarityColors[item.rarity]}`}>
+                    {item.rarity} {item.category}
+                    {item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
+                  </p>
+                  <p className="text-[10px] mt-0.5 text-[#5C4A2F] uppercase tracking-wide">Sourcebook: {item.sourcebook || 'unknown'}</p>
+                </div>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1 ml-3 shrink-0">
@@ -138,43 +190,43 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
         <div className="mx-4 sm:mx-5 border-t-2 border-[#DCC8A8] shrink-0" />
 
         {/* Content */}
-        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
+        <div className={isEditing ? 'p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col gap-2' : 'p-4 sm:p-5 space-y-4 overflow-y-auto flex-1'}>
           {isEditing ? (
             <>
-              <div>
-                <label className="block text-[#3D1409] font-semibold text-sm mb-1">Description</label>
+              <div className="flex-1 min-h-0 flex flex-col">
+                <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 min-h-20 resize-none"
+                  className="w-full flex-1 min-h-12 px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 resize-none"
                   placeholder="Describe the item..."
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2 shrink-0">
                 <div>
-                  <label className="block text-[#3D1409] font-semibold text-sm mb-1">
+                  <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
                     Category <span className="text-[#8B3A3A]">*</span>
                   </label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as Category })}
-                    className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
+                    className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
                   >
                     {categories.map(cat => (
-                      <option key={cat} value={cat} className="capitalize">{cat}</option>
+                      <option key={cat} value={cat}>{formatCategoryLabel(cat)}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[#3D1409] font-semibold text-sm mb-1">
+                  <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
                     Rarity <span className="text-[#8B3A3A]">*</span>
                   </label>
                   <select
                     value={formData.rarity}
                     onChange={(e) => setFormData({ ...formData, rarity: e.target.value as Rarity })}
-                    className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
+                    className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
                   >
                     {rarities.map(rar => (
                       <option key={rar} value={rar} className="capitalize">{rar}</option>
@@ -182,56 +234,8 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-[#3D1409] font-semibold text-sm mb-1">Quantity</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[#3D1409] font-semibold text-sm mb-1">
-                    Weight (lbs) <span className="text-[#8B3A3A]">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={formData.weight}
-                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
-                    placeholder="0.0"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[#3D1409] font-semibold text-sm mb-1">Value (gp)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.value}
-                    onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
-                    placeholder="0"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-[#3D1409] font-semibold text-sm mb-1">Notes</label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 min-h-16 resize-none"
-                    placeholder="Additional notes..."
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="flex items-center gap-2.5 cursor-pointer p-2.5 bg-white/40 border-2 border-[#DCC8A8] rounded-xl hover:bg-white/60 transition-colors">
+                <div className="pt-6">
+                  <label className="flex h-[42px] items-center gap-2.5 cursor-pointer px-3 bg-white/40 border-2 border-[#DCC8A8] rounded-xl hover:bg-white/60 transition-colors">
                     <input
                       type="checkbox"
                       checked={formData.attunement}
@@ -241,26 +245,50 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                     <span className="text-[#3D1409] text-sm font-semibold">Requires Attunement</span>
                   </label>
                 </div>
-
-                {formData.attunement && (
-                  <div className="col-span-2">
-                    <label className="flex items-center gap-2.5 cursor-pointer p-2.5 bg-[#F3E5F5]/40 border-2 border-[#7E57A2]/30 rounded-xl hover:bg-[#F3E5F5]/60 transition-colors">
-                      <Star className={'w-4 h-4 ' + (formData.attuned ? 'text-[#B8860B] fill-[#B8860B]' : 'text-[#8B6F47]/50')} />
-                      <input
-                        type="checkbox"
-                        checked={formData.attuned}
-                        onChange={(e) => setFormData({ ...formData, attuned: e.target.checked })}
-                        className="w-4 h-4 rounded border-[#8B6F47] bg-white/70 text-[#5C1A1A] accent-[#5C1A1A]"
-                      />
-                      <span className="text-[#5E3A7C] text-sm font-semibold">Attuned</span>
-                    </label>
-                  </div>
-                )}
               </div>
 
-              <div className="border-t-2 border-[#DCC8A8]" />
+              <div className="grid grid-cols-3 gap-2 shrink-0">
+                <div>
+                  <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Quantity</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                  />
+                </div>
 
-              <div className="flex gap-3">
+                <div>
+                  <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Weight (lbs)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={formData.weight}
+                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                    className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                    placeholder="0.0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Value (gp)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.value}
+                    onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                    className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                    placeholder="Not estimated"
+                  />
+                </div>
+              </div>
+
+              <div className="border-t-2 border-[#DCC8A8] shrink-0" />
+
+              <div className="flex gap-3 shrink-0">
                 <button
                   onClick={() => setIsEditing(false)}
                   className="btn-secondary flex-1 px-4 py-2.5"
@@ -336,17 +364,17 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                     <Coins className="w-3.5 h-3.5" />
                     <span>Value</span>
                   </div>
-                  {item.value ? (
-                    <p className="text-[#B8860B] font-bold">
-                      {(item.value * item.quantity).toLocaleString()} gp
+                  {item.valueUnknown || !displayValue ? (
+                    <p className="text-[#8B6F47] font-bold">Not estimated</p>
+                  ) : (
+                    <p className={getValueColor(displayValue.valueUnit) + ' font-bold'}>
+                      {(displayValue.value * item.quantity).toLocaleString()} {displayValue.valueUnit}
                       {item.quantity > 1 && (
                         <span className="text-[#5C4A2F] text-xs font-normal ml-1">
-                          ({item.value} × {item.quantity})
+                          ({displayValue.value} {displayValue.valueUnit} × {item.quantity})
                         </span>
                       )}
                     </p>
-                  ) : (
-                    <p className="text-[#8B6F47]/60 text-sm italic">No value</p>
                   )}
                 </div>
               </div>

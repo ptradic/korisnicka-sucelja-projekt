@@ -1,5 +1,6 @@
 import { Sword, Shield, Droplet, Sparkles, Gem, Package } from 'lucide-react';
 import type { Category, Item } from '../types';
+import { normalizeCategory } from '../types';
 
 interface CategoryFilterProps {
   selectedCategory: Category | 'all';
@@ -11,12 +12,12 @@ interface CategoryFilterProps {
 
 const categories: { value: Category | 'all'; label: string; icon: React.ComponentType<any> }[] = [
   { value: 'all', label: 'All Items', icon: Package },
-  { value: 'weapon', label: 'Weapons', icon: Sword },
+  { value: 'weapons', label: 'Weapons', icon: Sword },
   { value: 'armor', label: 'Armor', icon: Shield },
-  { value: 'potion', label: 'Potions', icon: Droplet },
-  { value: 'magic', label: 'Magic Items', icon: Sparkles },
-  { value: 'treasure', label: 'Treasure', icon: Gem },
-  { value: 'misc', label: 'Miscellaneous', icon: Package },
+  { value: 'consumables', label: 'Consumables', icon: Droplet },
+  { value: 'magic-gear', label: 'Magic Gear', icon: Sparkles },
+  { value: 'adventuring-gear', label: 'Adventuring Gear', icon: Package },
+  { value: 'wealth-valuables', label: 'Wealth & Valuables', icon: Gem },
 ];
 
 export function CategoryFilter({
@@ -33,7 +34,7 @@ export function CategoryFilter({
 
   const getCategoryCount = (category: Category | 'all') => {
     if (category === 'all') return items.length;
-    return items.filter(item => item.category === category).length;
+    return items.filter(item => normalizeCategory(item.category) === category).length;
   };
 
   return (

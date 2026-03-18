@@ -11,13 +11,16 @@ interface Open5eItem {
   category: { name: string; key: string };
   rarity: { name: string; key: string; rank: number } | null;
   is_magic_item: boolean;
-  weapon: any | null;
-  armor: any | null;
+  weapon: { key?: string; name?: string } | null;
+  armor: { key?: string; name?: string } | null;
   weight: string;
   cost: string;
   requires_attunement: boolean;
+  attunement_detail?: string | null;
   document: { key: string; display_name: string };
 }
+
+const inheritedWeightCache = new Map<string, number>();
 
 // Map Open5e category keys to our app categories
 const CATEGORY_MAP: Record<string, Category> = {
@@ -132,17 +135,116 @@ function parseCost(costRaw: string, isMagicItem: boolean): {
   };
 }
 
-function transformItem(item: Open5eItem): Omit<Item, 'id'> {
+function parseWeight(weightRaw: string | undefined): number {
+  const parsed = Number.parseFloat(weightRaw || '');
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+async function fetchOpen5eItemByKey(itemKey: string): Promise<Open5eItem | null> {
+  const response = await fetch(`${OPEN5E_BASE}/items/${encodeURIComponent(itemKey)}/?format=json`);
+  if (!response.ok) return null;
+  return response.json();
+}
+
+function extractCanonicalBaseName(item: Open5eItem): string | null {
+  const itemName = (item.name || '').trim();
+  if (!itemName) return null;
+
+  // Most armor variants expose the mundane base in parentheses.
+  const parenMatch = itemName.match(/\(([^)]+)\)\s*$/);
+  if (parenMatch?.[1]) {
+    return parenMatch[1].trim();
+  }
+
+  // Remove +X suffix variants.
+  const withoutPlusSuffix = itemName
+    .replace(/\s*\(\+\d+\)\s*$/i, '')
+    .replace(/\s*\+\d+\s*$/i, '')
+    .trim();
+
+  // "Staff of Power" style items often inherit the base category's weight.
+  if (/\sof\s/i.test(withoutPlusSuffix)) {
+    return item.category?.name?.trim() || null;
+  }
+
+  return withoutPlusSuffix || null;
+}
+
+async function resolveInheritedMagicWeight(item: Open5eItem): Promise<number> {
+  const currentWeight = parseWeight(item.weight);
+  if (currentWeight > 0 || !item.is_magic_item) return currentWeight;
+
+  const linkedBaseKey = item.weapon?.key || item.armor?.key;
+  if (linkedBaseKey) {
+    const linkedCacheKey = `linked:${linkedBaseKey}`;
+    const cachedLinkedWeight = inheritedWeightCache.get(linkedCacheKey);
+    if (cachedLinkedWeight !== undefined) return cachedLinkedWeight;
+
+    const linkedBaseItem = await fetchOpen5eItemByKey(linkedBaseKey);
+    const linkedWeight = linkedBaseItem ? parseWeight(linkedBaseItem.weight) : 0;
+    if (linkedWeight > 0) {
+      inheritedWeightCache.set(linkedCacheKey, linkedWeight);
+      return linkedWeight;
+    }
+  }
+
+  const canonicalBaseName = extractCanonicalBaseName(item);
+  if (!canonicalBaseName) return 0;
+
+  const canonicalCacheKey = `name:${item.document?.key || 'any'}:${item.category?.key || 'any'}:${canonicalBaseName.toLowerCase()}`;
+  const cachedCanonicalWeight = inheritedWeightCache.get(canonicalCacheKey);
+  if (cachedCanonicalWeight !== undefined) return cachedCanonicalWeight;
+
+  const params = new URLSearchParams({
+    format: 'json',
+    limit: '100',
+    name__icontains: canonicalBaseName,
+  });
+  const response = await fetch(`${OPEN5E_BASE}/items/?${params.toString()}`);
+  if (!response.ok) {
+    inheritedWeightCache.set(canonicalCacheKey, 0);
+    return 0;
+  }
+
+  const data = await response.json();
+  const candidates: Open5eItem[] = Array.isArray(data?.results) ? data.results : [];
+
+  const sameCategory = candidates.filter((candidate) => candidate.category?.key === item.category?.key);
+  const mundaneOnly = sameCategory.filter((candidate) => !candidate.is_magic_item);
+  const sameDocument = mundaneOnly.filter((candidate) => candidate.document?.key === item.document?.key);
+  const pool = sameDocument.length > 0 ? sameDocument : mundaneOnly;
+
+  const canonicalLower = canonicalBaseName.toLowerCase();
+  const exactName = pool.find((candidate) => candidate.name?.trim().toLowerCase() === canonicalLower);
+  const partialName = pool.find((candidate) => candidate.name?.toLowerCase().includes(canonicalLower));
+  const fallback = pool[0];
+  const bestMatch = exactName || partialName || fallback;
+
+  const resolvedWeight = bestMatch ? parseWeight(bestMatch.weight) : 0;
+  inheritedWeightCache.set(canonicalCacheKey, resolvedWeight);
+  return resolvedWeight;
+}
+
+async function transformItem(item: Open5eItem): Promise<Omit<Item, 'id'>> {
   const parsedCost = parseCost(item.cost, item.is_magic_item);
+  const resolvedWeight = await resolveInheritedMagicWeight(item);
+  const categoryLabel = item.category?.name?.trim();
+  const attunementDetail = item.attunement_detail?.trim();
+  const metadataLine = [categoryLabel, attunementDetail].filter(Boolean).join(', ');
+  const metadataLineBold = metadataLine ? `**${metadataLine}**` : '';
+  const baseDescription = item.desc?.trim();
+  const description = metadataLineBold
+    ? [metadataLineBold, baseDescription].filter(Boolean).join('\n\n')
+    : (baseDescription || undefined);
 
   return {
     name: item.name,
     sourcebook: item.document?.key || 'unknown',
-    description: item.desc || undefined,
+    description,
     category: mapCategory(item),
     rarity: mapRarity(item.rarity),
     quantity: 1,
-    weight: parseFloat(item.weight) || 0,
+    weight: resolvedWeight,
     value: parsedCost.value,
     valueUnit: parsedCost.valueUnit,
     valueUnknown: parsedCost.valueUnknown,
@@ -164,7 +266,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Item not found' }, { status: 404 });
       }
       const item: Open5eItem = await res.json();
-      const transformed = transformItem(item);
+      const transformed = await transformItem(item);
       if (transformed.category === 'hidden') {
         return NextResponse.json({ error: 'Item not found' }, { status: 404 });
       }

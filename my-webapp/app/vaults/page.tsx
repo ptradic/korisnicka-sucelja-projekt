@@ -28,6 +28,7 @@ import {
   getAllPlayerInventories,
   moveItemBetweenInventories,
   updatePlayerInventory,
+  updatePlayerNameInCampaign,
   updateSharedLoot,
   subscribeToCampaign,
   subscribeToPlayerInventories,
@@ -443,11 +444,11 @@ export default function VaultsPage() {
     }
   };
 
-  const handleJoinCampaign = async (campaignId: string, password: string): Promise<boolean> => {
+  const handleJoinCampaign = async (campaignId: string, password: string, characterName: string): Promise<boolean> => {
     if (!userId) return false;
     
     try {
-      await trackWrite(() => joinCampaign(campaignId, userId, userName, password));
+      await trackWrite(() => joinCampaign(campaignId, userId, characterName, password));
       const campaign = await getCampaign(campaignId);
       if (campaign) {
         setCampaigns([...campaigns, campaign]);
@@ -456,9 +457,17 @@ export default function VaultsPage() {
       return false;
     } catch (error: any) {
       console.error('Failed to join campaign:', error);
-      showActionError('Could not join vault', error, async () => { await handleJoinCampaign(campaignId, password); });
+      showActionError('Could not join vault', error, async () => { await handleJoinCampaign(campaignId, password, characterName); });
       return false;
     }
+  };
+
+  const handleUpdateMyCharacterName = async (newName: string): Promise<void> => {
+    if (!currentCampaignId || !userId) {
+      throw new Error('Campaign is not ready.');
+    }
+
+    await trackWrite(() => updatePlayerNameInCampaign(currentCampaignId, userId, newName));
   };
 
   const handleDeleteCampaign = async (campaignId: string) => {
@@ -1007,6 +1016,8 @@ export default function VaultsPage() {
             isDM={isDM}
             totalSlots={currentCampaign?.playerIds.length || players.length}
             onUpdateCampaignSettings={isDM ? handleUpdateCampaignSettings : undefined}
+            currentUserId={userId}
+            onUpdateMyCharacterName={!isDM ? handleUpdateMyCharacterName : undefined}
           />
           <div className="flex-1 min-w-0">
             <InventoryView

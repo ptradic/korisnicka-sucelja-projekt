@@ -592,6 +592,22 @@ export async function updatePlayerInventory(
   await updateDoc(docRef, updateData);
 }
 
+export async function updatePlayerNameInCampaign(
+  campaignId: string,
+  playerId: string,
+  playerName: string
+): Promise<void> {
+  const trimmedName = playerName.trim();
+  if (!trimmedName) {
+    throw new Error('Character name is required.');
+  }
+
+  await updateDoc(doc(db, 'campaigns', campaignId, 'playerInventories', playerId), {
+    playerName: trimmedName,
+    updatedAt: serverTimestamp(),
+  });
+}
+
 export async function updateSharedLoot(campaignId: string, sharedLoot: Item[]): Promise<void> {
   const docRef = doc(db, 'campaigns', campaignId);
   await updateDoc(docRef, {

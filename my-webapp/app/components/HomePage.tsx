@@ -21,7 +21,7 @@ interface CreateVaultPayload {
 interface HomePageProps {
   onSelectVault: (vaultId: string) => void;
   onCreateVault: (vault: CreateVaultPayload) => void;
-  onJoinVault: (campaignId: string, password: string) => Promise<boolean>;
+  onJoinVault: (campaignId: string, password: string, characterName: string) => Promise<boolean>;
   vaults: Vault[];
   onDeleteVault: (vaultId: string) => void;
   onLeaveVault: (vaultId: string) => void;
@@ -491,9 +491,10 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
   );
 }
 
-function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (campaignId: string, password: string) => Promise<boolean> }) {
+function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (campaignId: string, password: string, characterName: string) => Promise<boolean> }) {
   const [campaignId, setCampaignId] = useState('');
   const [password, setPassword] = useState('');
+  const [characterName, setCharacterName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -502,10 +503,10 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!campaignId.trim() || !password.trim()) return;
+    if (!campaignId.trim() || !password.trim() || !characterName.trim()) return;
     
     setIsLoading(true);
-    const joined = await onJoin(campaignId.trim().toUpperCase(), password.trim());
+    const joined = await onJoin(campaignId.trim().toUpperCase(), password.trim(), characterName.trim());
     setIsLoading(false);
     
     if (joined) {
@@ -593,6 +594,26 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
+            </div>
+          </div>
+
+          {/* Character Name */}
+          <div>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-2">
+              Character Name <span className="text-[#8B3A3A]">*</span>
+            </label>
+            <p className="text-[#5C4A2F] text-xs mb-2">This name is only used inside this vault.</p>
+            <div className="relative">
+              <Shield className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B6F47]" />
+              <input
+                type="text"
+                value={characterName}
+                onChange={(e) => { setCharacterName(e.target.value); setError(''); }}
+                className="w-full pl-10 pr-4 py-3 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                placeholder="e.g., Elira Nightwind"
+                maxLength={40}
+                required
+              />
             </div>
           </div>
 

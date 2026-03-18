@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Item, Category, Rarity } from '@/app/types';
 
-// Open5e v2 API - comprehensive 5.5e item database (2700+ items)
+// Open5e v2 API - comprehensive 5e or 5.5e item database (2700+ items)
 const OPEN5E_BASE = 'https://api.open5e.com/v2';
 
 interface Open5eItem {
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(items);
   } catch (error) {
-    console.error('Error fetching 5.5e items:', error);
+    console.error('Error fetching 5e or 5.5e items:', error);
     return NextResponse.json(
       { error: 'Failed to fetch items' },
       { status: 500 }

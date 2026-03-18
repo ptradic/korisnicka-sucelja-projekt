@@ -17,6 +17,85 @@ interface PlayerSidebarProps {
   isDM?: boolean;
   totalSlots: number;
   onUpdateCampaignSettings?: (updates: { name: string; password: string }) => Promise<void>;
+  currentUserId?: string;
+  onUpdateMyCharacterName?: (name: string) => Promise<void>;
+}
+
+function CharacterNameModal({
+  initialName,
+  onClose,
+  onSave,
+}: {
+  initialName: string;
+  onClose: () => void;
+  onSave: (name: string) => Promise<void>;
+}) {
+  const [name, setName] = useState(initialName);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSave = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError('Character name is required.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    try {
+      await onSave(trimmed);
+      onClose();
+    } catch (e: any) {
+      setError(e?.message || 'Could not update character name.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-60">
+      <div
+        className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-md w-full shadow-2xl"
+        style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}
+      >
+        <div className="p-5 pb-3 flex items-start justify-between border-b-2 border-[#DCC8A8]">
+          <div>
+            <h2 className="text-lg font-extrabold text-[#3D1409]">Change Character Name</h2>
+            <p className="text-[#5C4A2F] text-xs">This only affects this vault.</p>
+          </div>
+          <button onClick={onClose} className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-1">Character Name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C1A1A]"
+              placeholder="e.g., Elira Nightwind"
+              maxLength={40}
+            />
+          </div>
+
+          {error && (
+            <p className="text-xs text-[#8B3A3A] bg-[#FFEBEE] border border-[#8B3A3A]/30 rounded-lg px-2 py-1.5">{error}</p>
+          )}
+
+          <div className="flex gap-2">
+            <button onClick={onClose} className="btn-secondary flex-1 text-sm !py-2">Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 text-sm !py-2 disabled:opacity-60">
+              <Save className="w-4 h-4" />
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function VaultSettingsModal({
@@ -462,11 +541,15 @@ export function PlayerSidebar({
   isDM,
   totalSlots,
   onUpdateCampaignSettings,
+  currentUserId,
+  onUpdateMyCharacterName,
 }: PlayerSidebarProps) {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showCharacterModal, setShowCharacterModal] = useState(false);
   const { isDragging: isAnyDragging } = useDragLayer((monitor) => ({
     isDragging: monitor.isDragging(),
   }));
+  const currentPlayer = currentUserId ? players.find((player) => player.id === currentUserId) : undefined;
 
   const handleDrop = useCallback(
     (toId: string | 'shared') => (itemIds: string[], fromId: string) => {
@@ -497,6 +580,16 @@ export function PlayerSidebar({
         {/* Campaign name */}
         <div className="flex items-center gap-2 mb-2">
           <h2 className="text-[#3D1409] text-sm font-bold truncate flex-1">{campaignName}</h2>
+          {!isDM && currentPlayer && onUpdateMyCharacterName && (
+            <button
+              onClick={() => setShowCharacterModal(true)}
+              title="Change your character name"
+              className="flex items-center gap-1 px-1.5 py-0.5 bg-white/60 hover:bg-white border border-[#8B6F47]/50 rounded text-[10px] font-bold text-[#5C1A1A] transition-all shrink-0"
+            >
+              <User className="w-3 h-3" />
+              <span>Name</span>
+            </button>
+          )}
           {isDM && campaignId && onUpdateCampaignSettings && (
             <button
               onClick={() => setShowSettingsModal(true)}
@@ -544,6 +637,16 @@ export function PlayerSidebar({
             <h2 className="text-[#3D1409] text-sm font-bold truncate leading-tight flex-1">
               {campaignName}
             </h2>
+            {!isDM && currentPlayer && onUpdateMyCharacterName && (
+              <button
+                onClick={() => setShowCharacterModal(true)}
+                title="Change your character name"
+                className="flex items-center gap-1 px-1.5 py-0.5 bg-white/60 hover:bg-white border border-[#8B6F47]/50 rounded text-[10px] font-bold text-[#5C1A1A] transition-all shrink-0"
+              >
+                <User className="w-3 h-3" />
+                <span>Name</span>
+              </button>
+            )}
             {isDM && campaignId && onUpdateCampaignSettings && (
               <button
                 onClick={() => setShowSettingsModal(true)}
@@ -610,6 +713,14 @@ export function PlayerSidebar({
           initialPassword={campaignPassword || ''}
           onClose={() => setShowSettingsModal(false)}
           onSave={onUpdateCampaignSettings}
+        />
+      )}
+
+      {showCharacterModal && !isDM && currentPlayer && onUpdateMyCharacterName && (
+        <CharacterNameModal
+          initialName={currentPlayer.name}
+          onClose={() => setShowCharacterModal(false)}
+          onSave={onUpdateMyCharacterName}
         />
       )}
     </>

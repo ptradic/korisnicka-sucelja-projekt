@@ -86,7 +86,7 @@ function TemplateItemPicker({
   const [tab, setTab] = useState<'dnd' | 'custom'>('dnd');
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch 5.5e items from API
+  // Fetch 5e or 5.5e items from API
   useEffect(() => {
     if (tab !== 'dnd') return;
 
@@ -109,7 +109,7 @@ function TemplateItemPicker({
           setDndItems(items);
         }
       } catch (error) {
-        console.error('Failed to fetch 5.5e items:', error);
+        console.error('Failed to fetch 5e or 5.5e items:', error);
       } finally {
         setLoading(false);
       }
@@ -122,7 +122,7 @@ function TemplateItemPicker({
     };
   }, [search, tab]);
 
-  // Handle selecting a 5.5e item (fetch full details)
+  // Handle selecting a 5e or 5.5e item (fetch full details)
   const handleSelectDndItem = async (dndItem: DnDItemListItem) => {
     setLoadingDetails(dndItem.index);
     try {
@@ -161,7 +161,7 @@ function TemplateItemPicker({
           <div>
             <h2 className="text-lg font-extrabold text-[#3D1409]">Add Item to {targetName}</h2>
             <p className="text-[#5C4A2F] text-xs mt-0.5">
-              {tab === 'dnd' ? 'Search 5.5e items' : 'Choose from custom items'}
+              {tab === 'dnd' ? 'Search 5e or 5.5e items' : 'Choose from custom items'}
             </p>
           </div>
         </div>
@@ -176,7 +176,7 @@ function TemplateItemPicker({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
           <input
             type="text"
-            placeholder={tab === 'dnd' ? "Search 5.5e items (e.g., 'sword', 'potion')..." : 'Search custom items...'}
+            placeholder={tab === 'dnd' ? "Search 5e or 5.5e items (e.g., 'sword', 'potion')..." : 'Search custom items...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F]"
@@ -186,7 +186,7 @@ function TemplateItemPicker({
           )}
         </div>
 
-        {/* Toggle between 5.5e API and custom items */}
+        {/* Toggle between 5e or 5.5e API and custom items */}
         <div className="flex gap-2">
           <button
             onClick={() => setTab('dnd')}
@@ -197,7 +197,7 @@ function TemplateItemPicker({
                 : 'btn-secondary !px-3 !py-1.5 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
             }
           >
-            5.5e Items
+            5e or 5.5e Items
           </button>
           <button
             onClick={() => setTab('custom')}
@@ -218,7 +218,7 @@ function TemplateItemPicker({
         {loading && tab === 'dnd' && search.length >= 2 ? (
           <div className="text-center py-8">
             <Loader2 className="w-10 h-10 text-[#8B6F47] mx-auto mb-2 animate-spin" />
-            <div className="text-[#5C4A2F] text-sm">Searching 5.5e items...</div>
+            <div className="text-[#5C4A2F] text-sm">Searching 5e or 5.5e items...</div>
           </div>
         ) : tab === 'dnd' && search.length < 2 ? (
           <div className="text-center py-8">
@@ -229,7 +229,7 @@ function TemplateItemPicker({
         ) : tab === 'dnd' && dndItems.length === 0 && search.length >= 2 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
-            <div className="text-[#5C4A2F] text-sm">No 5.5e items found</div>
+            <div className="text-[#5C4A2F] text-sm">No 5e or 5.5e items found</div>
             <div className="text-[#8B6F47]/70 text-xs mt-1">Try a different search term</div>
           </div>
         ) : tab === 'dnd' ? (

@@ -82,14 +82,14 @@ const steps = [
     title: "Add Items from the Template List",
     icon: Package,
     description:
-      'As a Game Master, click "Add Item" in any inventory. Switch to the "Choose from List" tab to browse pre-built 5.5e items organized by category and rarity.',
+      'As a Game Master, click "Add Item" in any inventory. Switch to the "Choose from List" tab to browse pre-built 5e or 5.5e items organized by category and rarity.',
     details: [
       'Select a player (or Shared Loot) and click "+ Add Item".',
       'The "Choose from List" tab shows all template items.',
       "Use the search bar and category pills to filter items.",
       "Click any item to instantly add it to the inventory.",
     ],
-    tip: "Template items include classic 5.5e equipment — weapons, armor, potions, wondrous items, and more.",
+    tip: "Template items include classic 5e or 5.5e equipment — weapons, armor, potions, wondrous items, and more.",
   },
   {
     number: 6,

@@ -26,14 +26,19 @@ export function CategoryFilter({
   className,
   listClassName,
 }: CategoryFilterProps) {
+  const containerClasses = className || '';
+  const listClasses = listClassName
+    ? `flex gap-2 min-w-0 ${listClassName}`
+    : 'inline-flex w-max gap-2 min-w-fit';
+
   const getCategoryCount = (category: Category | 'all') => {
     if (category === 'all') return items.length;
     return items.filter(item => item.category === category).length;
   };
 
   return (
-    <div className={`mb-4 sm:mb-6 overflow-x-auto sm:overflow-x-visible ${className || ''}`.trim()}>
-      <div className={`flex flex-wrap gap-2 min-w-0 pb-2 ${listClassName || ''}`.trim()}>
+    <div className={`overflow-x-auto sm:overflow-x-visible ${containerClasses}`.trim()}>
+      <div className={listClasses.trim()}>
         {categories.map(({ value, label, icon: Icon }) => {
           const count = getCategoryCount(value);
           const isSelected = selectedCategory === value;

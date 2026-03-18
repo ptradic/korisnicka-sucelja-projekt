@@ -1,4 +1,4 @@
-import { Sword, Shield, Droplet, Sparkles, Gem, Package } from 'lucide-react';
+import { Sword, Shield, Droplet, Sparkles, Gem, Package, Backpack } from 'lucide-react';
 import type { Category, Item } from '../types';
 import { normalizeCategory } from '../types';
 
@@ -16,7 +16,7 @@ const categories: { value: Category | 'all'; label: string; icon: React.Componen
   { value: 'armor', label: 'Armor', icon: Shield },
   { value: 'consumables', label: 'Consumables', icon: Droplet },
   { value: 'magic-gear', label: 'Magic Gear', icon: Sparkles },
-  { value: 'adventuring-gear', label: 'Adventuring Gear', icon: Package },
+  { value: 'adventuring-gear', label: 'Adventuring Gear', icon: Backpack },
   { value: 'wealth-valuables', label: 'Wealth & Valuables', icon: Gem },
 ];
 

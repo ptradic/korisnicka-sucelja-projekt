@@ -209,8 +209,10 @@ export function InventoryView({
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [isEditingMaxWeight, setIsEditingMaxWeight] = useState(false);
   const [maxWeightEditValue, setMaxWeightEditValue] = useState('');
+  const [filtersOverflow, setFiltersOverflow] = useState(false);
   const itemListRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const filterMeasureRef = useRef<HTMLDivElement>(null);
   const previousQuantityByIdRef = useRef<Map<string, number>>(new Map());
   const helpSeenKey = 'vault-inventory-help-seen';
 
@@ -372,6 +374,38 @@ export function InventoryView({
   }, []);
 
   useEffect(() => {
+    const EARLY_COLLAPSE_PX = 220;
+
+    const checkOverflow = () => {
+      const el = filterMeasureRef.current;
+      if (!el) return;
+
+      const lastChip = el.querySelector('button:last-of-type') as HTMLElement | null;
+      if (!lastChip) {
+        setFiltersOverflow(el.scrollWidth > el.clientWidth);
+        return;
+      }
+
+      const containerRect = el.getBoundingClientRect();
+      const chipRect = lastChip.getBoundingClientRect();
+      setFiltersOverflow(chipRect.right > containerRect.right - EARLY_COLLAPSE_PX);
+    };
+
+    checkOverflow();
+
+    const observer = new ResizeObserver(() => checkOverflow());
+    if (filterMeasureRef.current) {
+      observer.observe(filterMeasureRef.current);
+    }
+
+    window.addEventListener('resize', checkOverflow);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', checkOverflow);
+    };
+  }, [visibleItems]);
+
+  useEffect(() => {
     try {
       const seen = localStorage.getItem(helpSeenKey);
       if (!seen) {
@@ -527,7 +561,7 @@ export function InventoryView({
                     setMaxWeightEditValue((maxWeight ?? 0).toString());
                     setIsEditingMaxWeight(true);
                   }}
-                  className="btn-ghost w-10 text-[10px] !px-0 !py-0 border-transparent border-b border-[#8B6F47]/50 rounded text-[#3D1409] tabular-nums text-center cursor-text hover:bg-white/60"
+                  className="inline-flex items-center justify-center w-10 px-0 py-0 text-[10px] text-[#3D1409] tabular-nums text-center cursor-text bg-transparent border-0 border-b border-[#8B6F47]/50 rounded-none hover:bg-white/60 transition-colors"
                 >
                   {maxWeight ?? 0}
                 </button>
@@ -557,7 +591,7 @@ export function InventoryView({
           <button
             onClick={() => setIsFilterOpen((o) => !o)}
             title={isFilterOpen ? 'Close filters' : 'Open filters'}
-            className={`min-[940px]:hidden shrink-0 w-9 h-9 !p-0 rounded-lg ${
+            className={`${filtersOverflow ? 'inline-flex' : 'hidden'} shrink-0 w-9 h-9 !p-0 rounded-lg ${
               isFilterOpen || selectedCategory !== 'all'
                 ? 'btn-primary text-white border-[#3D1409]'
                 : 'btn-secondary text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
@@ -651,18 +685,32 @@ export function InventoryView({
 
       </div>
 
-      {/* Filters */}
-      <div className="hidden min-[940px]:block bg-[#E8D5B7] border-b-2 border-[#8B6F47]/50 px-3 md:px-4 py-2">
-        <CategoryFilter
-          selectedCategory={selectedCategory}
-          onCategoryChange={handleCategoryChange}
-          items={visibleItems}
-          className="mb-0"
-        />
+      {/* Hidden width probe to detect when category filters overflow */}
+      <div className="absolute -z-10 pointer-events-none opacity-0 w-full h-0 overflow-hidden" aria-hidden="true">
+        <div ref={filterMeasureRef} className="px-3 md:px-4 py-2">
+          <CategoryFilter
+            selectedCategory={selectedCategory}
+            onCategoryChange={handleCategoryChange}
+            items={visibleItems}
+            className="mb-0"
+          />
+        </div>
       </div>
 
-      {isFilterOpen && (
-        <div className="min-[940px]:hidden relative">
+      {/* Filters */}
+      {!filtersOverflow && (
+        <div className="bg-[#E8D5B7] border-b-2 border-[#8B6F47]/50 px-3 md:px-4 py-2">
+          <CategoryFilter
+            selectedCategory={selectedCategory}
+            onCategoryChange={handleCategoryChange}
+            items={visibleItems}
+            className="mb-0"
+          />
+        </div>
+      )}
+
+      {isFilterOpen && filtersOverflow && (
+        <div className="relative">
           <div
             className="absolute left-3 right-3 top-0 mt-2 z-20 rounded-lg border-2 border-[#8B6F47] bg-[#F5EFE0] p-2"
             style={{ boxShadow: '0 8px 16px rgba(61, 20, 9, 0.2)' }}

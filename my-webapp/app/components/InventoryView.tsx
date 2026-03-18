@@ -114,10 +114,13 @@ function AddCoinsButton({
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="btn-secondary w-7 h-7 !p-0 rounded-lg border-[#8B6F47]/40 bg-[#D9C7AA] hover:bg-[#CDB89D] active:bg-[#C4B590] shadow-none"
+        className={open
+          ? 'btn-primary w-7 h-7 !p-0 rounded-lg text-white border-[#3D1409]'
+          : 'btn-secondary w-7 h-7 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
+        }
         title="Add or subtract coins"
       >
-        <Coins className="w-3.5 h-3.5 text-[#B8860B]" />
+        <Coins className={open ? 'w-3.5 h-3.5 text-white' : 'w-3.5 h-3.5 text-[#5C4A2F]'} />
       </button>
 
       {open && (
@@ -207,6 +210,7 @@ export function InventoryView({
   const [maxWeightEditValue, setMaxWeightEditValue] = useState('');
   const itemListRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const previousQuantityByIdRef = useRef<Map<string, number>>(new Map());
   const helpSeenKey = 'vault-inventory-help-seen';
 
   // Enable auto-scroll when dragging items near the top
@@ -259,23 +263,82 @@ export function InventoryView({
     });
   };
 
-  const toggleItemSelection = (itemId: string) => {
-    setSelectedItemIds((prev) =>
-      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
-    );
+  const toggleItemSelection = (item: Item) => {
+    setSelectedItemIds((prev) => {
+      const currentCount = prev.reduce((count, id) => count + (id === item.id ? 1 : 0), 0);
+      const nextCount = currentCount >= item.quantity ? 0 : currentCount + 1;
+      const withoutItem = prev.filter((id) => id !== item.id);
+
+      if (nextCount === 0) {
+        return withoutItem;
+      }
+
+      return [...withoutItem, ...Array(nextCount).fill(item.id)];
+    });
   };
 
   useEffect(() => {
     if (!bulkSelectEnabled) return;
     const visibleItemIds = new Set(filteredItems.map((item) => item.id));
+    const itemById = new Map(filteredItems.map((item) => [item.id, item]));
     setSelectedItemIds((prev) => {
-      const next = prev.filter((id) => visibleItemIds.has(id));
-      if (next.length === prev.length) {
+      const nextById = new Map<string, number>();
+      for (const id of prev) {
+        if (!visibleItemIds.has(id)) continue;
+        const current = nextById.get(id) || 0;
+        nextById.set(id, current + 1);
+      }
+
+      const next: string[] = [];
+      for (const [id, count] of nextById.entries()) {
+        const item = itemById.get(id);
+        if (!item) continue;
+        const clampedCount = Math.min(count, item.quantity);
+        for (let i = 0; i < clampedCount; i += 1) {
+          next.push(id);
+        }
+      }
+
+      if (next.length === prev.length && next.every((id, index) => id === prev[index])) {
         return prev;
       }
       return next;
     });
   }, [bulkSelectEnabled, filteredItems]);
+
+  const inventoryQuantityKey = inventory.map((item) => `${item.id}:${item.quantity}`).join('|');
+  const selectedItemIdsKey = selectedItemIds.join('|');
+
+  useEffect(() => {
+    const currentQuantityById = new Map(inventory.map((item) => [item.id, item.quantity]));
+
+    if (bulkSelectEnabled && selectedItemIds.length > 0) {
+      const idsToClear = new Set<string>();
+      for (const id of selectedItemIds) {
+        const prevQty = previousQuantityByIdRef.current.get(id);
+        const currQty = currentQuantityById.get(id);
+        if (currQty === undefined) {
+          idsToClear.add(id);
+          continue;
+        }
+        if (prevQty !== undefined && currQty < prevQty) {
+          idsToClear.add(id);
+        }
+      }
+
+      if (idsToClear.size > 0) {
+        setSelectedItemIds([]);
+        setBulkSelectEnabled(false);
+      }
+    }
+
+    previousQuantityByIdRef.current = currentQuantityById;
+  }, [bulkSelectEnabled, inventoryQuantityKey, selectedItemIdsKey]);
+
+  const selectedCountById = new Map<string, number>();
+  for (const id of selectedItemIds) {
+    selectedCountById.set(id, (selectedCountById.get(id) || 0) + 1);
+  }
 
   const handleSortSelect = (field: SortField, direction: SortDirection = 'asc') => {
     setSortField(field);
@@ -658,7 +721,8 @@ export function InventoryView({
                 ownerId={ownerId}
                 onClick={() => onItemClick(item)}
                 bulkSelectEnabled={bulkSelectEnabled}
-                isSelected={selectedItemIds.includes(item.id)}
+                isSelected={(selectedCountById.get(item.id) || 0) > 0}
+                selectedCount={selectedCountById.get(item.id) || 0}
                 selectedItemIds={selectedItemIds}
                 onToggleSelect={toggleItemSelection}
               />

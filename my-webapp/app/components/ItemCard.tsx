@@ -8,8 +8,9 @@ interface ItemCardProps {
   onClick: () => void;
   bulkSelectEnabled?: boolean;
   isSelected?: boolean;
+  selectedCount?: number;
   selectedItemIds?: string[];
-  onToggleSelect?: (itemId: string) => void;
+  onToggleSelect?: (item: Item) => void;
 }
 
 const rarityColors: Record<string, { text: string; dot: string; bg: string; border: string }> = {
@@ -27,6 +28,7 @@ export function ItemCard({
   onClick,
   bulkSelectEnabled = false,
   isSelected = false,
+  selectedCount = 0,
   selectedItemIds = [],
   onToggleSelect,
 }: ItemCardProps) {
@@ -52,7 +54,7 @@ export function ItemCard({
       ref={drag as any}
       onClick={() => {
         if (bulkSelectEnabled && onToggleSelect) {
-          onToggleSelect(item.id);
+          onToggleSelect(item);
           return;
         }
         onClick();
@@ -76,7 +78,11 @@ export function ItemCard({
             (isSelected ? 'bg-[#5C1A1A] border-[#3D1409] text-white' : 'bg-white border-[#8B6F47]/60')
           }
         >
-          {isSelected && <span className="text-[10px] leading-none">✓</span>}
+          {isSelected && (
+            <span className="text-[9px] leading-none tabular-nums">
+              {selectedCount >= item.quantity ? '✓' : selectedCount}
+            </span>
+          )}
         </div>
       )}
       {/* Grip icon — visual hint that the card is draggable */}
@@ -95,9 +101,16 @@ export function ItemCard({
         />
       )}
       {item.quantity > 1 && (
-        <span className="text-xs text-[#8B6F47] bg-[#D9C7AA]/60 px-1.5 py-0.5 rounded tabular-nums shrink-0">
-          x{item.quantity}
-        </span>
+        <div className="flex items-center gap-1 shrink-0">
+          {bulkSelectEnabled && selectedCount > 0 && (
+            <span className="text-[10px] text-[#5C1A1A] bg-[#F5E6D2] border border-[#8B6F47]/40 px-1.5 py-0.5 rounded tabular-nums">
+              {selectedCount}/{item.quantity}
+            </span>
+          )}
+          <span className="text-xs text-[#8B6F47] bg-[#D9C7AA]/60 px-1.5 py-0.5 rounded tabular-nums">
+            x{item.quantity}
+          </span>
+        </div>
       )}
       <span className={'text-[11px] capitalize shrink-0 font-medium ' + colors.text}>
         {item.rarity}

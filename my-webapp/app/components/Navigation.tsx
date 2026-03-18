@@ -517,7 +517,7 @@ export function Navigation() {
         </SheetTrigger>
         <SheetContent 
           side="top" 
-          className="w-full h-auto bg-linear-to-br from-[#F5EFE0] via-[#E8D5B7] to-[#DCC8A8] border-none p-0 pb-6 pt-24 z-30"
+          className="w-full h-auto bg-linear-to-br from-[#F5EFE0] via-[#E8D5B7] to-[#DCC8A8] border-x-4 border-b-4 border-[#3D1409] rounded-b-2xl p-0 pb-6 pt-24 z-30"
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
@@ -560,20 +560,19 @@ export function Navigation() {
                       </div>
                       <p className="text-xs text-[#5C4A2F] truncate">{authData.email}</p>
                     </div>
+                    <button
+                      onClick={() => { setIsOpen(false); setProfileModalOpen(true); }}
+                      className="btn-secondary inline-flex items-center gap-2 h-9 px-3.5 rounded-lg text-xs font-semibold text-[#3D1409] border-[#8B6F47]/60 shrink-0"
+                      title="Edit profile"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>Edit</span>
+                    </button>
                   </div>
                 </div>
 
                 {/* Actions */}
                 <ul className="space-y-2">
-                  <li className="w-full">
-                    <button
-                      onClick={() => { setIsOpen(false); setProfileModalOpen(true); }}
-                      className="btn-secondary inline-flex w-full items-center gap-3 px-5 py-4 rounded-lg justify-start text-[#3D1409]"
-                    >
-                      <User className="w-5 h-5" />
-                      <span>Edit Profile</span>
-                    </button>
-                  </li>
                   <li className="w-full">
                     <button 
                       onClick={handleLogout}

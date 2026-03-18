@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
 import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Item, Category, Rarity } from '../types';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
@@ -281,7 +283,32 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDeta
                     <StickyNote className="w-3.5 h-3.5" />
                     <span>Description</span>
                   </div>
-                  <p className="text-[#3D1409] text-sm leading-relaxed">{item.description}</p>
+                  <div className="text-[#3D1409] text-sm leading-relaxed space-y-2">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({ children }) => <p className="leading-relaxed">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc pl-5 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1">{children}</ol>,
+                        li: ({ children }) => <li>{children}</li>,
+                        strong: ({ children }) => <strong className="font-semibold text-[#2D0F06]">{children}</strong>,
+                        em: ({ children }) => <em className="italic">{children}</em>,
+                        code: ({ children }) => <code className="font-mono text-[0.85em] bg-[#F5EFE0] px-1 py-0.5 rounded">{children}</code>,
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto rounded-lg border border-[#DCC8A8] bg-[#F8F2E6]">
+                            <table className="min-w-full border-collapse">{children}</table>
+                          </div>
+                        ),
+                        thead: ({ children }) => <thead className="bg-[#E8D5B7]">{children}</thead>,
+                        tbody: ({ children }) => <tbody>{children}</tbody>,
+                        tr: ({ children }) => <tr className="border-b border-[#DCC8A8] last:border-0">{children}</tr>,
+                        th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-[#3D1409]">{children}</th>,
+                        td: ({ children }) => <td className="px-3 py-2 text-[#3D1409] align-top">{children}</td>,
+                      }}
+                    >
+                      {item.description}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               )}
 

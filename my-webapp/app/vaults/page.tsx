@@ -968,7 +968,7 @@ export default function VaultsPage() {
       return <VaultDetailSkeleton />;
     }
     // Otherwise show vault list skeleton
-    return <VaultListSkeleton userType={userRole} />;
+    return <VaultListSkeleton />;
   }
 
   if (!isAuthenticated) return null;

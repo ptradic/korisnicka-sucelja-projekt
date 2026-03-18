@@ -13,48 +13,21 @@ export function Skeleton({ className = '', pulse = true }: SkeletonProps) {
   );
 }
 
-interface VaultListSkeletonProps {
-  userType: 'dm' | 'player';
-}
-
-export function VaultListSkeleton({ userType }: VaultListSkeletonProps) {
+export function VaultListSkeleton() {
   return (
     <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
       <div className="max-w-7xl mx-auto px-6 py-8 pt-32">
         {/* Create/Join Vault Section Skeleton */}
         <div className="mb-8">
-          {userType === 'dm' ? (
-            <div className="w-full bg-[#F5EFE0]/50 border-4 border-[#8B6F47]/30 border-dashed rounded-xl p-8">
-              <div className="flex flex-col items-center gap-4">
-                <Skeleton className="w-16 h-16 rounded-full" />
-                <div className="text-center space-y-2">
-                  <Skeleton className="h-5 w-48" />
-                  <Skeleton className="h-4 w-64" />
-                </div>
+          <div className="w-full bg-[#F5EFE0]/50 border-4 border-[#8B6F47]/30 border-dashed rounded-xl p-8">
+            <div className="flex flex-col items-center gap-4">
+              <Skeleton className="w-16 h-16 rounded-full" />
+              <div className="text-center space-y-2">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-64" />
               </div>
             </div>
-          ) : (
-            <div className="flex gap-4">
-              <div className="flex-1 bg-[#F5EFE0]/50 border-4 border-[#8B6F47]/30 border-dashed rounded-xl p-6">
-                <div className="flex flex-col items-center gap-4">
-                  <Skeleton className="w-12 h-12 rounded-full" />
-                  <div className="text-center space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-40" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1 bg-[#F5EFE0]/50 border-4 border-[#8B6F47]/30 border-dashed rounded-xl p-6">
-                <div className="flex flex-col items-center gap-4">
-                  <Skeleton className="w-12 h-12 rounded-full" />
-                  <div className="text-center space-y-2">
-                    <Skeleton className="h-4 w-28" />
-                    <Skeleton className="h-3 w-36" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Vaults Grid Skeleton */}

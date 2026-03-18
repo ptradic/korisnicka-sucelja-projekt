@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   BookOpen,
   ChevronDown,
@@ -13,11 +14,14 @@ import {
   Wand2,
   PenLine,
   MousePointer,
+  Coins,
+  Settings,
   AlertTriangle,
   CheckCircle2,
   ArrowRight,
 } from "lucide-react";
 import { useScrollReveal } from "@/app/hooks/useScrollReveal";
+import { onAuthChange } from "@/src/firebaseService";
 
 /* ── Tutorial step data ─────────────────────────────────────────────── */
 const steps = [
@@ -38,33 +42,49 @@ const steps = [
   },
   {
     number: 2,
-    title: "Sign In to Your Account",
+    title: "Sign In (Email or Google)",
     icon: LogIn,
     description:
-      "Once registered, sign in with your email and password. You'll be redirected to the home page where you can start managing vaults.",
+      "Log in with email/password or Google. If your account already exists, you\'ll be redirected to your vault dashboard.",
     details: [
-      "Enter the email and password you just created.",
-      'Click "Sign In" to access your dashboard.',
-      "You'll see the home page with a welcome message.",
+      "Use your email/password, or click Google sign-in.",
+      "After successful login, open Vaults from navigation.",
+      "Your role (GM or Player) determines what actions you can perform.",
     ],
-    tip: "Your session is saved locally — you'll stay signed in until you log out.",
+    tip: "Already signed in? Opening Login will forward you to Vaults automatically.",
   },
   {
     number: 3,
-    title: "Create Your First Vault",
+    title: "GM: Create a Vault",
     icon: Plus,
     description:
-      "From the home page, open the Create Vault modal. Name your campaign, set the number of player slots, and bring your adventure to life.",
+      "As a Game Master, create a campaign vault with a name, password, and optional description.",
     details: [
-      'Click the "Create New Vault" button on the home page.',
-      "Give your campaign a memorable name (e.g., Curse of Strahd).",
-      "Set the number of player slots (2–8 adventurers).",
-      'Press "Create Vault" — your vault is ready!',
+      'Click "Create New Campaign Vault".',
+      "Set your campaign name and vault password.",
+      "Optionally add a short campaign description.",
+      'Click "Create Vault" to generate your campaign.',
+      "Copy the 8-character invite code shown after creation.",
     ],
-    tip: "You can always create additional vaults later. Each vault is an independent campaign with its own players and inventory.",
+    tip: "Players need both the invite code and the vault password to join.",
   },
   {
     number: 4,
+    title: "Player: Join a Campaign",
+    icon: Users,
+    description:
+      "As a Player, join an existing vault using the GM\'s invite code and password.",
+    details: [
+      'Click "Join Campaign Vault".',
+      "Enter the 8-character invite code.",
+      "Enter the campaign password.",
+      "Choose your character name for this vault.",
+      'Click "Join Campaign" to enter the party.',
+    ],
+    tip: "Your character name can be changed later inside that vault.",
+  },
+  {
+    number: 5,
     title: "Meet the Vault Interface",
     icon: Users,
     description:
@@ -78,54 +98,110 @@ const steps = [
     tip: "On mobile, the sidebar appears as a horizontal scrollable bar at the top of the screen.",
   },
   {
-    number: 5,
-    title: "Add Items from the Template List",
+    number: 6,
+    title: "Add Items from 5e/5.5e or Vault Pool",
     icon: Package,
     description:
-      'As a Game Master, click "Add Item" in any inventory. Switch to the "Choose from List" tab to browse pre-built 5e or 5.5e items organized by category and rarity.',
+      'Open Add Item, then search official 5e/5.5e equipment or pick from your vault\'s custom item pool.',
     details: [
       'Select a player (or Shared Loot) and click "+ Add Item".',
-      'The "Choose from List" tab shows all template items.',
-      "Use the search bar and category pills to filter items.",
-      "Click any item to instantly add it to the inventory.",
+      "In Add Items, choose between 5e/5.5e items and custom items.",
+      "Search by name (minimum 2 characters for API search).",
+      "Pick an item to add it instantly to the selected inventory.",
     ],
-    tip: "Template items include classic 5e or 5.5e equipment — weapons, armor, potions, wondrous items, and more.",
-  },
-  {
-    number: 6,
-    title: "Create a Custom Item",
-    icon: PenLine,
-    description:
-      'Switch to the "Create Custom" tab to design your own item from scratch. Set the name, description, category, rarity, weight, value, and whether it requires attunement.',
-    details: [
-      'In the Add Item modal, switch to the "Create Custom" tab.',
-      "Fill in the Item Name (required), Description, Category and Rarity.",
-      "Set the Weight (lbs) and optionally a gold-piece Value.",
-      'Toggle "Requires Attunement" if applicable.',
-      'Click "Create Item" to add it.',
-    ],
-    tip: "Custom items are perfect for homebrew gear, quest rewards, or anything not in the standard list.",
+    tip: "You can add to a player inventory or to Shared Loot depending on what is selected.",
   },
   {
     number: 7,
-    title: "Drag & Drop Between Inventories",
+    title: "Create Homebrew and Manage Pool",
+    icon: PenLine,
+    description:
+      "Game Masters can create homebrew items, edit them later, and control which homebrew appears in the current vault.",
+    details: [
+      'In Add Item, switch to "Create Homebrew" to make a new item.',
+      "Set name, category, rarity, quantity, value, weight, and attunement.",
+      "Save it to your homebrew list.",
+      "From Add Items, toggle which homebrew entries are enabled in this vault.",
+      "Save Custom Item Pool to publish your selection to the campaign.",
+    ],
+    tip: "Homebrew is user-level, while the custom item pool is vault-level.",
+  },
+  {
+    number: 8,
+    title: "Edit, Stack, and Remove Items",
+    icon: CheckCircle2,
+    description:
+      "Open item details to update quantity, notes, attunement state, and other fields. Matching items stack automatically on add.",
+    details: [
+      "Click an item card to open details.",
+      "Adjust fields like quantity, notes, and attunement state.",
+      "Delete items you no longer need from the same modal.",
+      "When adding the same item signature, quantity stacks instead of duplicating.",
+    ],
+    tip: "Use clear naming and notes so players can understand loot at a glance.",
+  },
+  {
+    number: 9,
+    title: "Track Coins and Carry Limit",
+    icon: Coins,
+    description:
+      "Each player inventory supports coin tracking and max carry weight controls.",
+    details: [
+      "Use the coin controls to add or subtract PP, GP, SP, and CP.",
+      "Edit carry limit to match character strength or house rules.",
+      "Watch the weight bar to avoid over-encumbrance.",
+      "Shared Loot does not use player coin/carry settings.",
+    ],
+    tip: "Negative values in the coin panel are useful for quick spending adjustments.",
+  },
+  {
+    number: 10,
+    title: "Move Items and Handle Transfer Requests",
     icon: MousePointer,
     description:
-      "Move items between players or to shared loot with drag and drop. Grab any item card and drop it onto another player in the sidebar to transfer it instantly.",
+      "Drag and drop items between inventories. GM moves are immediate, while player-to-player moves create short transfer requests.",
     details: [
       "Click and hold an item card to start dragging.",
-      "Drag it onto a player slot in the sidebar.",
-      "The target slot highlights when you hover over it.",
-      "Release to complete the transfer.",
+      "Drop onto another player or Shared Loot in the sidebar.",
+      "If a player sends to another player, the recipient gets an accept/decline prompt.",
+      "Requests expire quickly if not accepted, and senders can cancel pending ones.",
     ],
-    tip: "Drag and drop works on desktop and mobile.",
+    tip: "Bulk-select and drag can move multiple item units in one action.",
+  },
+  {
+    number: 11,
+    title: "Use Vault and Profile Settings",
+    icon: Settings,
+    description:
+      "Fine-tune your campaign and identity from settings modals in the app.",
+    details: [
+      "GM: open Vault Settings to rename vault, update password, and copy invite code.",
+      "Player: change your character name for this vault from the sidebar.",
+      "Any user: open Account Settings from navigation to update profile details.",
+      "Switch GM/Player role from account settings when needed.",
+    ],
+    tip: "Role changes update what actions are available the next time vault state refreshes.",
   },
 ];
 
 /* ── Component ──────────────────────────────────────────────────────── */
 export default function GuidesPage() {
+  const [startNowHref, setStartNowHref] = useState("/login");
+
+  useEffect(() => {
+    const unsubscribe = onAuthChange((firebaseUser) => {
+      setStartNowHref(firebaseUser ? "/vaults" : "/login");
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   /* scroll-reveal refs – one per below-the-fold section */
   const stepRefs = [
+    useScrollReveal<HTMLElement>({ delay: 0 }),
+    useScrollReveal<HTMLElement>({ delay: 50 }),
+    useScrollReveal<HTMLElement>({ delay: 0 }),
+    useScrollReveal<HTMLElement>({ delay: 50 }),
     useScrollReveal<HTMLElement>({ delay: 0 }),
     useScrollReveal<HTMLElement>({ delay: 50 }),
     useScrollReveal<HTMLElement>({ delay: 0 }),
@@ -162,7 +238,7 @@ export default function GuidesPage() {
         {/* Quick-jump pills */}
         <div className="flex flex-wrap justify-center gap-3 fade-in-up delay-400">
           <Link
-            href="/login"
+            href={startNowHref}
             className="btn-primary group"
           >
             <Wand2 className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
@@ -196,8 +272,8 @@ export default function GuidesPage() {
               className="scroll-reveal bg-[#F5EFE0] border-4 border-[#8B6F47] rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden"
             >
               {/* Step number accent */}
-              <div className="absolute -top-1 -right-1 w-20 h-20 bg-[#5C1A1A]/5 rounded-full" />
-              <div className="absolute top-3 right-4 text-[#5C1A1A]/15 text-6xl font-extrabold select-none" style={{ fontFamily: "var(--font-archivo-black)" }}>
+              <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-[#5C1A1A]/8 rounded-[58%_42%_60%_40%/45%_55%_45%_55%] rotate-12" />
+              <div className="absolute top-3 right-3 w-14 sm:w-16 text-center text-[#5C1A1A]/18 text-4xl sm:text-5xl font-extrabold leading-none select-none" style={{ fontFamily: "var(--font-archivo-black)" }}>
                 {step.number}
               </div>
 

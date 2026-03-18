@@ -116,6 +116,20 @@ export default function LoginPage() {
     setSignupSuccess(false);
   }, [mode]);
 
+  // If already authenticated, skip login page.
+  useEffect(() => {
+    const unsubscribe = onAuthChange(async (firebaseUser) => {
+      if (!firebaseUser) return;
+
+      const userDoc = await getUserDoc(firebaseUser.uid);
+      if (userDoc) {
+        router.replace("/vaults");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
   //  Login handler 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

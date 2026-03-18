@@ -62,6 +62,7 @@ export interface UserDoc {
   updatedAt: Timestamp;
   dmCampaigns: string[]; // Campaign IDs where user is DM
   playerCampaigns: string[]; // Campaign IDs where user is a player
+  userHomebrew: Item[];
 }
 
 // Campaign Document Structure
@@ -75,6 +76,7 @@ export interface CampaignDoc {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   sharedLoot: Item[];
+  customItemPool?: Item[];
   password?: string; // Optional password for joining
 }
 
@@ -107,6 +109,7 @@ export async function signUpUser(email: string, password: string, name: string, 
     updatedAt: serverTimestamp() as Timestamp,
     dmCampaigns: [],
     playerCampaigns: [],
+    userHomebrew: [],
   };
 
   await setDoc(doc(db, 'users', user.uid), userDoc);
@@ -140,6 +143,7 @@ export async function signInWithGoogle(): Promise<{ user: FirebaseUser; isNewUse
       updatedAt: serverTimestamp() as Timestamp,
       dmCampaigns: [],
       playerCampaigns: [],
+      userHomebrew: [],
     };
     await setDoc(doc(db, 'users', user.uid), userDoc);
     return { user, isNewUser: true };
@@ -179,6 +183,103 @@ export async function updateUserName(uid: string, name: string) {
   });
 }
 
+export async function getUserHomebrew(uid: string): Promise<Item[]> {
+  const userDoc = await getUserDoc(uid);
+  return userDoc?.userHomebrew ?? [];
+}
+
+export async function createUserHomebrewItem(uid: string, item: Omit<Item, 'id'>): Promise<Item> {
+  const userDoc = await getUserDoc(uid);
+  if (!userDoc) {
+    throw new Error('User profile not found');
+  }
+
+  const nextItem: Item = cleanItem({
+    ...item,
+    id: `hb-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+    createdAt: item.createdAt || new Date().toISOString(),
+  });
+
+  await updateDoc(doc(db, 'users', uid), {
+    userHomebrew: [...(userDoc.userHomebrew ?? []), nextItem],
+    updatedAt: serverTimestamp(),
+  });
+
+  return nextItem;
+}
+
+export async function updateUserHomebrewItem(uid: string, updatedItem: Item): Promise<void> {
+  const userDoc = await getUserDoc(uid);
+  if (!userDoc) {
+    throw new Error('User profile not found');
+  }
+
+  const existingIndex = (userDoc.userHomebrew ?? []).findIndex((item) => item.id === updatedItem.id);
+  if (existingIndex < 0) {
+    throw new Error('Homebrew item not found');
+  }
+
+  const nextHomebrew = [...(userDoc.userHomebrew ?? [])];
+  nextHomebrew[existingIndex] = cleanItem(updatedItem);
+
+  const campaignsSnap = await getDocs(query(collection(db, 'campaigns'), where('dmId', '==', uid)));
+  const batch = writeBatch(db);
+
+  batch.update(doc(db, 'users', uid), {
+    userHomebrew: cleanItems(nextHomebrew),
+    updatedAt: serverTimestamp(),
+  });
+
+  campaignsSnap.forEach((campaignDocSnap) => {
+    const campaign = campaignDocSnap.data() as CampaignDoc;
+    const pool = campaign.customItemPool ?? [];
+    const poolIndex = pool.findIndex((item) => item.id === updatedItem.id);
+    if (poolIndex < 0) return;
+
+    const nextPool = [...pool];
+    nextPool[poolIndex] = cleanItem(updatedItem);
+
+    batch.update(campaignDocSnap.ref, {
+      customItemPool: cleanItems(nextPool),
+      updatedAt: serverTimestamp(),
+    });
+  });
+
+  await batch.commit();
+}
+
+export async function deleteUserHomebrewItem(uid: string, itemId: string): Promise<void> {
+  const userDoc = await getUserDoc(uid);
+  if (!userDoc) {
+    throw new Error('User profile not found');
+  }
+
+  const nextHomebrew = (userDoc.userHomebrew ?? []).filter((item) => item.id !== itemId);
+
+  const campaignsSnap = await getDocs(query(collection(db, 'campaigns'), where('dmId', '==', uid)));
+  const batch = writeBatch(db);
+
+  batch.update(doc(db, 'users', uid), {
+    userHomebrew: cleanItems(nextHomebrew),
+    updatedAt: serverTimestamp(),
+  });
+
+  campaignsSnap.forEach((campaignDocSnap) => {
+    const campaign = campaignDocSnap.data() as CampaignDoc;
+    const pool = campaign.customItemPool ?? [];
+    const nextPool = pool.filter((item) => item.id !== itemId);
+
+    if (nextPool.length === pool.length) return;
+
+    batch.update(campaignDocSnap.ref, {
+      customItemPool: cleanItems(nextPool),
+      updatedAt: serverTimestamp(),
+    });
+  });
+
+  await batch.commit();
+}
+
 // ==================== Campaign Management ====================
 
 export async function createCampaign(
@@ -200,6 +301,7 @@ export async function createCampaign(
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
     sharedLoot: [],
+    customItemPool: [],
     password,
   };
 
@@ -240,6 +342,25 @@ export async function updateCampaignSettings(
   await updateDoc(doc(db, 'campaigns', campaignId), {
     name: updates.name.trim(),
     password: updates.password,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateCampaignCustomItemPool(
+  campaignId: string,
+  dmId: string,
+  customItemPool: Item[]
+): Promise<void> {
+  const campaign = await getCampaign(campaignId);
+  if (!campaign) {
+    throw new Error('Campaign not found');
+  }
+  if (campaign.dmId !== dmId) {
+    throw new Error('Only the campaign DM can update custom items.');
+  }
+
+  await updateDoc(doc(db, 'campaigns', campaignId), {
+    customItemPool: cleanItems(customItemPool),
     updatedAt: serverTimestamp(),
   });
 }

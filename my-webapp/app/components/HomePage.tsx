@@ -12,9 +12,15 @@ interface Vault {
   createdAt: string;
 }
 
+interface CreateVaultPayload {
+  name: string;
+  description: string;
+  password: string;
+}
+
 interface HomePageProps {
   onSelectVault: (vaultId: string) => void;
-  onCreateVault: (vault: Omit<Vault, 'id' | 'createdAt' | 'lastAccessed'>) => void;
+  onCreateVault: (vault: CreateVaultPayload) => void;
   onJoinVault: (campaignId: string, password: string) => Promise<boolean>;
   vaults: Vault[];
   onDeleteVault: (vaultId: string) => void;
@@ -187,11 +193,10 @@ function VaultCard({ vault, isDM, onOpen, onAction }: { vault: Vault; isDM: bool
   );
 }
 
-function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate: (vault: Omit<Vault, 'id' | 'createdAt' | 'lastAccessed'>) => void }) {
+function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate: (vault: CreateVaultPayload) => void }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    playerCount: 4,
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -326,7 +331,11 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
     e.preventDefault();
     const description = textareaRef.current?.value || '';
     if (formData.name.trim() && formData.password.trim()) {
-      onCreate({ ...formData, description });
+      onCreate({
+        name: formData.name,
+        description,
+        password: formData.password,
+      });
     }
   };
 
@@ -376,34 +385,6 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
               placeholder="e.g., The Dragon's Lair Campaign"
               required
             />
-          </div>
-
-          {/* Player Count */}
-          <div>
-            <label className="block text-[#3D1409] font-semibold text-sm mb-1">
-              Number of Players
-            </label>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, playerCount: Math.max(1, formData.playerCount - 1) })}
-                className="btn-secondary w-9 h-9 !p-0 text-[#3D1409] font-bold text-lg"
-              >
-                −
-              </button>
-              <div className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl shadow-sm">
-                <Users className="w-4 h-4 text-[#8B6F47]" />
-                <span className="text-[#3D1409] font-bold text-xl tabular-nums">{formData.playerCount}</span>
-                <span className="text-[#5C4A2F] text-sm font-medium">player{formData.playerCount !== 1 ? 's' : ''}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, playerCount: Math.min(10, formData.playerCount + 1) })}
-                className="btn-secondary w-9 h-9 !p-0 text-[#3D1409] font-bold text-lg"
-              >
-                +
-              </button>
-            </div>
           </div>
 
           {/* Vault Password */}

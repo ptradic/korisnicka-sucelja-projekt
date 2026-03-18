@@ -10,6 +10,7 @@ interface ItemDetailsModalProps {
   onClose: () => void;
   onUpdate: (updates: Partial<Item>) => void;
   onDelete: () => void;
+  showDeleteAction?: boolean;
 }
 
 const categories: Category[] = ['weapon', 'armor', 'potion', 'magic', 'treasure', 'misc'];
@@ -33,7 +34,7 @@ const rarityGradients: Record<string, string> = {
   artifact: 'from-[#6B2020] to-[#8B3A3A]',
 };
 
-export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDetailsModalProps) {
+export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const backdropMouseDown = useRef(false);
@@ -384,13 +385,15 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete }: ItemDeta
 
               <div className="border-t-2 border-[#DCC8A8]" />
 
-              <button
-                onClick={handleDelete}
-                className="btn-secondary w-full px-4 py-2.5 bg-[#FFEBEE]/80 hover:bg-[#FFCDD2] border-[#8B3A3A]/60 hover:border-[#8B3A3A] text-[#6B2020]"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Item
-              </button>
+              {showDeleteAction && (
+                <button
+                  onClick={handleDelete}
+                  className="btn-secondary w-full px-4 py-2.5 bg-[#FFEBEE]/80 hover:bg-[#FFCDD2] border-[#8B3A3A]/60 hover:border-[#8B3A3A] text-[#6B2020]"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Item
+                </button>
+              )}
             </>
           )}
         </div>

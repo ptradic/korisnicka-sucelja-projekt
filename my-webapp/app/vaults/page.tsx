@@ -46,100 +46,12 @@ import {
   leaveCampaign,
   deletePlayerInventoryDoc,
   updateCampaignSettings,
+  createUserHomebrewItem,
+  updateCampaignCustomItemPool,
+  updateUserHomebrewItem,
+  deleteUserHomebrewItem,
 } from '@/src/firebaseService';
 import type { CampaignDoc, PlayerInventoryDoc, TransferRequest } from '@/src/firebaseService';
-
-//  Template items (for adding new items) 
-const TEMPLATE_ITEMS: Item[] = [
-  {
-    id: 'tpl-1',
-    name: 'Flaming Longsword',
-    description: 'A masterwork longsword wreathed in magical fire. Deals an extra 1d6 fire damage on hit.',
-    category: 'weapon',
-    rarity: 'rare',
-    quantity: 1,
-    weight: 3,
-    value: 5000,
-    attunement: true,
-  },
-  {
-    id: 'tpl-2',
-    name: 'Shield of Faith',
-    description: 'A heavy steel shield blessed by a cleric. Grants +2 AC.',
-    category: 'armor',
-    rarity: 'uncommon',
-    quantity: 1,
-    weight: 6,
-    value: 1200,
-    attunement: false,
-  },
-  {
-    id: 'tpl-3',
-    name: 'Potion of Healing',
-    description: 'A vial of red liquid that restores 2d4+2 hit points when consumed.',
-    category: 'potion',
-    rarity: 'common',
-    quantity: 1,
-    weight: 0.5,
-    value: 50,
-    attunement: false,
-  },
-  {
-    id: 'tpl-4',
-    name: 'Wand of Magic Missiles',
-    description: 'Has 7 charges. Expend 1 charge to cast Magic Missile at 1st level.',
-    category: 'magic',
-    rarity: 'uncommon',
-    quantity: 1,
-    weight: 1,
-    value: 8000,
-    attunement: true,
-  },
-  {
-    id: 'tpl-5',
-    name: 'Bag of Holding',
-    description: 'This bag has an interior space considerably larger than its outside dimensions.',
-    category: 'magic',
-    rarity: 'uncommon',
-    quantity: 1,
-    weight: 15,
-    value: 4000,
-    attunement: false,
-  },
-  {
-    id: 'tpl-6',
-    name: 'Golden Crown',
-    description: 'An ornate crown studded with rubies, taken from a forgotten king.',
-    category: 'treasure',
-    rarity: 'legendary',
-    quantity: 1,
-    weight: 2,
-    value: 25000,
-    attunement: false,
-  },
-  {
-    id: 'tpl-7',
-    name: 'Rope of Climbing',
-    description: '60 feet of silk rope that obeys your commands.',
-    category: 'misc',
-    rarity: 'uncommon',
-    quantity: 1,
-    weight: 3,
-    value: 2000,
-    attunement: false,
-  },
-  {
-    id: 'tpl-8',
-    name: 'Staff of the Archmage',
-    description: 'A powerful staff granting +2 to spell attack rolls and spell save DC.',
-    category: 'magic',
-    rarity: 'legendary',
-    quantity: 1,
-    weight: 4,
-    value: 60000,
-    attunement: true,
-  },
-];
 
 // Multi-backend configuration for desktop and mobile
 const HTML5toTouch = {
@@ -205,6 +117,7 @@ export default function VaultsPage() {
   const [userId, setUserId] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
   const [userRole, setUserRole] = useState<'dm' | 'player'>('player');
+  const [userHomebrew, setUserHomebrew] = useState<Item[]>([]);
   const [campaigns, setCampaigns] = useState<CampaignDoc[]>([]);
   const [currentCampaignId, setCurrentCampaignId] = useState<string | null>(null);
   const [currentCampaign, setCurrentCampaign] = useState<CampaignDoc | null>(null);
@@ -291,6 +204,7 @@ export default function VaultsPage() {
           setUserId(firebaseUser.uid);
           setUserName(userDoc.name);
           setUserRole(userDoc.role);
+          setUserHomebrew(userDoc.userHomebrew ?? []);
           setIsLoading(false);
         } else {
           router.push('/login');
@@ -493,7 +407,7 @@ export default function VaultsPage() {
     router.push(`/vaults?c=${campaignId}`, { scroll: false });
   };
 
-  const handleCreateCampaign = async (info: { name: string; description: string; playerCount: number; password: string }) => {
+  const handleCreateCampaign = async (info: { name: string; description: string; password: string }) => {
     if (!userId) return;
     
     try {
@@ -824,6 +738,76 @@ export default function VaultsPage() {
     }
   };
 
+  const handleCreateHomebrew = async (item: Omit<Item, 'id'>) => {
+    if (!userId) return;
+
+    try {
+      const createdItem = await trackWrite(() => createUserHomebrewItem(userId, item));
+      setUserHomebrew((prev) => [...prev, createdItem]);
+    } catch (error) {
+      console.error('Failed to create homebrew item:', error);
+      showActionError('Could not save homebrew item', error, () => handleCreateHomebrew(item));
+    }
+  };
+
+  const handleSaveCustomItemPool = async (items: Item[]) => {
+    if (!currentCampaignId || !currentCampaign || !userId) return;
+
+    try {
+      await trackWrite(() => updateCampaignCustomItemPool(currentCampaignId, userId, items));
+      setCurrentCampaign((prev) => (prev ? { ...prev, customItemPool: items } : prev));
+    } catch (error) {
+      console.error('Failed to update custom item pool:', error);
+      showActionError('Could not update custom item pool', error, () => handleSaveCustomItemPool(items));
+    }
+  };
+
+  const handleUpdateHomebrewItem = async (updatedItem: Item) => {
+    if (!userId) return;
+
+    try {
+      await trackWrite(() => updateUserHomebrewItem(userId, updatedItem));
+
+      setUserHomebrew((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
+      setCampaigns((prev) => prev.map((campaign) => ({
+        ...campaign,
+        customItemPool: (campaign.customItemPool ?? []).map((item) => (item.id === updatedItem.id ? updatedItem : item)),
+      })));
+      setCurrentCampaign((prev) => prev
+        ? {
+            ...prev,
+            customItemPool: (prev.customItemPool ?? []).map((item) => (item.id === updatedItem.id ? updatedItem : item)),
+          }
+        : prev);
+    } catch (error) {
+      console.error('Failed to update homebrew item:', error);
+      showActionError('Could not update homebrew item', error, () => handleUpdateHomebrewItem(updatedItem));
+    }
+  };
+
+  const handleDeleteHomebrewItem = async (itemId: string) => {
+    if (!userId) return;
+
+    try {
+      await trackWrite(() => deleteUserHomebrewItem(userId, itemId));
+
+      setUserHomebrew((prev) => prev.filter((item) => item.id !== itemId));
+      setCampaigns((prev) => prev.map((campaign) => ({
+        ...campaign,
+        customItemPool: (campaign.customItemPool ?? []).filter((item) => item.id !== itemId),
+      })));
+      setCurrentCampaign((prev) => prev
+        ? {
+            ...prev,
+            customItemPool: (prev.customItemPool ?? []).filter((item) => item.id !== itemId),
+          }
+        : prev);
+    } catch (error) {
+      console.error('Failed to delete homebrew item:', error);
+      showActionError('Could not delete homebrew item', error, () => handleDeleteHomebrewItem(itemId));
+    }
+  };
+
   const handleUpdateSelectedItem = async (baseItem: Item, updates: Partial<Item>) => {
     if (!currentCampaignId || !currentCampaign) return;
 
@@ -918,6 +902,7 @@ export default function VaultsPage() {
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId);
   const isShared = selectedPlayerId === 'shared';
   const isDM = userRole === 'dm';
+  const vaultCustomItems = currentCampaign?.customItemPool ?? [];
   const syncStatus: 'saving' | 'saved' = pendingWriteCount > 0 ? 'saving' : 'saved';
 
   useEffect(() => {
@@ -1031,7 +1016,13 @@ export default function VaultsPage() {
             onClose={() => setShowAddItemModal(false)}
             targetName={isShared ? 'Shared Loot' : (selectedPlayer?.name ?? 'Unknown')}
             isDM={isDM}
-            templateItems={TEMPLATE_ITEMS}
+            customItems={vaultCustomItems}
+            userHomebrew={userHomebrew}
+            customItemPool={vaultCustomItems}
+            onSaveCustomItemPool={handleSaveCustomItemPool}
+            onCreateHomebrew={handleCreateHomebrew}
+            onUpdateHomebrewItem={handleUpdateHomebrewItem}
+            onDeleteHomebrewItem={handleDeleteHomebrewItem}
             onAdd={handleAddItem}
           />
         )}

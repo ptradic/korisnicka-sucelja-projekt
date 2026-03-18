@@ -49,6 +49,7 @@ export interface Campaign {
   dmName: string;
   playerIds: string[];
   sharedLoot: Item[];
+  customItemPool?: Item[];
   password?: string;
   createdAt?: any;
   updatedAt?: any;
@@ -61,4 +62,5 @@ export interface User {
   role: 'dm' | 'player';
   dmCampaigns: string[];
   playerCampaigns: string[];
+  userHomebrew?: Item[];
 }

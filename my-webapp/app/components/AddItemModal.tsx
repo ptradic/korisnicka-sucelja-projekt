@@ -1,13 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Search, Plus, Package, Loader2 } from 'lucide-react';
+import { X, Search, Plus, Package, Loader2, Check } from 'lucide-react';
 import type { Item, Category, Rarity } from '../types';
+import { ItemDetailsModal } from './ItemDetailsModal';
 
 interface AddItemModalProps {
   onClose: () => void;
   onAdd: (item: Omit<Item, 'id'>) => void;
   targetName: string;
   isDM?: boolean;
-  templateItems?: Item[];
+  customItems?: Item[];
+  userHomebrew?: Item[];
+  customItemPool?: Item[];
+  onSaveCustomItemPool?: (items: Item[]) => Promise<void> | void;
+  onCreateHomebrew?: (item: Omit<Item, 'id'>) => Promise<void> | void;
+  onUpdateHomebrewItem?: (item: Item) => Promise<void> | void;
+  onDeleteHomebrewItem?: (itemId: string) => Promise<void> | void;
 }
 
 interface DnDItemListItem {
@@ -38,12 +45,12 @@ const rarityDots: Record<string, string> = {
 };
 
 function TemplateItemPicker({
-  templateItems,
+  customItems,
   onSelect,
   onClose,
   targetName,
 }: {
-  templateItems: Item[];
+  customItems: Item[];
   onSelect: (item: Item) => void;
   onClose: () => void;
   targetName: string;
@@ -52,12 +59,12 @@ function TemplateItemPicker({
   const [dndItems, setDndItems] = useState<DnDItemListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState<string | null>(null);
-  const [useDndApi, setUseDndApi] = useState(true);
+  const [tab, setTab] = useState<'dnd' | 'custom'>('dnd');
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch D&D items from API
   useEffect(() => {
-    if (!useDndApi) return;
+    if (tab !== 'dnd') return;
 
     // Debounce search
     if (searchTimeoutRef.current) {
@@ -89,7 +96,7 @@ function TemplateItemPicker({
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [search, useDndApi]);
+  }, [search, tab]);
 
   // Handle selecting a D&D item (fetch full details)
   const handleSelectDndItem = async (dndItem: DnDItemListItem) => {
@@ -111,14 +118,14 @@ function TemplateItemPicker({
     }
   };
 
-  // Filter template items (fallback)
-  const filteredTemplates = templateItems.filter((item) => {
+  const filteredCustomItems = customItems.filter((item) => {
     const matchesSearch =
       search === '' ||
       item.name.toLowerCase().includes(search.toLowerCase()) ||
       (item.description || '').toLowerCase().includes(search.toLowerCase());
     return matchesSearch;
   });
+
 
   return (
     <>
@@ -130,11 +137,11 @@ function TemplateItemPicker({
           <div>
             <h2 className="text-lg font-extrabold text-[#3D1409]">Add Item to {targetName}</h2>
             <p className="text-[#5C4A2F] text-xs mt-0.5">
-              {useDndApi ? 'Search D&D 5e items' : 'Choose from templates'}
+              {tab === 'dnd' ? 'Search D&D 5e items' : 'Choose from custom items'}
             </p>
           </div>
         </div>
-        <button onClick={onClose} className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50">
+        <button onClick={onClose} className="btn-ghost active:scale-100 !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -145,23 +152,23 @@ function TemplateItemPicker({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
           <input
             type="text"
-            placeholder={useDndApi ? "Search D&D items (e.g., 'sword', 'potion')..." : "Search templates..."}
+            placeholder={tab === 'dnd' ? "Search D&D items (e.g., 'sword', 'potion')..." : 'Search custom items...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F]"
           />
-          {loading && (
+          {loading && tab === 'dnd' && (
             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F] animate-spin" />
           )}
         </div>
 
-        {/* Toggle between D&D API and templates */}
+        {/* Toggle between D&D API and custom items */}
         <div className="flex gap-2">
           <button
-            onClick={() => setUseDndApi(true)}
+            onClick={() => setTab('dnd')}
             className={
               'flex-1 text-xs rounded-lg ' +
-              (useDndApi
+              (tab === 'dnd'
                 ? 'btn-primary !px-3 !py-1.5'
                 : 'btn-secondary !px-3 !py-1.5 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
             }
@@ -169,39 +176,39 @@ function TemplateItemPicker({
             D&D 5e Items
           </button>
           <button
-            onClick={() => setUseDndApi(false)}
+            onClick={() => setTab('custom')}
             className={
               'flex-1 text-xs rounded-lg ' +
-              (!useDndApi
+              (tab === 'custom'
                 ? 'btn-primary !px-3 !py-1.5'
                 : 'btn-secondary !px-3 !py-1.5 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
             }
           >
-            Templates ({templateItems.length})
+            {`Custom Items (${customItems.length})`}
           </button>
         </div>
       </div>
 
       {/* Item list */}
       <div className="flex-1 overflow-y-auto p-3 min-h-0">
-        {loading && search.length >= 2 ? (
+        {loading && tab === 'dnd' && search.length >= 2 ? (
           <div className="text-center py-8">
             <Loader2 className="w-10 h-10 text-[#8B6F47] mx-auto mb-2 animate-spin" />
             <div className="text-[#5C4A2F] text-sm">Searching D&D items...</div>
           </div>
-        ) : useDndApi && search.length < 2 ? (
+        ) : tab === 'dnd' && search.length < 2 ? (
           <div className="text-center py-8">
             <Search className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
             <div className="text-[#5C4A2F] text-sm">Type at least 2 characters to search</div>
             <div className="text-[#8B6F47]/70 text-xs mt-1">Search for weapons, armor, potions, and magic items</div>
           </div>
-        ) : useDndApi && dndItems.length === 0 && search.length >= 2 ? (
+        ) : tab === 'dnd' && dndItems.length === 0 && search.length >= 2 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
             <div className="text-[#5C4A2F] text-sm">No D&D items found</div>
             <div className="text-[#8B6F47]/70 text-xs mt-1">Try a different search term</div>
           </div>
-        ) : useDndApi ? (
+        ) : tab === 'dnd' ? (
           <div className="space-y-1.5">
             {dndItems.map((item) => (
               <button
@@ -223,14 +230,14 @@ function TemplateItemPicker({
               </button>
             ))}
           </div>
-        ) : filteredTemplates.length === 0 ? (
+        ) : filteredCustomItems.length === 0 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
-            <div className="text-[#5C4A2F] text-sm">No templates match your search</div>
+            <div className="text-[#5C4A2F] text-sm">No custom items available in this vault</div>
           </div>
         ) : (
           <div className="space-y-1.5">
-            {filteredTemplates.map((item) => (
+            {filteredCustomItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => onSelect(item)}
@@ -239,9 +246,7 @@ function TemplateItemPicker({
                 <div className={'w-2.5 h-2.5 rounded-full shrink-0 ' + (rarityDots[item.rarity] || 'bg-[#A89A7C]')} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-[#3D1409] font-medium truncate">{item.name}</div>
-                  {item.description && (
-                    <div className="text-[11px] text-[#8B6F47] truncate">{item.description}</div>
-                  )}
+                  <div className="text-[11px] text-[#8B6F47] capitalize">{item.category}</div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-[11px] text-[#8B6F47]">{item.weight} lbs</span>
@@ -259,12 +264,203 @@ function TemplateItemPicker({
   );
 }
 
-function CustomItemForm({
-  onAdd,
+function CustomItemPoolManager({
+  userHomebrew,
+  customItemPool,
+  onSaveCustomItemPool,
+  onUpdateHomebrewItem,
+  onDeleteHomebrewItem,
   onClose,
   targetName,
 }: {
-  onAdd: (item: Omit<Item, 'id'>) => void;
+  userHomebrew: Item[];
+  customItemPool: Item[];
+  onSaveCustomItemPool?: (items: Item[]) => Promise<void> | void;
+  onUpdateHomebrewItem?: (item: Item) => Promise<void> | void;
+  onDeleteHomebrewItem?: (itemId: string) => Promise<void> | void;
+  onClose: () => void;
+  targetName: string;
+}) {
+  const [search, setSearch] = useState('');
+  const [isSavingPool, setIsSavingPool] = useState(false);
+  const [selectedPoolIds, setSelectedPoolIds] = useState<string[]>(() => customItemPool.map((item) => item.id));
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+
+  useEffect(() => {
+    setSelectedPoolIds(customItemPool.map((item) => item.id));
+  }, [customItemPool]);
+
+  const filteredHomebrewItems = userHomebrew.filter((item) => {
+    const matchesSearch =
+      search === '' ||
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
+      (item.description || '').toLowerCase().includes(search.toLowerCase());
+    return matchesSearch;
+  });
+
+  const handleTogglePool = (itemId: string) => {
+    setSelectedPoolIds((prev) => {
+      if (prev.includes(itemId)) {
+        return prev.filter((id) => id !== itemId);
+      }
+      return [...prev, itemId];
+    });
+  };
+
+  const handleSavePool = async () => {
+    if (!onSaveCustomItemPool) return;
+    const selectedSet = new Set(selectedPoolIds);
+    const nextPool = userHomebrew.filter((item) => selectedSet.has(item.id));
+
+    setIsSavingPool(true);
+    try {
+      await onSaveCustomItemPool(nextPool);
+    } finally {
+      setIsSavingPool(false);
+    }
+  };
+
+  const hasPoolChanges = (() => {
+    const current = new Set(customItemPool.map((item) => item.id));
+    const next = new Set(selectedPoolIds);
+    if (current.size !== next.size) return true;
+    for (const id of current) {
+      if (!next.has(id)) return true;
+    }
+    return false;
+  })();
+
+  return (
+    <>
+      <div className="sticky top-0 bg-[#F5EFE0] p-4 sm:p-5 pb-3 flex items-start justify-between z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md shrink-0">
+            <Check className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold text-[#3D1409]">Manage Custom Item Pool</h2>
+            <p className="text-[#5C4A2F] text-xs mt-0.5">Choose which homebrew items appear for {targetName}</p>
+          </div>
+        </div>
+        <button onClick={onClose} className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="p-4 border-b border-[#8B6F47]/30">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
+          <input
+            type="text"
+            placeholder="Search homebrew items..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F]"
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3 min-h-0 space-y-1.5">
+        {filteredHomebrewItems.length === 0 ? (
+          <div className="text-center py-8">
+            <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
+            <div className="text-[#5C4A2F] text-sm">No homebrew items found</div>
+          </div>
+        ) : (
+          filteredHomebrewItems.map((item) => {
+            const enabled = selectedPoolIds.includes(item.id);
+
+            return (
+              <div
+                key={item.id}
+                onClick={() => setSelectedItem(item)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedItem(item);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                className="btn-secondary active:scale-100 w-full flex items-center gap-3 !px-3 !py-2.5 rounded-lg border-[#D4C4A8] bg-white/40 hover:bg-[#F5EFE0] hover:border-[#8B6F47] text-left group"
+              >
+                <div className={'w-2.5 h-2.5 rounded-full shrink-0 ' + (rarityDots[item.rarity] || 'bg-[#A89A7C]')} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-[#3D1409] font-medium truncate">{item.name}</div>
+                  <div className="text-[11px] text-[#8B6F47] capitalize">{item.category}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleTogglePool(item.id);
+                  }}
+                  className={
+                    'active:scale-100 w-8 h-8 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors touch-manipulation ' +
+                    (enabled ? 'bg-[#3D5A27] border-[#3D5A27]' : 'border-[#8B6F47]/60 bg-white/70')
+                  }
+                  aria-label={enabled ? 'Remove from custom item pool' : 'Add to custom item pool'}
+                  title={enabled ? 'Remove from pool' : 'Add to pool'}
+                >
+                  {enabled ? (
+                    <Check className="w-4 h-4 text-white" />
+                  ) : null}
+                </button>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="p-3 border-t-2 border-[#DCC8A8]">
+        <button
+          onClick={() => void handleSavePool()}
+          disabled={!hasPoolChanges || isSavingPool}
+          className="btn-primary active:scale-100 w-full disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {isSavingPool ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Save Custom Item Pool'
+          )}
+        </button>
+      </div>
+
+      {selectedItem && (
+        <ItemDetailsModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+          onUpdate={async (updates) => {
+            const updatedItem = { ...selectedItem, ...updates };
+            if (onUpdateHomebrewItem) {
+              await onUpdateHomebrewItem(updatedItem);
+            }
+            setSelectedItem(updatedItem);
+          }}
+          onDelete={async () => {
+            const deletingId = selectedItem.id;
+            if (onDeleteHomebrewItem) {
+              await onDeleteHomebrewItem(deletingId);
+            }
+            setSelectedPoolIds((prev) => prev.filter((id) => id !== deletingId));
+            setSelectedItem(null);
+          }}
+          showDeleteAction
+        />
+      )}
+    </>
+  );
+}
+
+function CustomItemForm({
+  onCreate,
+  onClose,
+  targetName,
+}: {
+  onCreate: (item: Omit<Item, 'id'>) => Promise<void> | void;
   onClose: () => void;
   targetName: string;
 }) {
@@ -330,7 +526,7 @@ function CustomItemForm({
     return nextErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const nextErrors = validateForm();
     setErrors(nextErrors);
@@ -357,7 +553,7 @@ function CustomItemForm({
       item.notes = formData.notes;
     }
 
-    onAdd(item);
+    await onCreate(item);
     onClose();
   };
 
@@ -370,7 +566,7 @@ function CustomItemForm({
           </div>
           <div>
             <h2 className="text-base font-extrabold text-[#3D1409] leading-tight">Create Custom Item</h2>
-            <p className="text-[#5C4A2F] text-xs">Add to {targetName}</p>
+            <p className="text-[#5C4A2F] text-xs">Save to your homebrew for {targetName}</p>
           </div>
         </div>
         <button onClick={onClose} className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50">
@@ -529,8 +725,20 @@ function CustomItemForm({
   );
 }
 
-export function AddItemModal({ onClose, onAdd, targetName, isDM, templateItems = [] }: AddItemModalProps) {
-  const [mode, setMode] = useState<'pick' | 'custom'>(isDM ? 'custom' : 'pick');
+export function AddItemModal({
+  onClose,
+  onAdd,
+  targetName,
+  isDM,
+  customItems = [],
+  userHomebrew = [],
+  customItemPool = [],
+  onSaveCustomItemPool,
+  onCreateHomebrew,
+  onUpdateHomebrewItem,
+  onDeleteHomebrewItem,
+}: AddItemModalProps) {
+  const [mode, setMode] = useState<'pick' | 'manage' | 'custom'>('pick');
   const backdropMouseDown = useRef(false);
 
   const handleSelectTemplate = (template: Item) => {
@@ -552,7 +760,7 @@ export function AddItemModal({ onClose, onAdd, targetName, isDM, templateItems =
         className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl overflow-hidden"
         style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', height: 'min(90vh, 700px)' }}
       >
-        {/* GM gets tabs to switch between template picker and custom form */}
+        {/* GM gets tabs to switch between pool management and homebrew creation */}
         {isDM && (
           <div className="flex border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] rounded-t-xl overflow-hidden">
             <button
@@ -564,7 +772,18 @@ export function AddItemModal({ onClose, onAdd, targetName, isDM, templateItems =
                   : 'btn-secondary rounded-none text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409] border-transparent shadow-none')
               }
             >
-              Choose from List
+              Add Items
+            </button>
+            <button
+              onClick={() => setMode('manage')}
+              className={
+                'flex-1 text-sm py-3 ' +
+                (mode === 'manage'
+                  ? 'btn-primary rounded-none'
+                  : 'btn-secondary rounded-none text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409] border-transparent shadow-none')
+              }
+            >
+              Manage Pool
             </button>
             <button
               onClick={() => setMode('custom')}
@@ -575,20 +794,30 @@ export function AddItemModal({ onClose, onAdd, targetName, isDM, templateItems =
                   : 'btn-secondary rounded-none text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409] border-transparent shadow-none')
               }
             >
-              Create Custom
+              Create Homebrew
             </button>
           </div>
         )}
 
         {mode === 'pick' ? (
           <TemplateItemPicker
-            templateItems={templateItems}
+            customItems={customItems}
             onSelect={handleSelectTemplate}
             onClose={onClose}
             targetName={targetName}
           />
+        ) : mode === 'manage' ? (
+          <CustomItemPoolManager
+            userHomebrew={userHomebrew}
+            customItemPool={customItemPool}
+            onSaveCustomItemPool={onSaveCustomItemPool}
+            onUpdateHomebrewItem={onUpdateHomebrewItem}
+            onDeleteHomebrewItem={onDeleteHomebrewItem}
+            onClose={onClose}
+            targetName={targetName}
+          />
         ) : (
-          <CustomItemForm onAdd={onAdd} onClose={onClose} targetName={targetName} />
+          <CustomItemForm onCreate={onCreateHomebrew || onAdd} onClose={onClose} targetName={targetName} />
         )}
       </div>
     </div>

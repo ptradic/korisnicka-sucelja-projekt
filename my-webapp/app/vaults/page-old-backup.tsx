@@ -246,13 +246,15 @@ export default function VaultsPage() {
     }
   };
 
-  const handleCreateVault = (info: { name: string; description: string; playerCount: number; password: string }) => {
+  const handleCreateVault = (info: { name: string; description: string; password: string }) => {
+    const defaultPlayerCount = 4;
     const newVault: Vault = {
       ...info,
+      playerCount: defaultPlayerCount,
       id: `vault-${Date.now()}`,
       createdAt: new Date().toISOString(),
       lastAccessed: new Date().toISOString(),
-      data: buildInitialData(info.playerCount),
+      data: buildInitialData(defaultPlayerCount),
     };
     setVaults([...vaults, newVault]);
   };
@@ -420,7 +422,7 @@ export default function VaultsPage() {
             onClose={() => setShowAddItemModal(false)}
             targetName={isShared ? 'Shared Loot' : (selectedPlayer?.name ?? 'Unknown')}
             isDM={isDM}
-            templateItems={TEMPLATE_ITEMS}
+            customItems={TEMPLATE_ITEMS}
             onAdd={(item: Omit<Item, 'id'>) => {
               setVaultData((prev) => {
                 const addQty = item.quantity || 1;

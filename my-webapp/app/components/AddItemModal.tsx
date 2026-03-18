@@ -21,6 +21,7 @@ interface DnDItemListItem {
   index: string;
   name: string;
   type: 'equipment' | 'magic';
+  rarity?: string;
 }
 
 const categories: Category[] = ['weapon', 'armor', 'potion', 'magic', 'treasure', 'misc'];
@@ -42,6 +43,28 @@ const rarityDots: Record<string, string> = {
   'very rare': 'bg-[#7E57A2]',
   legendary: 'bg-[#B8860B]',
   artifact: 'bg-[#8B3A3A]',
+};
+
+const dndRarityDotByKey: Record<string, string> = {
+  common: rarityDots.common,
+  uncommon: rarityDots.uncommon,
+  rare: rarityDots.rare,
+  'very-rare': rarityDots['very rare'],
+  legendary: rarityDots.legendary,
+  artifact: rarityDots.artifact,
+  varies: rarityDots.common,
+  none: 'bg-[#8B6F47]/50',
+};
+
+const dndRarityLabelByKey: Record<string, string> = {
+  common: 'Common',
+  uncommon: 'Uncommon',
+  rare: 'Rare',
+  'very-rare': 'Very Rare',
+  legendary: 'Legendary',
+  artifact: 'Artifact',
+  varies: 'Varies',
+  none: 'Mundane',
 };
 
 function TemplateItemPicker({
@@ -211,16 +234,22 @@ function TemplateItemPicker({
         ) : tab === 'dnd' ? (
           <div className="space-y-1.5">
             {dndItems.map((item) => (
+              (() => {
+                const rarityKey = item.rarity || 'none';
+                const rarityDotClass = dndRarityDotByKey[rarityKey] || dndRarityDotByKey.none;
+                const rarityLabel = dndRarityLabelByKey[rarityKey] || 'Mundane';
+
+                return (
               <button
                 key={item.index}
                 onClick={() => handleSelectDndItem(item)}
                 disabled={loadingDetails === item.index}
                 className="btn-secondary w-full flex items-center gap-3 !px-3 !py-2.5 rounded-lg border-[#D4C4A8] bg-white/40 hover:bg-[#F5EFE0] hover:border-[#8B6F47] text-left group disabled:opacity-50 disabled:cursor-wait shadow-none"
               >
-                <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#5C7A3B]" />
+                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${rarityDotClass}`} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-[#3D1409] font-medium truncate">{item.name}</div>
-                  <div className="text-[11px] text-[#8B6F47] capitalize">{item.type === 'magic' ? 'Magic Item' : 'Equipment'}</div>
+                  <div className="text-[11px] text-[#8B6F47]">{rarityLabel} • {item.type === 'magic' ? 'Magic Item' : 'Equipment'}</div>
                 </div>
                 {loadingDetails === item.index ? (
                   <Loader2 className="w-4 h-4 text-[#5C1A1A] animate-spin shrink-0" />
@@ -228,6 +257,8 @@ function TemplateItemPicker({
                   <Plus className="w-4 h-4 text-[#8B6F47]/40 group-hover:text-[#5C1A1A] transition-colors shrink-0" />
                 )}
               </button>
+                );
+              })()
             ))}
           </div>
         ) : filteredCustomItems.length === 0 ? (

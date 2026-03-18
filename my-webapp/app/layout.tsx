@@ -32,7 +32,7 @@ const archivoBlack = Archivo_Black({
 
 export const metadata: Metadata = {
   title: "Trailblazers' Vault",
-  description: "Manage your D&D party's inventory",
+  description: "Manage your 5.5e party's inventory",
 };
 
 export default function RootLayout({

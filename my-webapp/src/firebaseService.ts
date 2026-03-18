@@ -42,6 +42,21 @@ function cleanItems(items: Item[]): Item[] {
   return items.map(cleanItem);
 }
 
+function getItemStackSignature(item: Item): string {
+  return JSON.stringify({
+    name: item.name.trim().toLowerCase(),
+    category: item.category,
+    rarity: item.rarity,
+    description: item.description ?? '',
+    weight: Number.isFinite(item.weight) ? item.weight : 0,
+    value: item.value ?? null,
+    notes: item.notes ?? '',
+    attunement: Boolean(item.attunement),
+    attuned: Boolean(item.attuned),
+    sourcebook: (item.sourcebook ?? '').trim().toLowerCase(),
+  });
+}
+
 // Generate random campaign ID
 export function generateCampaignId(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -196,6 +211,7 @@ export async function createUserHomebrewItem(uid: string, item: Omit<Item, 'id'>
 
   const nextItem: Item = cleanItem({
     ...item,
+    sourcebook: item.sourcebook || 'homebrew',
     id: `hb-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     createdAt: item.createdAt || new Date().toISOString(),
   });
@@ -592,9 +608,9 @@ export async function addItemToInventory(
   const inventory = await getPlayerInventory(campaignId, playerId);
   if (!inventory) throw new Error('Inventory not found');
   
-  // Check if item already exists (same name, category, rarity)
+  // Check if item already exists (same full metadata signature)
   const existingIndex = inventory.inventory.findIndex(
-    (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+    (i) => getItemStackSignature(i) === getItemStackSignature(item)
   );
   
   if (existingIndex >= 0) {
@@ -612,9 +628,9 @@ export async function addItemToSharedLoot(campaignId: string, item: Item): Promi
   const campaign = await getCampaign(campaignId);
   if (!campaign) throw new Error('Campaign not found');
   
-  // Check if item already exists (same name, category, rarity)
+  // Check if item already exists (same full metadata signature)
   const existingIndex = campaign.sharedLoot.findIndex(
-    (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+    (i) => getItemStackSignature(i) === getItemStackSignature(item)
   );
   
   if (existingIndex >= 0) {
@@ -675,7 +691,7 @@ export async function moveItemBetweenInventories(
     if (toId === 'shared') {
       // Check if item already exists in shared loot
       const existingIndex = campaign.sharedLoot.findIndex(
-        (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+        (i) => getItemStackSignature(i) === getItemStackSignature(item)
       );
       
       if (existingIndex >= 0) {
@@ -691,7 +707,7 @@ export async function moveItemBetweenInventories(
       if (toInventory) {
         // Check if item already exists in player inventory
         const existingIndex = toInventory.inventory.findIndex(
-          (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+          (i) => getItemStackSignature(i) === getItemStackSignature(item)
         );
         
         if (existingIndex >= 0) {

@@ -74,6 +74,24 @@ const HTML5toTouch = {
   ],
 };
 
+type StackComparableItem = Pick<Item, 'name' | 'category' | 'rarity' | 'weight'> &
+  Partial<Pick<Item, 'description' | 'value' | 'notes' | 'attunement' | 'attuned' | 'sourcebook'>>;
+
+function getItemStackSignature(item: StackComparableItem): string {
+  return JSON.stringify({
+    name: item.name.trim().toLowerCase(),
+    category: item.category,
+    rarity: item.rarity,
+    description: item.description ?? '',
+    weight: Number.isFinite(item.weight) ? item.weight : 0,
+    value: item.value ?? null,
+    notes: item.notes ?? '',
+    attunement: Boolean(item.attunement),
+    attuned: Boolean(item.attuned),
+    sourcebook: (item.sourcebook ?? '').trim().toLowerCase(),
+  });
+}
+
 // Touch drag preview that follows the finger on mobile
 function TouchDragPreview() {
   const preview = usePreview();
@@ -697,7 +715,7 @@ export default function VaultsPage() {
     try {
       if (isShared) {
         const existingIndex = currentCampaign.sharedLoot.findIndex(
-          (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+          (i) => getItemStackSignature(i) === getItemStackSignature(item)
         );
 
         let updatedShared: Item[];
@@ -707,6 +725,7 @@ export default function VaultsPage() {
         } else {
           const newItem: Item = {
             ...item,
+            sourcebook: item.sourcebook || 'unknown',
             id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           };
           updatedShared = [...currentCampaign.sharedLoot, newItem];
@@ -714,7 +733,7 @@ export default function VaultsPage() {
         await trackWrite(() => updateSharedLoot(currentCampaignId, updatedShared));
       } else if (selectedPlayer) {
         const existingIndex = selectedPlayer.inventory.findIndex(
-          (i) => i.name === item.name && i.category === item.category && i.rarity === item.rarity
+          (i) => getItemStackSignature(i) === getItemStackSignature(item)
         );
 
         let updatedInventory: Item[];
@@ -724,6 +743,7 @@ export default function VaultsPage() {
         } else {
           const newItem: Item = {
             ...item,
+            sourcebook: item.sourcebook || 'unknown',
             id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           };
           updatedInventory = [...selectedPlayer.inventory, newItem];

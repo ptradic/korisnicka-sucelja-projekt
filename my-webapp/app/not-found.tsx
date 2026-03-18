@@ -52,7 +52,7 @@ export default function NotFound() {
           Page Not Found
         </h2>
 
-        {/* Funny D&D message - with About Us style background */}
+        {/* Funny 5.5e message - with About Us style background */}
         <div className="bg-white/40 backdrop-blur-sm border-2 border-[#DCC8A8] rounded-2xl p-4 sm:p-6 shadow-lg w-full mb-4 sm:mb-6">
           <p className="text-[#3D1409] text-sm sm:text-base mb-1" style={{ fontFamily: 'var(--font-averia)' }}>
             The page you're looking for rolled a <strong>Nat 20</strong> on its Stealth check.

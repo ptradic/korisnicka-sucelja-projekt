@@ -22,6 +22,7 @@ interface DnDItemListItem {
   name: string;
   type: 'equipment' | 'magic';
   rarity?: string;
+  editionKey?: string;
 }
 
 const categories: Category[] = ['weapon', 'armor', 'potion', 'magic', 'treasure', 'misc'];
@@ -85,7 +86,7 @@ function TemplateItemPicker({
   const [tab, setTab] = useState<'dnd' | 'custom'>('dnd');
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch D&D items from API
+  // Fetch 5.5e items from API
   useEffect(() => {
     if (tab !== 'dnd') return;
 
@@ -108,7 +109,7 @@ function TemplateItemPicker({
           setDndItems(items);
         }
       } catch (error) {
-        console.error('Failed to fetch D&D items:', error);
+        console.error('Failed to fetch 5.5e items:', error);
       } finally {
         setLoading(false);
       }
@@ -121,7 +122,7 @@ function TemplateItemPicker({
     };
   }, [search, tab]);
 
-  // Handle selecting a D&D item (fetch full details)
+  // Handle selecting a 5.5e item (fetch full details)
   const handleSelectDndItem = async (dndItem: DnDItemListItem) => {
     setLoadingDetails(dndItem.index);
     try {
@@ -160,7 +161,7 @@ function TemplateItemPicker({
           <div>
             <h2 className="text-lg font-extrabold text-[#3D1409]">Add Item to {targetName}</h2>
             <p className="text-[#5C4A2F] text-xs mt-0.5">
-              {tab === 'dnd' ? 'Search D&D 5e items' : 'Choose from custom items'}
+              {tab === 'dnd' ? 'Search 5.5e items' : 'Choose from custom items'}
             </p>
           </div>
         </div>
@@ -175,7 +176,7 @@ function TemplateItemPicker({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
           <input
             type="text"
-            placeholder={tab === 'dnd' ? "Search D&D items (e.g., 'sword', 'potion')..." : 'Search custom items...'}
+            placeholder={tab === 'dnd' ? "Search 5.5e items (e.g., 'sword', 'potion')..." : 'Search custom items...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F]"
@@ -185,7 +186,7 @@ function TemplateItemPicker({
           )}
         </div>
 
-        {/* Toggle between D&D API and custom items */}
+        {/* Toggle between 5.5e API and custom items */}
         <div className="flex gap-2">
           <button
             onClick={() => setTab('dnd')}
@@ -196,7 +197,7 @@ function TemplateItemPicker({
                 : 'btn-secondary !px-3 !py-1.5 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
             }
           >
-            D&D 5e Items
+            5.5e Items
           </button>
           <button
             onClick={() => setTab('custom')}
@@ -217,7 +218,7 @@ function TemplateItemPicker({
         {loading && tab === 'dnd' && search.length >= 2 ? (
           <div className="text-center py-8">
             <Loader2 className="w-10 h-10 text-[#8B6F47] mx-auto mb-2 animate-spin" />
-            <div className="text-[#5C4A2F] text-sm">Searching D&D items...</div>
+            <div className="text-[#5C4A2F] text-sm">Searching 5.5e items...</div>
           </div>
         ) : tab === 'dnd' && search.length < 2 ? (
           <div className="text-center py-8">
@@ -228,7 +229,7 @@ function TemplateItemPicker({
         ) : tab === 'dnd' && dndItems.length === 0 && search.length >= 2 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
-            <div className="text-[#5C4A2F] text-sm">No D&D items found</div>
+            <div className="text-[#5C4A2F] text-sm">No 5.5e items found</div>
             <div className="text-[#8B6F47]/70 text-xs mt-1">Try a different search term</div>
           </div>
         ) : tab === 'dnd' ? (
@@ -238,6 +239,7 @@ function TemplateItemPicker({
                 const rarityKey = item.rarity || 'none';
                 const rarityDotClass = dndRarityDotByKey[rarityKey] || dndRarityDotByKey.none;
                 const rarityLabel = dndRarityLabelByKey[rarityKey] || 'Mundane';
+                const editionLabel = item.editionKey || 'unknown';
 
                 return (
               <button
@@ -251,6 +253,9 @@ function TemplateItemPicker({
                   <div className="text-sm text-[#3D1409] font-medium truncate">{item.name}</div>
                   <div className="text-[11px] text-[#8B6F47]">{rarityLabel} • {item.type === 'magic' ? 'Magic Item' : 'Equipment'}</div>
                 </div>
+                <span className="text-[10px] uppercase tracking-wide px-2 py-1 rounded-md bg-[#E8D5B7] border border-[#D4C4A8] text-[#5C4A2F] shrink-0">
+                  {editionLabel}
+                </span>
                 {loadingDetails === item.index ? (
                   <Loader2 className="w-4 h-4 text-[#5C1A1A] animate-spin shrink-0" />
                 ) : (
@@ -280,6 +285,9 @@ function TemplateItemPicker({
                   <div className="text-[11px] text-[#8B6F47] capitalize">{item.category}</div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] uppercase tracking-wide px-2 py-1 rounded-md bg-[#E8D5B7] border border-[#D4C4A8] text-[#5C4A2F]">
+                    {item.sourcebook || 'homebrew'}
+                  </span>
                   <span className="text-[11px] text-[#8B6F47]">{item.weight} lbs</span>
                   <span className={'text-[11px] capitalize font-medium ' + (rarityColors[item.rarity] || '')}>
                     {item.rarity}
@@ -565,6 +573,7 @@ function CustomItemForm({
 
     const item: Omit<Item, 'id'> = {
       name: formData.name.trim(),
+      sourcebook: 'homebrew',
       category: formData.category,
       rarity: formData.rarity,
       quantity: formData.quantity,

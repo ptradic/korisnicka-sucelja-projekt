@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Item, Category, Rarity } from '@/app/types';
 
-// Open5e v2 API - comprehensive D&D 5e item database (2700+ items)
+// Open5e v2 API - comprehensive 5.5e item database (2700+ items)
 const OPEN5E_BASE = 'https://api.open5e.com/v2';
 
 interface Open5eItem {
@@ -67,6 +67,7 @@ function mapRarity(rarity: Open5eItem['rarity']): Rarity {
 function transformItem(item: Open5eItem): Omit<Item, 'id'> {
   return {
     name: item.name,
+    sourcebook: item.document?.key || 'unknown',
     description: item.desc || undefined,
     category: mapCategory(item),
     rarity: mapRarity(item.rarity),
@@ -118,12 +119,13 @@ export async function GET(request: NextRequest) {
       name: item.name,
       type: item.is_magic_item ? 'magic' : 'equipment',
       source: item.document.display_name,
+      editionKey: item.document.key,
       rarity: item.rarity?.key || 'none',
     }));
 
     return NextResponse.json(items);
   } catch (error) {
-    console.error('Error fetching D&D items:', error);
+    console.error('Error fetching 5.5e items:', error);
     return NextResponse.json(
       { error: 'Failed to fetch items' },
       { status: 500 }

@@ -5,6 +5,7 @@ export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' 
 export interface Item {
   id: string;
   name: string;
+  sourcebook?: string;
   description?: string;
   category: Category;
   rarity: Rarity;

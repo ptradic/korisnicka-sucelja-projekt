@@ -112,6 +112,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                 {item.rarity} {item.category}
                 {item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
               </p>
+              <p className="text-[10px] mt-1 text-[#5C4A2F] uppercase tracking-wide">Sourcebook: {item.sourcebook || 'unknown'}</p>
             </div>
           </div>
           <div className="flex items-center gap-1 ml-3 shrink-0">

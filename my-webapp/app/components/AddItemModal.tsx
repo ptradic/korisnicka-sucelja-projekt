@@ -817,13 +817,11 @@ function CustomItemForm({
               defaultValue={formData.description}
               onInput={(e) => {
                 const el = e.currentTarget;
-                el.scrollTop = el.scrollHeight;
                 setFormData((prev) => ({ ...prev, description: el.value }));
                 updateDescriptionScrollbar();
               }}
               onKeyUp={(e) => {
                 const el = e.currentTarget;
-                el.scrollTop = el.scrollHeight;
                 setFormData((prev) => ({ ...prev, description: el.value }));
                 updateDescriptionScrollbar();
               }}

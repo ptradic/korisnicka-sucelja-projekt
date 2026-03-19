@@ -424,13 +424,9 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
                 <textarea
                   ref={textareaRef}
                   onInput={() => {
-                    const el = textareaRef.current;
-                    if (el) el.scrollTop = el.scrollHeight;
                     updateScrollbar();
                   }}
                   onKeyUp={() => {
-                    const el = textareaRef.current;
-                    if (el) el.scrollTop = el.scrollHeight;
                     updateScrollbar();
                   }}
                   className="w-full px-4 py-3 pr-8 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-[border-color,box-shadow] duration-300 custom-scrollbar resize-none"

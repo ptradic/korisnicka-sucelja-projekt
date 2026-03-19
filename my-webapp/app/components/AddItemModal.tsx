@@ -989,6 +989,9 @@ export function AddItemModal({
 }: AddItemModalProps) {
   const [mode, setMode] = useState<'pick' | 'manage' | 'custom'>('pick');
   const backdropMouseDown = useRef(false);
+  const tabBaseClass = 'flex-1 text-sm py-3 font-bold border-0 rounded-none shadow-none transition-colors duration-200';
+  const tabActiveClass = 'bg-linear-to-r from-[#5C1A1A] to-[#7A2424] text-white';
+  const tabInactiveClass = 'bg-[#E8D5B7] text-[#5C4A2F] hover:bg-[#F5EFE0]/70 hover:text-[#3D1409]';
 
   const handleSelectTemplate = (template: Item) => {
     const { id, ...rest } = template;
@@ -1011,14 +1014,11 @@ export function AddItemModal({
       >
         {/* GM gets tabs to switch between pool management and homebrew creation */}
         {isDM && (
-          <div className="flex border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] rounded-t-xl overflow-hidden">
+          <div className="flex border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] overflow-hidden">
             <button
               onClick={() => setMode('pick')}
               className={
-                'flex-1 text-sm py-3 ' +
-                (mode === 'pick'
-                  ? 'btn-primary rounded-none'
-                  : 'btn-secondary rounded-none text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409] border-transparent shadow-none')
+                tabBaseClass + ' ' + (mode === 'pick' ? tabActiveClass : tabInactiveClass)
               }
             >
               Add Items
@@ -1026,10 +1026,7 @@ export function AddItemModal({
             <button
               onClick={() => setMode('manage')}
               className={
-                'flex-1 text-sm py-3 ' +
-                (mode === 'manage'
-                  ? 'btn-primary rounded-none'
-                  : 'btn-secondary rounded-none text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409] border-transparent shadow-none')
+                tabBaseClass + ' ' + (mode === 'manage' ? tabActiveClass : tabInactiveClass)
               }
             >
               Manage Pool
@@ -1037,10 +1034,7 @@ export function AddItemModal({
             <button
               onClick={() => setMode('custom')}
               className={
-                'flex-1 text-sm py-3 ' +
-                (mode === 'custom'
-                  ? 'btn-primary rounded-none'
-                  : 'btn-secondary rounded-none text-[#5C4A2F] hover:bg-[#F5EFE0]/50 hover:text-[#3D1409] border-transparent shadow-none')
+                tabBaseClass + ' ' + (mode === 'custom' ? tabActiveClass : tabInactiveClass)
               }
             >
               Create Homebrew

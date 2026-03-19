@@ -46,45 +46,76 @@ export function useCustomScrollbar<T extends HTMLElement>(
   }, [containerRef]);
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+    let activeEl: T | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    let mutationObserver: MutationObserver | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let raf1 = 0;
+    let raf2 = 0;
+    let rafAttach = 0;
 
     const handler = () => updateScrollbar();
-    const contentEl = el.firstElementChild;
 
-    el.addEventListener('scroll', handler);
-    el.addEventListener('input', handler);
-    el.addEventListener('change', handler);
-    const resizeObserver = new ResizeObserver(handler);
-    resizeObserver.observe(el);
-    if (contentEl instanceof Element) {
-      resizeObserver.observe(contentEl);
-    }
+    const detach = () => {
+      if (activeEl) {
+        activeEl.removeEventListener('scroll', handler);
+        activeEl.removeEventListener('input', handler);
+        activeEl.removeEventListener('change', handler);
+      }
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+      window.removeEventListener('resize', handler);
+      if (timer) clearTimeout(timer);
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+      activeEl = null;
+      resizeObserver = null;
+      mutationObserver = null;
+      timer = null;
+      raf1 = 0;
+      raf2 = 0;
+    };
 
-    const mutationObserver = new MutationObserver(handler);
-    mutationObserver.observe(el, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-    });
+    const attach = () => {
+      const el = containerRef.current;
+      if (!el) {
+        rafAttach = requestAnimationFrame(attach);
+        return;
+      }
 
-    window.addEventListener('resize', handler);
+      activeEl = el;
+      const contentEl = el.firstElementChild;
 
-    const timer = setTimeout(handler, 50);
-    const raf1 = requestAnimationFrame(handler);
-    const raf2 = requestAnimationFrame(() => requestAnimationFrame(handler));
+      el.addEventListener('scroll', handler);
+      el.addEventListener('input', handler);
+      el.addEventListener('change', handler);
+
+      resizeObserver = new ResizeObserver(handler);
+      resizeObserver.observe(el);
+      if (contentEl instanceof Element) {
+        resizeObserver.observe(contentEl);
+      }
+
+      mutationObserver = new MutationObserver(handler);
+      mutationObserver.observe(el, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+      });
+
+      window.addEventListener('resize', handler);
+
+      timer = setTimeout(handler, 50);
+      raf1 = requestAnimationFrame(handler);
+      raf2 = requestAnimationFrame(() => requestAnimationFrame(handler));
+    };
+
+    attach();
 
     return () => {
-      el.removeEventListener('scroll', handler);
-      el.removeEventListener('input', handler);
-      el.removeEventListener('change', handler);
-      resizeObserver.disconnect();
-      mutationObserver.disconnect();
-      window.removeEventListener('resize', handler);
-      clearTimeout(timer);
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
+      if (rafAttach) cancelAnimationFrame(rafAttach);
+      detach();
     };
   }, [containerRef, updateScrollbar]);
 

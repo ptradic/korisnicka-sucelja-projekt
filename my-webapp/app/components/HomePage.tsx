@@ -34,9 +34,9 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
   const isDM = userType === 'dm';
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
+    <div className="min-h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8 pt-32">
+      <div className="max-w-7xl mx-auto px-6 py-8 pt-8">
         {/* Create / Join Vault Section */}
         <div className="mb-8">
           {isDM ? (
@@ -219,15 +219,18 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
     const el = textareaRef.current;
     if (!el) return;
     const { scrollTop, scrollHeight, clientHeight } = el;
-    const hasScroll = scrollHeight > clientHeight;
+    const hasScroll = scrollHeight > clientHeight + 1;
     setShowScrollbar(hasScroll);
-    if (!hasScroll) return;
-    const trackPad = 6;
-    const trackH = clientHeight - trackPad * 2;
+    if (!hasScroll) {
+      setThumbTop(0);
+      setThumbHeight(0);
+      return;
+    }
+    const trackH = Math.max(1, scrollTrackRef.current?.clientHeight ?? clientHeight);
     const ratio = clientHeight / scrollHeight;
-    const tHeight = Math.max(24, trackH * ratio);
-    const maxTop = trackH - tHeight;
-    const tTop = maxTop * (scrollTop / (scrollHeight - clientHeight));
+    const tHeight = Math.min(trackH, Math.max(24, trackH * ratio));
+    const maxTop = Math.max(0, trackH - tHeight);
+    const tTop = maxTop * (scrollTop / Math.max(1, scrollHeight - clientHeight));
     setThumbHeight(tHeight);
     setThumbTop(tTop);
   }, []);
@@ -259,15 +262,14 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
     const handleMove = (ev: MouseEvent) => {
       if (!isScrollDragging.current || !textareaRef.current) return;
       const el = textareaRef.current;
-      const trackPad = 6;
-      const trackH = el.clientHeight - trackPad * 2;
+      const trackH = Math.max(1, scrollTrackRef.current?.clientHeight ?? el.clientHeight);
       const delta = ev.clientY - scrollDragStartY.current;
       const ratio = el.clientHeight / el.scrollHeight;
-      const tHeight = Math.max(24, trackH * ratio);
-      const maxTop = trackH - tHeight;
+      const tHeight = Math.min(trackH, Math.max(24, trackH * ratio));
+      const maxTop = Math.max(0, trackH - tHeight);
       const newTop = Math.min(maxTop, Math.max(0, scrollDragStartTop.current + delta));
-      const scrollRatio = newTop / maxTop;
-      el.scrollTop = scrollRatio * (el.scrollHeight - el.clientHeight);
+      const scrollRatio = maxTop > 0 ? newTop / maxTop : 0;
+      el.scrollTop = scrollRatio * Math.max(0, el.scrollHeight - el.clientHeight);
     };
 
     const handleUp = () => {
@@ -283,16 +285,15 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
   const handleTrackClick = useCallback((e: React.MouseEvent) => {
     if (!scrollTrackRef.current || !textareaRef.current) return;
     const rect = scrollTrackRef.current.getBoundingClientRect();
-    const trackPad = 6;
-    const clickY = e.clientY - rect.top - trackPad;
+    const clickY = e.clientY - rect.top;
     const el = textareaRef.current;
-    const trackH = el.clientHeight - trackPad * 2;
+    const trackH = Math.max(1, rect.height);
     const ratio = el.clientHeight / el.scrollHeight;
-    const tHeight = Math.max(24, trackH * ratio);
-    const maxTop = trackH - tHeight;
+    const tHeight = Math.min(trackH, Math.max(24, trackH * ratio));
+    const maxTop = Math.max(0, trackH - tHeight);
     const newTop = Math.min(maxTop, Math.max(0, clickY - tHeight / 2));
-    const scrollRatio = newTop / maxTop;
-    el.scrollTop = scrollRatio * (el.scrollHeight - el.clientHeight);
+    const scrollRatio = maxTop > 0 ? newTop / maxTop : 0;
+    el.scrollTop = scrollRatio * Math.max(0, el.scrollHeight - el.clientHeight);
   }, []);
 
   const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -441,16 +442,14 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
                   <div
                     ref={scrollTrackRef}
                     onClick={handleTrackClick}
-                    className="absolute top-[3px] right-1.5 bottom-[3px] w-3.5 flex items-stretch cursor-pointer"
+                    className="absolute top-2 right-1 bottom-3 w-3.5 flex items-stretch cursor-pointer"
                   >
-                    {/* Thin center rail */}
-                    <div className="absolute left-1/2 -translate-x-1/2 top-1.5 bottom-[11px] w-0.5 rounded-full bg-[#DCC8A8]" />
                     {/* Thick draggable thumb */}
                     <div
                       onMouseDown={handleScrollThumbDown}
                       className="absolute left-1/2 -translate-x-1/2 w-2.5 rounded-full bg-[#8B6F47] hover:bg-[#5C1A1A] transition-colors duration-200 cursor-grab active:cursor-grabbing"
                       style={{
-                        top: `${thumbTop + 6}px`,
+                        top: `${thumbTop}px`,
                         height: `${thumbHeight}px`,
                       }}
                     />

@@ -1002,8 +1002,8 @@ export default function VaultsPage() {
   return (
     <DndProvider options={HTML5toTouch}>
       <TouchDragPreview />
-      <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] pt-20 overflow-x-hidden">
-        <div className="flex flex-col sm:flex-row sm:h-[calc(100vh-5rem)] sm:overflow-hidden">
+      <div className="h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-x-hidden">
+        <div className="flex flex-col sm:flex-row sm:h-full sm:overflow-hidden">
           <PlayerSidebar
             players={players}
             selectedPlayerId={selectedPlayerId}

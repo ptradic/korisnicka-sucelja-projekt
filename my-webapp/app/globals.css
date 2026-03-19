@@ -312,6 +312,46 @@ button,
   will-change: transform;
 }
 
+/* Global themed scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #8B6F47 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track-piece:start {
+  margin-top: 4px;
+}
+
+*::-webkit-scrollbar-track-piece:end {
+  margin-bottom: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #8B6F47;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #5C1A1A;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Hide native scrollbar for custom scrollbar replacement */
 .custom-scrollbar {
   overflow-y: auto !important;

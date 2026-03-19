@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Search, Plus, Package, Loader2, Check } from 'lucide-react';
 import type { Item, Category, Rarity } from '../types';
 import { ItemDetailsModal } from './ItemDetailsModal';
+import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 
 interface AddItemModalProps {
   onClose: () => void;
@@ -93,6 +94,16 @@ function TemplateItemPicker({
   const [loadingDetails, setLoadingDetails] = useState<string | null>(null);
   const [tab, setTab] = useState<'dnd' | 'custom'>('dnd');
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  const {
+    showScrollbar,
+    thumbTop,
+    thumbHeight,
+    trackRef,
+    handleTrackClick,
+    handleThumbMouseDown,
+  } = useCustomScrollbar(listRef);
 
   // Fetch 5e or 5.5e items from API
   useEffect(() => {
@@ -222,8 +233,9 @@ function TemplateItemPicker({
       </div>
 
       {/* Item list */}
-      <div className="flex-1 overflow-y-auto p-3 min-h-0">
-        {loading && tab === 'dnd' && search.length >= 2 ? (
+      <div className="relative flex-1 min-h-0">
+        <div ref={listRef} className="h-full overflow-y-auto p-3 min-h-0 custom-scrollbar">
+          {loading && tab === 'dnd' && search.length >= 2 ? (
           <div className="text-center py-8">
             <Loader2 className="w-10 h-10 text-[#8B6F47] mx-auto mb-2 animate-spin" />
             <div className="text-[#5C4A2F] text-sm">Searching 5e or 5.5e items...</div>
@@ -305,6 +317,24 @@ function TemplateItemPicker({
               </button>
             ))}
           </div>
+          )}
+        </div>
+
+        {showScrollbar && (
+          <div
+            ref={trackRef}
+            onClick={handleTrackClick}
+            className="absolute top-2 right-0.5 bottom-2 w-3.5 flex items-stretch cursor-pointer z-10"
+          >
+            <div
+              onMouseDown={handleThumbMouseDown}
+              className="absolute left-1/2 -translate-x-1/2 w-2.5 rounded-full bg-[#8B6F47] hover:bg-[#5C1A1A] transition-colors duration-200 cursor-grab active:cursor-grabbing"
+              style={{
+                top: `${thumbTop}px`,
+                height: `${thumbHeight}px`,
+              }}
+            />
+          </div>
         )}
       </div>
     </>
@@ -332,6 +362,16 @@ function CustomItemPoolManager({
   const [isSavingPool, setIsSavingPool] = useState(false);
   const [selectedPoolIds, setSelectedPoolIds] = useState<string[]>(() => customItemPool.map((item) => item.id));
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  const {
+    showScrollbar,
+    thumbTop,
+    thumbHeight,
+    trackRef,
+    handleTrackClick,
+    handleThumbMouseDown,
+  } = useCustomScrollbar(listRef);
 
   useEffect(() => {
     setSelectedPoolIds(customItemPool.map((item) => item.id));
@@ -407,8 +447,9 @@ function CustomItemPoolManager({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 min-h-0 space-y-1.5">
-        {filteredHomebrewItems.length === 0 ? (
+      <div className="relative flex-1 min-h-0">
+        <div ref={listRef} className="h-full overflow-y-auto p-3 min-h-0 space-y-1.5 custom-scrollbar">
+          {filteredHomebrewItems.length === 0 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
             <div className="text-[#5C4A2F] text-sm">No homebrew items found</div>
@@ -456,6 +497,24 @@ function CustomItemPoolManager({
               </div>
             );
           })
+          )}
+        </div>
+
+        {showScrollbar && (
+          <div
+            ref={trackRef}
+            onClick={handleTrackClick}
+            className="absolute top-2 right-0.5 bottom-2 w-3.5 flex items-stretch cursor-pointer z-10"
+          >
+            <div
+              onMouseDown={handleThumbMouseDown}
+              className="absolute left-1/2 -translate-x-1/2 w-2.5 rounded-full bg-[#8B6F47] hover:bg-[#5C1A1A] transition-colors duration-200 cursor-grab active:cursor-grabbing"
+              style={{
+                top: `${thumbTop}px`,
+                height: `${thumbHeight}px`,
+              }}
+            />
+          </div>
         )}
       </div>
 

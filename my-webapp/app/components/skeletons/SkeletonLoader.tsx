@@ -15,8 +15,8 @@ export function Skeleton({ className = '', pulse = true }: SkeletonProps) {
 
 export function VaultListSkeleton() {
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
-      <div className="max-w-7xl mx-auto px-6 py-8 pt-32">
+    <div className="min-h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
+      <div className="max-w-7xl mx-auto px-6 py-8 pt-8">
         {/* Create/Join Vault Section Skeleton */}
         <div className="mb-8">
           <div className="w-full bg-[#F5EFE0]/50 border-4 border-[#8B6F47]/30 border-dashed rounded-xl p-8">
@@ -74,8 +74,8 @@ export function VaultListSkeleton() {
 
 export function VaultDetailSkeleton() {
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] pt-20 overflow-x-hidden">
-      <div className="flex flex-col sm:flex-row sm:h-[calc(100vh-5rem)] sm:overflow-hidden">
+    <div className="h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row sm:h-full sm:overflow-hidden">
         {/* PlayerSidebar Skeleton */}
         <div className="w-full sm:w-80 bg-white/30 backdrop-blur border-r-4 border-[#8B6F47]/50 p-6 flex flex-col">
           {/* Campaign Header */}

@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Item, Category, Rarity, ValueUnit } from '../types';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 
 interface ItemDetailsModalProps {
   item: Item;
@@ -69,6 +70,24 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const backdropMouseDown = useRef(false);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const editDescriptionRef = useRef<HTMLTextAreaElement | null>(null);
+  const {
+    showScrollbar,
+    thumbTop,
+    thumbHeight,
+    trackRef,
+    handleTrackClick,
+    handleThumbMouseDown,
+  } = useCustomScrollbar(contentRef);
+  const {
+    showScrollbar: showEditDescriptionScrollbar,
+    thumbTop: editDescriptionThumbTop,
+    thumbHeight: editDescriptionThumbHeight,
+    trackRef: editDescriptionTrackRef,
+    handleTrackClick: handleEditDescriptionTrackClick,
+    handleThumbMouseDown: handleEditDescriptionThumbMouseDown,
+  } = useCustomScrollbar(editDescriptionRef);
   const initialGpValue = item.value && item.value > 0
     ? toGpValue(item.value, (item.valueUnit || 'gp') as ValueUnit)
     : null;
@@ -133,8 +152,8 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
       }}
     >
       <div
-        className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl"
-        style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', maxHeight: 'min(90vh, 700px)' }}
+        className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl overflow-hidden"
+        style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', height: 'min(90vh, 700px)' }}
       >
         {/* Header */}
         <div className="sticky top-0 bg-[#F5EFE0] p-4 sm:p-5 pb-3 flex items-start justify-between z-10 rounded-t-xl shrink-0">
@@ -190,17 +209,45 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
         <div className="mx-4 sm:mx-5 border-t-2 border-[#DCC8A8] shrink-0" />
 
         {/* Content */}
-        <div className={isEditing ? 'p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col gap-2' : 'p-4 sm:p-5 space-y-4 overflow-y-auto flex-1'}>
+        <div className="relative flex-1 min-h-0">
+          <div
+            ref={contentRef}
+            className={
+              isEditing
+                ? 'p-4 sm:p-5 overflow-y-auto h-full flex flex-col gap-2 custom-scrollbar'
+                : 'p-4 sm:p-5 space-y-4 overflow-y-auto h-full custom-scrollbar'
+            }
+          >
           {isEditing ? (
             <>
               <div className="flex-1 min-h-0 flex flex-col">
                 <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full flex-1 min-h-28 px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 resize-none"
-                  placeholder="Describe the item..."
-                />
+                <div className="relative flex-1 min-h-0">
+                  <textarea
+                    ref={editDescriptionRef}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full h-full min-h-28 px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 custom-scrollbar resize-none"
+                    placeholder="Describe the item..."
+                  />
+
+                  {showEditDescriptionScrollbar && (
+                    <div
+                      ref={editDescriptionTrackRef}
+                      onClick={handleEditDescriptionTrackClick}
+                      className="absolute top-2 right-1 bottom-3 w-3.5 flex items-stretch cursor-pointer"
+                    >
+                      <div
+                        onMouseDown={handleEditDescriptionThumbMouseDown}
+                        className="absolute left-1/2 -translate-x-1/2 w-2.5 rounded-full bg-[#8B6F47] hover:bg-[#5C1A1A] transition-colors duration-200 cursor-grab active:cursor-grabbing"
+                        style={{
+                          top: `${editDescriptionThumbTop}px`,
+                          height: `${editDescriptionThumbHeight}px`,
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 shrink-0">
@@ -424,6 +471,25 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                 </button>
               )}
             </>
+          )}
+
+          </div>
+
+          {showScrollbar && (
+            <div
+              ref={trackRef}
+              onClick={handleTrackClick}
+              className="absolute top-2 right-0.5 bottom-2 w-3.5 flex items-stretch cursor-pointer z-10"
+            >
+              <div
+                onMouseDown={handleThumbMouseDown}
+                className="absolute left-1/2 -translate-x-1/2 w-2.5 rounded-full bg-[#8B6F47] hover:bg-[#5C1A1A] transition-colors duration-200 cursor-grab active:cursor-grabbing"
+                style={{
+                  top: `${thumbTop}px`,
+                  height: `${thumbHeight}px`,
+                }}
+              />
+            </div>
           )}
         </div>
       </div>

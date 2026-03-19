@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrop, useDragLayer } from 'react-dnd';
 import { Package, Users, User, Copy, Check, Settings, X, Eye, EyeOff, Save } from 'lucide-react';
 import type { Player } from '../types';
+import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 
 interface PlayerSidebarProps {
   players: Player[];
@@ -546,6 +547,7 @@ export function PlayerSidebar({
 }: PlayerSidebarProps) {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showCharacterModal, setShowCharacterModal] = useState(false);
+  const desktopListRef = useRef<HTMLDivElement>(null);
   const { isDragging: isAnyDragging } = useDragLayer((monitor) => ({
     isDragging: monitor.isDragging(),
   }));
@@ -568,6 +570,15 @@ export function PlayerSidebar({
     }),
     [],
   );
+
+  const {
+    showScrollbar: showDesktopListScrollbar,
+    thumbTop: desktopListThumbTop,
+    thumbHeight: desktopListThumbHeight,
+    trackRef: desktopListTrackRef,
+    handleTrackClick: handleDesktopListTrackClick,
+    handleThumbMouseDown: handleDesktopListThumbMouseDown,
+  } = useCustomScrollbar(desktopListRef);
 
   return (
     <>
@@ -661,41 +672,60 @@ export function PlayerSidebar({
         </div>
 
         {/* Party Members */}
-        <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
-          <div className="flex items-center gap-1.5 text-[#5C4A2F] text-[10px] font-semibold uppercase tracking-wider mb-1 px-0.5">
-            <Users className="w-3 h-3" />
-            <span>Party</span>
-          </div>
-          <div className="space-y-1.5">
-            {players.map((player) => (
-              <PlayerSlot
-                key={player.id}
-                player={player}
-                isSelected={selectedPlayerId === player.id}
-                onClick={() => onSelectPlayer(player.id)}
-                onDrop={handleDrop(player.id)}
-                isBeingDraggedOver={dragOverPlayerId === player.id}
+        <div className="relative flex-1 min-h-0">
+          <div ref={desktopListRef} className="h-full overflow-y-auto space-y-2 min-h-0 custom-scrollbar">
+            <div className="flex items-center gap-1.5 text-[#5C4A2F] text-[10px] font-semibold uppercase tracking-wider mb-1 px-0.5">
+              <Users className="w-3 h-3" />
+              <span>Party</span>
+            </div>
+            <div className="space-y-1.5">
+              {players.map((player) => (
+                <PlayerSlot
+                  key={player.id}
+                  player={player}
+                  isSelected={selectedPlayerId === player.id}
+                  onClick={() => onSelectPlayer(player.id)}
+                  onDrop={handleDrop(player.id)}
+                  isBeingDraggedOver={dragOverPlayerId === player.id}
+                />
+              ))}
+              {Array.from({ length: Math.max(0, totalSlots - players.length) }).map((_, i) => (
+                <EmptySlot key={'empty-' + i} index={players.length + i} />
+              ))}
+            </div>
+
+            {/* Shared Loot */}
+            <div className="mt-3 pt-2 border-t-2 border-[#8B6F47]/30">
+              <div className="flex items-center gap-1.5 text-[#5C4A2F] text-[10px] font-semibold uppercase tracking-wider mb-1 px-0.5">
+                <Package className="w-3 h-3" />
+                <span>Shared</span>
+              </div>
+              <SharedLootSlot
+                isSelected={selectedPlayerId === 'shared'}
+                onClick={() => onSelectPlayer('shared')}
+                onDrop={handleDrop('shared')}
+                itemCount={sharedLootCount}
+                isBeingDraggedOver={dragOverPlayerId === 'shared'}
               />
-            ))}
-            {Array.from({ length: Math.max(0, totalSlots - players.length) }).map((_, i) => (
-              <EmptySlot key={'empty-' + i} index={players.length + i} />
-            ))}
+            </div>
           </div>
 
-          {/* Shared Loot */}
-          <div className="mt-3 pt-2 border-t-2 border-[#8B6F47]/30">
-            <div className="flex items-center gap-1.5 text-[#5C4A2F] text-[10px] font-semibold uppercase tracking-wider mb-1 px-0.5">
-              <Package className="w-3 h-3" />
-              <span>Shared</span>
+          {showDesktopListScrollbar && (
+            <div
+              ref={desktopListTrackRef}
+              onClick={handleDesktopListTrackClick}
+              className="absolute top-2 right-0.5 bottom-2 w-3.5 flex items-stretch cursor-pointer z-10"
+            >
+              <div
+                onMouseDown={handleDesktopListThumbMouseDown}
+                className="absolute left-1/2 -translate-x-1/2 w-2.5 rounded-full bg-[#8B6F47] hover:bg-[#5C1A1A] transition-colors duration-200 cursor-grab active:cursor-grabbing"
+                style={{
+                  top: `${desktopListThumbTop}px`,
+                  height: `${desktopListThumbHeight}px`,
+                }}
+              />
             </div>
-            <SharedLootSlot
-              isSelected={selectedPlayerId === 'shared'}
-              onClick={() => onSelectPlayer('shared')}
-              onDrop={handleDrop('shared')}
-              itemCount={sharedLootCount}
-              isBeingDraggedOver={dragOverPlayerId === 'shared'}
-            />
-          </div>
+          )}
         </div>
 
         {/* Footer */}

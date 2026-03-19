@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
 import { useAutoScroll } from '../hooks/useAutoScroll';
+import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 import type { Item, Category, Currency } from '../types';
 import { normalizeCategory } from '../types';
 
@@ -218,6 +219,15 @@ export function InventoryView({
 
   // Enable auto-scroll when dragging items near the top
   useAutoScroll(itemListRef, { scrollThreshold: 100, scrollSpeed: 10 });
+
+  const {
+    showScrollbar: showItemListScrollbar,
+    thumbTop: itemListThumbTop,
+    thumbHeight: itemListThumbHeight,
+    trackRef: itemListTrackRef,
+    handleTrackClick: handleItemListTrackClick,
+    handleThumbMouseDown: handleItemListThumbMouseDown,
+  } = useCustomScrollbar(itemListRef);
 
   const visibleItems = inventory.filter((item) => normalizeCategory(item.category) !== 'hidden');
 
@@ -727,8 +737,9 @@ export function InventoryView({
       )}
 
       {/* Item list */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5" ref={itemListRef}>
-        {filteredItems.length === 0 ? (
+      <div className="relative flex-1 min-h-0">
+        <div className="h-full overflow-y-auto overflow-x-hidden p-4 sm:p-5 custom-scrollbar" ref={itemListRef}>
+          {filteredItems.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-[#5C4A2F] text-base mb-1">No items found</div>
             <div className="text-[#8B6F47] text-sm">
@@ -782,16 +793,34 @@ export function InventoryView({
               />
             ))}
           </div>
-        )}
+          )}
 
-        {/* Add item button at end of list */}
-        <button
-          onClick={onAddItem}
-          className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-dashed border-[#8B6F47]/40 text-[#8B6F47] hover:border-[#5C1A1A] hover:text-[#5C1A1A] hover:bg-[#F5EFE0] transition-all text-sm"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Item</span>
-        </button>
+          {/* Add item button at end of list */}
+          <button
+            onClick={onAddItem}
+            className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-dashed border-[#8B6F47]/40 text-[#8B6F47] hover:border-[#5C1A1A] hover:text-[#5C1A1A] hover:bg-[#F5EFE0] transition-all text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Item</span>
+          </button>
+        </div>
+
+        {showItemListScrollbar && (
+          <div
+            ref={itemListTrackRef}
+            onClick={handleItemListTrackClick}
+            className="absolute top-2 right-0.5 bottom-2 w-3.5 flex items-stretch cursor-pointer z-10"
+          >
+            <div
+              onMouseDown={handleItemListThumbMouseDown}
+              className="absolute left-1/2 -translate-x-1/2 w-2.5 rounded-full bg-[#8B6F47] hover:bg-[#5C1A1A] transition-colors duration-200 cursor-grab active:cursor-grabbing"
+              style={{
+                top: `${itemListThumbTop}px`,
+                height: `${itemListThumbHeight}px`,
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {showHelpOverlay && (

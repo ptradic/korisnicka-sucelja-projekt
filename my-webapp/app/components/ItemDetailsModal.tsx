@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote, Sword, Shield, Droplet, Backpack, Gem } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { Item, Category, Rarity, ValueUnit } from '../types';
+import { normalizeCategory, type Item, type Category, type Rarity, type ValueUnit } from '../types';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 
@@ -43,13 +43,14 @@ const rarityGradients: Record<string, string> = {
   artifact: 'from-[#6B2020] to-[#8B3A3A]',
 };
 
-const categoryIcons: Record<Category, React.ComponentType<{ className?: string }>> = {
+const categoryIcons: Partial<Record<Category, React.ComponentType<{ className?: string }>>> = {
   weapons: Sword,
   armor: Shield,
   consumables: Droplet,
   'magic-gear': Sparkles,
   'adventuring-gear': Backpack,
   'wealth-valuables': Gem,
+  hidden: Package,
 };
 
 function normalizeValueUnit(value: number, valueUnit: ValueUnit): { value: number; valueUnit: ValueUnit } {
@@ -239,7 +240,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
     : null;
 
   const gradient = rarityGradients[item.rarity] || rarityGradients.common;
-  const activeCategory = isEditing ? formData.category : item.category;
+  const activeCategory = normalizeCategory(isEditing ? formData.category : item.category);
   const ItemTypeIcon = categoryIcons[activeCategory] || Package;
 
   return (

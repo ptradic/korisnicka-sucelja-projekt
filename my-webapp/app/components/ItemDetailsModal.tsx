@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote } from 'lucide-react';
+import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote, Sword, Shield, Droplet, Backpack, Gem } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Item, Category, Rarity, ValueUnit } from '../types';
@@ -41,6 +41,15 @@ const rarityGradients: Record<string, string> = {
   'very rare': 'from-[#5E3A7C] to-[#7E57A2]',
   legendary: 'from-[#8B6914] to-[#B8860B]',
   artifact: 'from-[#6B2020] to-[#8B3A3A]',
+};
+
+const categoryIcons: Record<Category, React.ComponentType<{ className?: string }>> = {
+  weapons: Sword,
+  armor: Shield,
+  consumables: Droplet,
+  'magic-gear': Sparkles,
+  'adventuring-gear': Backpack,
+  'wealth-valuables': Gem,
 };
 
 function normalizeValueUnit(value: number, valueUnit: ValueUnit): { value: number; valueUnit: ValueUnit } {
@@ -230,6 +239,8 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
     : null;
 
   const gradient = rarityGradients[item.rarity] || rarityGradients.common;
+  const activeCategory = isEditing ? formData.category : item.category;
+  const ItemTypeIcon = categoryIcons[activeCategory] || Package;
 
   return (
     <div
@@ -242,13 +253,13 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
     >
       <div
         className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl overflow-hidden"
-        style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', height: 'min(90vh, 700px)' }}
+        style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', maxHeight: 'min(90vh, 700px)' }}
       >
         {/* Header */}
         <div className="sticky top-0 bg-[#F5EFE0] p-4 sm:p-5 pb-3 flex items-start justify-between z-10 rounded-t-xl shrink-0">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className={`w-10 h-10 bg-linear-to-br ${gradient} rounded-xl flex items-center justify-center shadow-md shrink-0`}>
-              <Package className="w-5 h-5 text-white" />
+              <ItemTypeIcon className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-3">
@@ -298,13 +309,13 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
         <div className="mx-4 sm:mx-5 border-t-2 border-[#DCC8A8] shrink-0" />
 
         {/* Content */}
-        <div className="relative flex-1 min-h-0">
+        <div className="relative flex-1 min-h-0 flex">
           <div
             ref={contentRef}
             className={
               isEditing
-                ? 'p-4 sm:p-5 overflow-y-auto h-full flex flex-col gap-2 custom-scrollbar'
-                : 'p-4 sm:p-5 space-y-4 overflow-y-auto h-full custom-scrollbar'
+                ? 'p-4 sm:p-5 overflow-y-auto flex-1 min-h-0 flex flex-col gap-2 custom-scrollbar'
+                : 'p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0 custom-scrollbar'
             }
           >
           {isEditing ? (

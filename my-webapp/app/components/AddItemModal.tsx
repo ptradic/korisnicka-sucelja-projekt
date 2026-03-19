@@ -570,6 +570,102 @@ function CustomItemForm({
   onClose: () => void;
   targetName: string;
 }) {
+  const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
+  const [showDescriptionScrollbar, setShowDescriptionScrollbar] = useState(false);
+  const [descriptionThumbTop, setDescriptionThumbTop] = useState(0);
+  const [descriptionThumbHeight, setDescriptionThumbHeight] = useState(0);
+  const descriptionTrackRef = useRef<HTMLDivElement | null>(null);
+  const isDescriptionDragging = useRef(false);
+  const descriptionDragStartY = useRef(0);
+  const descriptionDragStartTop = useRef(0);
+
+  const updateDescriptionScrollbar = () => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    const hasScroll = scrollHeight > clientHeight + 1;
+    setShowDescriptionScrollbar(hasScroll);
+
+    if (!hasScroll) {
+      setDescriptionThumbTop(0);
+      setDescriptionThumbHeight(0);
+      return;
+    }
+
+    const trackH = Math.max(1, descriptionTrackRef.current?.clientHeight ?? clientHeight);
+    const ratio = clientHeight / scrollHeight;
+    const tHeight = Math.min(trackH, Math.max(24, trackH * ratio));
+    const maxTop = Math.max(0, trackH - tHeight);
+    const tTop = maxTop * (scrollTop / Math.max(1, scrollHeight - clientHeight));
+    setDescriptionThumbHeight(tHeight);
+    setDescriptionThumbTop(tTop);
+  };
+
+  useEffect(() => {
+    const el = descriptionRef.current;
+    if (!el) return;
+
+    const handler = () => updateDescriptionScrollbar();
+    el.addEventListener('scroll', handler);
+    el.addEventListener('input', handler);
+
+    const resizeObserver = new ResizeObserver(handler);
+    resizeObserver.observe(el);
+
+    const timer = setTimeout(handler, 100);
+
+    return () => {
+      el.removeEventListener('scroll', handler);
+      el.removeEventListener('input', handler);
+      resizeObserver.disconnect();
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const handleDescriptionThumbMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isDescriptionDragging.current = true;
+    descriptionDragStartY.current = e.clientY;
+    descriptionDragStartTop.current = descriptionThumbTop;
+
+    const handleMove = (ev: MouseEvent) => {
+      if (!isDescriptionDragging.current || !descriptionRef.current) return;
+      const el = descriptionRef.current;
+      const trackH = Math.max(1, descriptionTrackRef.current?.clientHeight ?? el.clientHeight);
+      const delta = ev.clientY - descriptionDragStartY.current;
+      const ratio = el.clientHeight / el.scrollHeight;
+      const tHeight = Math.min(trackH, Math.max(24, trackH * ratio));
+      const maxTop = Math.max(0, trackH - tHeight);
+      const newTop = Math.min(maxTop, Math.max(0, descriptionDragStartTop.current + delta));
+      const scrollRatio = maxTop > 0 ? newTop / maxTop : 0;
+      el.scrollTop = scrollRatio * Math.max(0, el.scrollHeight - el.clientHeight);
+    };
+
+    const handleUp = () => {
+      isDescriptionDragging.current = false;
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleUp);
+    };
+
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleUp);
+  };
+
+  const handleDescriptionTrackClick = (e: React.MouseEvent) => {
+    if (!descriptionTrackRef.current || !descriptionRef.current) return;
+    const rect = descriptionTrackRef.current.getBoundingClientRect();
+    const clickY = e.clientY - rect.top;
+    const el = descriptionRef.current;
+    const trackH = Math.max(1, rect.height);
+    const ratio = el.clientHeight / el.scrollHeight;
+    const tHeight = Math.min(trackH, Math.max(24, trackH * ratio));
+    const maxTop = Math.max(0, trackH - tHeight);
+    const newTop = Math.min(maxTop, Math.max(0, clickY - tHeight / 2));
+    const scrollRatio = maxTop > 0 ? newTop / maxTop : 0;
+    el.scrollTop = scrollRatio * Math.max(0, el.scrollHeight - el.clientHeight);
+  };
+
   const normalizeGpValue = (value: number): { value: number; valueUnit: 'gp' | 'sp' | 'cp' } => {
     if (value > 0 && value < 1) {
       if (value < 0.1) {
@@ -715,12 +811,46 @@ function CustomItemForm({
         {/* Description - flexible height */}
         <div className="flex-1 min-h-0 flex flex-col">
           <label className="block text-[#3D1409] font-semibold text-sm mb-0.5 shrink-0">Description</label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full flex-1 min-h-12 px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 resize-none"
-            placeholder="Describe the item..."
-          />
+          <div className="relative flex-1 min-h-0">
+            <textarea
+              ref={descriptionRef}
+              defaultValue={formData.description}
+              onInput={(e) => {
+                const el = e.currentTarget;
+                el.scrollTop = el.scrollHeight;
+                setFormData((prev) => ({ ...prev, description: el.value }));
+                updateDescriptionScrollbar();
+              }}
+              onKeyUp={(e) => {
+                const el = e.currentTarget;
+                el.scrollTop = el.scrollHeight;
+                setFormData((prev) => ({ ...prev, description: el.value }));
+                updateDescriptionScrollbar();
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+              }}
+              className="w-full h-full min-h-12 pl-3 pr-10 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 custom-scrollbar resize-none"
+              placeholder="Describe the item..."
+            />
+
+            {showDescriptionScrollbar && (
+              <div
+                ref={descriptionTrackRef}
+                onClick={handleDescriptionTrackClick}
+                className="absolute top-2 right-1 bottom-3 w-3.5 flex items-stretch cursor-pointer"
+              >
+                <div
+                  onMouseDown={handleDescriptionThumbMouseDown}
+                  className="absolute left-1/2 -translate-x-1/2 w-2.5 rounded-full bg-[#8B6F47] hover:bg-[#5C1A1A] transition-colors duration-200 cursor-grab active:cursor-grabbing"
+                  style={{
+                    top: `${descriptionThumbTop}px`,
+                    height: `${descriptionThumbHeight}px`,
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Category + Rarity + Attunement */}

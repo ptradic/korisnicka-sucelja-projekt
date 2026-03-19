@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -72,6 +72,10 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
   const backdropMouseDown = useRef(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const editDescriptionRef = useRef<HTMLTextAreaElement | null>(null);
+  const editDescriptionTrackRef = useRef<HTMLDivElement | null>(null);
+  const isEditDescriptionDragging = useRef(false);
+  const editDescriptionDragStartY = useRef(0);
+  const editDescriptionDragStartTop = useRef(0);
   const {
     showScrollbar,
     thumbTop,
@@ -80,14 +84,99 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
     handleTrackClick,
     handleThumbMouseDown,
   } = useCustomScrollbar(contentRef);
-  const {
-    showScrollbar: showEditDescriptionScrollbar,
-    thumbTop: editDescriptionThumbTop,
-    thumbHeight: editDescriptionThumbHeight,
-    trackRef: editDescriptionTrackRef,
-    handleTrackClick: handleEditDescriptionTrackClick,
-    handleThumbMouseDown: handleEditDescriptionThumbMouseDown,
-  } = useCustomScrollbar(editDescriptionRef);
+  const [showEditDescriptionScrollbar, setShowEditDescriptionScrollbar] = useState(false);
+  const [editDescriptionThumbTop, setEditDescriptionThumbTop] = useState(0);
+  const [editDescriptionThumbHeight, setEditDescriptionThumbHeight] = useState(0);
+
+  const updateEditDescriptionScrollbar = () => {
+    const el = editDescriptionRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    const hasScroll = scrollHeight > clientHeight + 1;
+    setShowEditDescriptionScrollbar(hasScroll);
+
+    if (!hasScroll) {
+      setEditDescriptionThumbTop(0);
+      setEditDescriptionThumbHeight(0);
+      return;
+    }
+
+    const trackH = Math.max(1, editDescriptionTrackRef.current?.clientHeight ?? clientHeight);
+    const ratio = clientHeight / scrollHeight;
+    const tHeight = Math.min(trackH, Math.max(24, trackH * ratio));
+    const maxTop = Math.max(0, trackH - tHeight);
+    const tTop = maxTop * (scrollTop / Math.max(1, scrollHeight - clientHeight));
+    setEditDescriptionThumbHeight(tHeight);
+    setEditDescriptionThumbTop(tTop);
+  };
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const el = editDescriptionRef.current;
+    if (!el) return;
+
+    const handler = () => updateEditDescriptionScrollbar();
+    el.addEventListener('scroll', handler);
+    el.addEventListener('input', handler);
+
+    const resizeObserver = new ResizeObserver(handler);
+    resizeObserver.observe(el);
+
+    const timer = setTimeout(handler, 100);
+
+    return () => {
+      el.removeEventListener('scroll', handler);
+      el.removeEventListener('input', handler);
+      resizeObserver.disconnect();
+      clearTimeout(timer);
+    };
+  }, [isEditing]);
+
+  const handleEditDescriptionThumbMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isEditDescriptionDragging.current = true;
+    editDescriptionDragStartY.current = e.clientY;
+    editDescriptionDragStartTop.current = editDescriptionThumbTop;
+
+    const handleMove = (ev: MouseEvent) => {
+      if (!isEditDescriptionDragging.current || !editDescriptionRef.current) return;
+      const el = editDescriptionRef.current;
+      const trackH = Math.max(1, editDescriptionTrackRef.current?.clientHeight ?? el.clientHeight);
+      const delta = ev.clientY - editDescriptionDragStartY.current;
+      const ratio = el.clientHeight / el.scrollHeight;
+      const tHeight = Math.min(trackH, Math.max(24, trackH * ratio));
+      const maxTop = Math.max(0, trackH - tHeight);
+      const newTop = Math.min(maxTop, Math.max(0, editDescriptionDragStartTop.current + delta));
+      const scrollRatio = maxTop > 0 ? newTop / maxTop : 0;
+      el.scrollTop = scrollRatio * Math.max(0, el.scrollHeight - el.clientHeight);
+    };
+
+    const handleUp = () => {
+      isEditDescriptionDragging.current = false;
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleUp);
+    };
+
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleUp);
+  };
+
+  const handleEditDescriptionTrackClick = (e: React.MouseEvent) => {
+    if (!editDescriptionTrackRef.current || !editDescriptionRef.current) return;
+    const rect = editDescriptionTrackRef.current.getBoundingClientRect();
+    const clickY = e.clientY - rect.top;
+    const el = editDescriptionRef.current;
+    const trackH = Math.max(1, rect.height);
+    const ratio = el.clientHeight / el.scrollHeight;
+    const tHeight = Math.min(trackH, Math.max(24, trackH * ratio));
+    const maxTop = Math.max(0, trackH - tHeight);
+    const newTop = Math.min(maxTop, Math.max(0, clickY - tHeight / 2));
+    const scrollRatio = maxTop > 0 ? newTop / maxTop : 0;
+    el.scrollTop = scrollRatio * Math.max(0, el.scrollHeight - el.clientHeight);
+  };
+
   const initialGpValue = item.value && item.value > 0
     ? toGpValue(item.value, (item.valueUnit || 'gp') as ValueUnit)
     : null;
@@ -225,9 +314,23 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                 <div className="relative flex-1 min-h-0">
                   <textarea
                     ref={editDescriptionRef}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full h-full min-h-28 px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 custom-scrollbar resize-none"
+                    defaultValue={formData.description}
+                    onInput={(e) => {
+                      const el = e.currentTarget;
+                      el.scrollTop = el.scrollHeight;
+                      setFormData((prev) => ({ ...prev, description: el.value }));
+                      updateEditDescriptionScrollbar();
+                    }}
+                    onKeyUp={(e) => {
+                      const el = e.currentTarget;
+                      el.scrollTop = el.scrollHeight;
+                      setFormData((prev) => ({ ...prev, description: el.value }));
+                      updateEditDescriptionScrollbar();
+                    }}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                    }}
+                    className="w-full h-full min-h-28 pl-3 pr-10 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 custom-scrollbar resize-none"
                     placeholder="Describe the item..."
                   />
 

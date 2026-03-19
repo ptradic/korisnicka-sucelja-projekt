@@ -26,7 +26,7 @@ export function useCustomScrollbar<T extends HTMLElement>(
     if (!el) return;
 
     const { scrollTop, scrollHeight, clientHeight } = el;
-    const hasScroll = scrollHeight > clientHeight + 1;
+    const hasScroll = scrollHeight > clientHeight;
     setShowScrollbar(hasScroll);
     if (!hasScroll) {
       setThumbTop(0);

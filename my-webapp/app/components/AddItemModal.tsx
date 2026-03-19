@@ -169,6 +169,9 @@ function TemplateItemPicker({
     return matchesSearch;
   });
 
+  const sortedDndItems = [...dndItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  const sortedCustomItems = [...filteredCustomItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
 
   return (
     <>
@@ -254,7 +257,7 @@ function TemplateItemPicker({
           </div>
         ) : tab === 'dnd' ? (
           <div className="space-y-1.5">
-            {dndItems.map((item) => (
+            {sortedDndItems.map((item) => (
               (() => {
                 const rarityKey = item.rarity || 'none';
                 const rarityDotClass = dndRarityDotByKey[rarityKey] || dndRarityDotByKey.none;
@@ -286,14 +289,14 @@ function TemplateItemPicker({
               })()
             ))}
           </div>
-        ) : filteredCustomItems.length === 0 ? (
+        ) : sortedCustomItems.length === 0 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
             <div className="text-[#5C4A2F] text-sm">No custom items available in this vault</div>
           </div>
         ) : (
           <div className="space-y-1.5">
-            {filteredCustomItems.map((item) => (
+            {sortedCustomItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => onSelect(item)}
@@ -385,6 +388,8 @@ function CustomItemPoolManager({
     return matchesSearch;
   });
 
+  const sortedHomebrewItems = [...filteredHomebrewItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
   const handleTogglePool = (itemId: string) => {
     setSelectedPoolIds((prev) => {
       if (prev.includes(itemId)) {
@@ -449,13 +454,13 @@ function CustomItemPoolManager({
 
       <div className="relative flex-1 min-h-0">
         <div ref={listRef} className="h-full overflow-y-auto p-3 min-h-0 space-y-1.5 custom-scrollbar">
-          {filteredHomebrewItems.length === 0 ? (
+          {sortedHomebrewItems.length === 0 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
             <div className="text-[#5C4A2F] text-sm">No homebrew items found</div>
           </div>
         ) : (
-          filteredHomebrewItems.map((item) => {
+          sortedHomebrewItems.map((item) => {
             const enabled = selectedPoolIds.includes(item.id);
 
             return (

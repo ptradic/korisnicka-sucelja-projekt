@@ -24,13 +24,6 @@ export default function HomePage() {
       
       {/* Hero Section */}
       <section className="w-full max-w-5xl text-center flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
-        <div className="inline-block mb-4 px-4 py-2 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full fade-in-up delay-100">
-          <span className="text-sm font-semibold text-[#5C1A1A] flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            Your Ultimate RPG Inventory Manager
-          </span>
-        </div>
-        
         <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#3D1409] leading-tight fade-in-up delay-200" style={{ fontFamily: 'var(--font-archivo-black)' }}>
           <span className="block sm:inline">Trailblazers'</span>{' '}
           <span className="block sm:inline">Vault</span>

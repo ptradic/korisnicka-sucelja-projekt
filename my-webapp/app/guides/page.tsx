@@ -216,13 +216,6 @@ export default function GuidesPage() {
     <main className="flex min-h-screen flex-col items-center bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
       {/* ─── Hero — fills first viewport ─── */}
       <section className="w-full max-w-5xl text-center flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
-        <div className="inline-block mb-4 px-4 py-2 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full fade-in-up delay-100">
-          <span className="text-sm font-semibold text-[#5C1A1A] flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
-            Step-by-Step Tutorial
-          </span>
-        </div>
-
         <h1
           className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 text-[#3D1409] leading-tight fade-in-up delay-200"
           style={{ fontFamily: "var(--font-archivo-black)" }}

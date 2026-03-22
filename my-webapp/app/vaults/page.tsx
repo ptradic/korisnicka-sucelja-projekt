@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DndProvider } from 'react-dnd-multi-backend';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -424,6 +424,7 @@ export default function VaultsPage() {
   // Campaign CRUD
   const handleSelectCampaign = (campaignId: string) => {
     setCurrentCampaignId(campaignId);
+    setSelectedPlayerId(userRole === 'player' && userId ? userId : 'shared');
     // Update URL with campaign ID for persistence and browser history
     router.push(`/vaults?c=${campaignId}`, { scroll: false });
   };
@@ -566,12 +567,13 @@ export default function VaultsPage() {
       const campaignExists = campaigns.some(c => c.id === campaignIdFromUrl);
       if (campaignExists) {
         setCurrentCampaignId(campaignIdFromUrl);
+        setSelectedPlayerId(userRole === 'player' && userId ? userId : 'shared');
       } else {
         // Campaign not found, clear invalid URL param
         router.replace('/vaults', { scroll: false });
       }
     }
-  }, [requestedCampaignId, campaigns, currentCampaignId, router]);
+  }, [requestedCampaignId, campaigns, currentCampaignId, router, userRole, userId]);
 
   // Item movement with Firebase
   const handleMoveItem = async (itemIds: string[], fromId: string | 'shared', toId: string | 'shared') => {
@@ -935,12 +937,24 @@ export default function VaultsPage() {
   const isDM = userRole === 'dm';
   const vaultCustomItems = currentCampaign?.customItemPool ?? [];
   const syncStatus: 'saving' | 'saved' = pendingWriteCount > 0 ? 'saving' : 'saved';
+  const userRoleRef = useRef(userRole);
+  const userIdRef = useRef(userId);
+
+  userRoleRef.current = userRole;
+  userIdRef.current = userId;
 
   useEffect(() => {
-    if (selectedPlayerId === 'shared') return;
+    if (selectedPlayerId === 'shared' || players.length === 0) return;
     const stillExists = players.some((player) => player.id === selectedPlayerId);
     if (!stillExists) {
-      setSelectedPlayerId('shared');
+      const myUserId = userIdRef.current;
+      const myRole = userRoleRef.current;
+      const myInventoryExists = players.some((player) => player.id === myUserId);
+      if (myRole === 'player' && myUserId && myInventoryExists) {
+        setSelectedPlayerId(myUserId);
+      } else {
+        setSelectedPlayerId('shared');
+      }
     }
   }, [selectedPlayerId, players]);
   const isRestoringCampaign = Boolean(

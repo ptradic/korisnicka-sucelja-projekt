@@ -9,9 +9,10 @@ import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 interface ItemDetailsModalProps {
   item: Item;
   onClose: () => void;
-  onUpdate: (updates: Partial<Item>) => void;
-  onDelete: () => void;
+  onUpdate?: (updates: Partial<Item>) => void;
+  onDelete?: () => void;
   showDeleteAction?: boolean;
+  canEdit?: boolean;
 }
 
 const categories: Category[] = ['weapons', 'armor', 'consumables', 'magic-gear', 'adventuring-gear', 'wealth-valuables'];
@@ -76,7 +77,7 @@ function getValueColor(valueUnit: ValueUnit): string {
   return 'text-[#B8860B]';
 }
 
-export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true }: ItemDetailsModalProps) {
+export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, canEdit = true }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const backdropMouseDown = useRef(false);
@@ -203,6 +204,11 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
   });
 
   const handleSave = async () => {
+    if (!onUpdate) {
+      setIsEditing(false);
+      return;
+    }
+
     const parsedValue = formData.value ? parseFloat(formData.value) : 0;
     const hasEstimatedValue = Number.isFinite(parsedValue) && parsedValue > 0;
     const parsedWeight = formData.weight === '' ? 0 : Number(formData.weight);
@@ -232,7 +238,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
 
   const confirmDelete = () => {
     setShowDeleteConfirm(false);
-    onDelete();
+    onDelete?.();
   };
 
   const displayValue = item.value && item.value > 0
@@ -288,7 +294,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
             </div>
           </div>
           <div className="flex items-center gap-1 ml-3 shrink-0">
-            {!isEditing && (
+            {!isEditing && canEdit && onUpdate && (
               <button
                 onClick={() => setIsEditing(true)}
                 className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all"
@@ -540,14 +546,17 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
               </div>
 
               {/* Attunement badge with toggle */}
-              {item.attunement && (
+              {item.attunement && canEdit && onUpdate && (
                 <div className="flex items-center justify-between bg-[#F3E5F5]/70 border-2 border-[#7E57A2]/40 rounded-xl px-3.5 py-2.5">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#7E57A2]" />
                     <span className="text-[#5E3A7C] text-sm font-semibold">Requires Attunement</span>
                   </div>
                   <button
-                    onClick={(e) => { e.stopPropagation(); onUpdate({ attuned: !item.attuned }); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpdate({ attuned: !item.attuned });
+                    }}
                     className={'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer '
                       + (item.attuned
                         ? 'bg-[#7E57A2]/20 text-[#5E3A7C] hover:bg-[#7E57A2]/30'
@@ -574,7 +583,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
 
               <div className="border-t-2 border-[#DCC8A8]" />
 
-              {showDeleteAction && (
+              {showDeleteAction && onDelete && (
                 <button
                   onClick={handleDelete}
                   className="btn-secondary w-full px-4 py-2.5 bg-[#FFEBEE]/80 hover:bg-[#FFCDD2] border-[#8B3A3A]/60 hover:border-[#8B3A3A] text-[#6B2020]"

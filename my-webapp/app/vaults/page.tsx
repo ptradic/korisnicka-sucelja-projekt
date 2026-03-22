@@ -1078,8 +1078,9 @@ export default function VaultsPage() {
           <ItemDetailsModal
             item={selectedItem}
             onClose={() => setSelectedItem(null)}
-            onUpdate={(updates: Partial<Item>) => handleUpdateSelectedItem(selectedItem, updates)}
+            onUpdate={isDM ? (updates: Partial<Item>) => handleUpdateSelectedItem(selectedItem, updates) : undefined}
             onDelete={() => handleDeleteSelectedItem(selectedItem)}
+            canEdit={isDM}
           />
         )}
 

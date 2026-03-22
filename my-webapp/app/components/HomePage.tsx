@@ -83,10 +83,13 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
           </div>
 
           {vaults.length === 0 ? (
-            <div className="btn-secondary !block p-12 text-center">
+            <div
+              className="p-12 text-center rounded-xl border-3 bg-white/40"
+              style={{ boxShadow: '0 2px 4px rgba(61, 20, 9, 0.15)' }}
+            >
               <Package className="w-12 h-12 text-[#8B6F47] mx-auto mb-4" />
               <h3 className="text-[#3D1409] mb-2">No vaults yet</h3>
-              <p className="text-[#5C4A2F] text-sm">Create your first campaign vault to get started</p>
+              <p className="text-[#5C4A2F] text-sm">{isDM ? 'Create your first campaign vault to get started' : 'Join your first campaign vault to get started'}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

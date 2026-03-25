@@ -117,12 +117,12 @@ function AddCoinsButton({
       <button
         onClick={() => setOpen(!open)}
         className={open
-          ? 'btn-primary w-7 h-7 !p-0 rounded-lg text-white border-[#3D1409]'
-          : 'btn-secondary w-7 h-7 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
+          ? 'btn-primary h-7 min-w-10 !px-1.5 !py-0 rounded-lg text-white border-[#3D1409]'
+          : 'btn-secondary h-7 min-w-10 !px-1.5 !py-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
         }
         title="Add or subtract coins"
       >
-        <Coins className={open ? 'w-3.5 h-3.5 text-white' : 'w-3.5 h-3.5 text-[#5C4A2F]'} />
+        <span className={open ? 'text-[11px] font-extrabold tracking-tight text-white' : 'text-[11px] font-extrabold tracking-tight text-[#5C4A2F]'}>+/-</span>
       </button>
 
       {open && (
@@ -131,7 +131,7 @@ function AddCoinsButton({
           style={{ boxShadow: '0 8px 20px rgba(61, 20, 9, 0.25)' }}
         >
           <div className="text-xs font-bold text-[#3D1409] mb-2 flex items-center gap-1.5">
-            <Coins className="w-3.5 h-3.5 text-[#B8860B]" />
+            <span className="text-[11px] font-extrabold tracking-tight text-[#B8860B]">+/-</span>
             Add / Subtract Coins
           </div>
           <p className="text-[10px] text-[#8B6F47] mb-2 -mt-1">Use negative numbers to subtract</p>

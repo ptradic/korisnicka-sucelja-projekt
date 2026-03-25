@@ -5,9 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
-import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save, ToggleLeft, ToggleRight } from "lucide-react";
+import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { updateUserRole, updateUserName, signOutUser, onAuthChange, getUserDoc } from "@/src/firebaseService";
+import { updateUserName, signOutUser, onAuthChange, getUserDoc } from "@/src/firebaseService";
 import { auth } from "@/src/firebase";
 import { reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
 
@@ -63,12 +63,10 @@ function ProfileModal({
   auth,
   onClose,
   onSave,
-  onRoleToggle,
 }: {
   auth: AuthData;
   onClose: () => void;
   onSave: (updated: { name: string; email: string; currentPassword?: string; newPassword?: string }) => Promise<{ success: boolean; error?: string }>;
-  onRoleToggle: () => void;
 }) {
   const [name, setName] = useState(auth.name);
   const [email, setEmail] = useState(auth.email);
@@ -148,21 +146,6 @@ function ProfileModal({
           <h2 className="text-lg font-extrabold text-[#3D1409]">Account Settings</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#5C1A1A]/10 transition-colors">
             <X className="w-5 h-5 text-[#3D1409]" />
-          </button>
-        </div>
-
-        {/* Role switch */}
-        <div className="mb-4">
-          <button
-            type="button"
-            onClick={() => { onClose(); onRoleToggle(); }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5C1A1A]/10 hover:bg-[#5C1A1A]/20 border-2 border-[#5C1A1A]/30 hover:border-[#5C1A1A]/50 rounded-xl text-sm font-semibold text-[#5C1A1A] transition-all duration-200"
-          >
-            {auth.userType === "dm" ? (
-              <><ToggleRight className="w-4 h-4" /> Switch to Player Mode</>
-            ) : (
-              <><ToggleLeft className="w-4 h-4" /> Switch to GM Mode</>
-            )}
           </button>
         </div>
 
@@ -372,33 +355,6 @@ export function Navigation() {
     }
   };
 
-  const handleRoleToggle = async () => {
-    if (!authData?.uid) {
-      alert('Unable to switch role: UID not found. Please log in again.');
-      return;
-    }
-    
-    const newRole = authData.userType === 'dm' ? 'player' : 'dm';
-    
-    try {
-      await updateUserRole(authData.uid, newRole);
-      
-      const updatedAuth: AuthData = {
-        ...authData,
-        userType: newRole,
-      };
-      
-      setAuthData(updatedAuth);
-      
-      // Reload after a short delay
-      setTimeout(() => window.location.reload(), 500);
-    } catch (error: any) {
-      console.error('Failed to toggle role:', error);
-      const errorMsg = error?.message || 'Unknown error occurred';
-      alert(`Failed to switch role: ${errorMsg}`);
-    }
-  };
-
   const handleProfileSave = async (updated: { name: string; email: string; currentPassword?: string; newPassword?: string }): Promise<{ success: boolean; error?: string }> => {
     if (!authData) return { success: false, error: "Not logged in." };
 
@@ -552,12 +508,7 @@ export function Navigation() {
                       <span className="text-sm font-bold text-white leading-none">{initials}</span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-[#3D1409] truncate">{authData.name}</p>
-                        <span className="inline-flex items-center px-1.5 py-0.5 bg-[#5C1A1A]/10 border border-[#5C1A1A]/30 rounded text-[10px] font-bold text-[#5C1A1A] uppercase shrink-0">
-                          {authData.userType === "dm" ? "GM" : "Player"}
-                        </span>
-                      </div>
+                      <p className="text-sm font-bold text-[#3D1409] truncate">{authData.name}</p>
                       <p className="text-xs text-[#5C4A2F] truncate">{authData.email}</p>
                     </div>
                     <button
@@ -633,12 +584,7 @@ export function Navigation() {
                             <span className="text-sm font-bold text-white leading-none">{initials}</span>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-bold text-[#3D1409] truncate">{authData.name}</p>
-                              <span className="inline-flex items-center px-1.5 py-0.5 bg-[#5C1A1A]/10 border border-[#5C1A1A]/30 rounded text-[10px] font-bold text-[#5C1A1A] uppercase shrink-0">
-                                {authData.userType === "dm" ? "GM" : "Player"}
-                              </span>
-                            </div>
+                            <p className="text-sm font-bold text-[#3D1409] truncate">{authData.name}</p>
                             <p className="text-xs text-[#5C4A2F] truncate">{authData.email}</p>
                           </div>
                         </div>
@@ -680,7 +626,6 @@ export function Navigation() {
           auth={authData}
           onClose={() => setProfileModalOpen(false)}
           onSave={handleProfileSave}
-          onRoleToggle={handleRoleToggle}
         />
       )}
 

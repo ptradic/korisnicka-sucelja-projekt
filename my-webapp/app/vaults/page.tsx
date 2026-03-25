@@ -404,20 +404,22 @@ export default function VaultsPage() {
     });
   }, [currentCampaignId, currentCampaign, playerInventories, userRole, trackWrite]);
 
-  // Handle role toggle
-  const handleRoleToggle = async () => {
-    if (!userId) return;
-    const newRole = userRole === 'dm' ? 'player' : 'dm';
+  // Handle role switch from vault page tabs
+  const handleRoleSwitch = async (nextRole: 'dm' | 'player') => {
+    if (!userId || nextRole === userRole) return;
+
     try {
-      await trackWrite(() => updateUserRole(userId, newRole));
-      setUserRole(newRole);
+      await trackWrite(() => updateUserRole(userId, nextRole));
+      setUserRole(nextRole);
       setCampaigns([]);
       setCurrentCampaignId(null);
       setCurrentCampaign(null);
       setPlayerInventories([]);
+      setSelectedPlayerId('shared');
+      router.push('/vaults', { scroll: false });
     } catch (error) {
       console.error('Failed to update role:', error);
-      showActionError('Could not switch role', error, () => handleRoleToggle());
+      showActionError('Could not switch role', error, () => handleRoleSwitch(nextRole));
     }
   };
 
@@ -1002,6 +1004,10 @@ export default function VaultsPage() {
   if (!isAuthenticated) return null;
 
   if (!currentCampaignId) {
+    const tabBaseClass = 'flex-1 text-sm py-3 font-bold border-0 shadow-none transition-colors duration-200 rounded-b-lg first:rounded-bl-xl last:rounded-br-xl';
+    const tabActiveClass = 'bg-linear-to-r from-[#5C1A1A] to-[#7A2424] text-white';
+    const tabInactiveClass = 'bg-[#E8D5B7] text-[#5C4A2F] hover:bg-[#F5EFE0]/70 hover:text-[#3D1409]';
+
     return (
       <>
         <HomePage
@@ -1012,6 +1018,30 @@ export default function VaultsPage() {
           onJoinVault={handleJoinCampaign}
           onDeleteVault={handleDeleteCampaign}
           onLeaveVault={handleLeaveCampaign}
+          topContent={(
+            <div className="px-6 pt-8">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex w-full border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] overflow-hidden rounded-xl">
+                  <button
+                    onClick={() => void handleRoleSwitch('player')}
+                    className={
+                      tabBaseClass + ' ' + (userRole === 'player' ? tabActiveClass : tabInactiveClass)
+                    }
+                  >
+                    Player
+                  </button>
+                  <button
+                    onClick={() => void handleRoleSwitch('dm')}
+                    className={
+                      tabBaseClass + ' ' + (userRole === 'dm' ? tabActiveClass : tabInactiveClass)
+                    }
+                  >
+                    GM
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         />
         {actionError && (
           <ActionErrorToast

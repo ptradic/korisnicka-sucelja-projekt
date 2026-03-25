@@ -16,6 +16,16 @@ export function Skeleton({ className = '', pulse = true }: SkeletonProps) {
 export function VaultListSkeleton() {
   return (
     <div className="min-h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
+      {/* Role Tabs Skeleton */}
+      <div className="px-6 pt-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex w-full border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] overflow-hidden rounded-xl">
+            <Skeleton className="h-12 flex-1 rounded-b-xl" />
+            <Skeleton className="h-12 flex-1 rounded-b-xl" />
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-6 py-8 pt-8">
         {/* Create/Join Vault Section Skeleton */}
         <div className="mb-8">

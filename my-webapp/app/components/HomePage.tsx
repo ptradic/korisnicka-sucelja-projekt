@@ -26,15 +26,17 @@ interface HomePageProps {
   onDeleteVault: (vaultId: string) => void;
   onLeaveVault: (vaultId: string) => void;
   userType: string;
+  topContent?: React.ReactNode;
 }
 
-export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, onDeleteVault, onLeaveVault, userType }: HomePageProps) {
+export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, onDeleteVault, onLeaveVault, userType, topContent }: HomePageProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const isDM = userType === 'dm';
 
   return (
     <div className="min-h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
+      {topContent}
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8 pt-8">
         {/* Create / Join Vault Section */}

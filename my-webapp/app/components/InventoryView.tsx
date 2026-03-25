@@ -211,7 +211,9 @@ export function InventoryView({
   const [isEditingMaxWeight, setIsEditingMaxWeight] = useState(false);
   const [maxWeightEditValue, setMaxWeightEditValue] = useState('');
   const [filtersOverflow, setFiltersOverflow] = useState(false);
+  const [mobileListMinHeight, setMobileListMinHeight] = useState<number | null>(null);
   const itemListRef = useRef<HTMLDivElement>(null);
+  const itemListSectionRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const filterMeasureRef = useRef<HTMLDivElement>(null);
   const previousQuantityByIdRef = useRef<Map<string, number>>(new Map());
@@ -425,6 +427,32 @@ export function InventoryView({
       // Ignore storage errors and keep default behavior.
     }
   }, []);
+
+  useEffect(() => {
+    const updateMobileListMinHeight = () => {
+      if (window.innerWidth >= 640) {
+        setMobileListMinHeight(null);
+        return;
+      }
+
+      const section = itemListSectionRef.current;
+      if (!section) return;
+
+      const top = section.getBoundingClientRect().top;
+      const nextMinHeight = Math.max(180, Math.floor(window.innerHeight - top));
+      setMobileListMinHeight(nextMinHeight);
+    };
+
+    const rafId = window.requestAnimationFrame(updateMobileListMinHeight);
+    window.addEventListener('resize', updateMobileListMinHeight);
+    window.addEventListener('orientationchange', updateMobileListMinHeight);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateMobileListMinHeight);
+      window.removeEventListener('orientationchange', updateMobileListMinHeight);
+    };
+  }, [isFilterOpen, filtersOverflow]);
 
   const closeHelpOverlay = (markSeen: boolean) => {
     setShowHelpOverlay(false);
@@ -737,7 +765,11 @@ export function InventoryView({
       )}
 
       {/* Item list */}
-      <div className="relative flex-1 min-h-0">
+      <div
+        ref={itemListSectionRef}
+        className="relative flex-1 min-h-0"
+        style={{ minHeight: mobileListMinHeight ? `${mobileListMinHeight}px` : undefined }}
+      >
         <div className="h-full overflow-y-auto overflow-x-hidden p-4 sm:p-5 custom-scrollbar" ref={itemListRef}>
           {filteredItems.length === 0 ? (
           <div className="text-center py-12">

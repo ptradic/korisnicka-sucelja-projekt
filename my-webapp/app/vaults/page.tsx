@@ -844,7 +844,20 @@ export default function VaultsPage() {
   const handleUpdateSelectedItem = async (baseItem: Item, updates: Partial<Item>) => {
     if (!currentCampaignId || !currentCampaign) return;
 
-    const updatedItem = { ...baseItem, ...updates };
+    const isPlayerCustomItem = (baseItem.sourcebook || '').trim().toUpperCase() === 'PLAYER CUSTOM';
+    if (!isDM && !isPlayerCustomItem) {
+      return;
+    }
+
+    const sanitizedUpdates = !isDM
+      ? {
+          ...updates,
+          sourcebook: 'PLAYER CUSTOM',
+          rarity: 'common' as const,
+        }
+      : updates;
+
+    const updatedItem = { ...baseItem, ...sanitizedUpdates };
 
     try {
       if (selectedPlayerId === 'shared') {
@@ -935,6 +948,7 @@ export default function VaultsPage() {
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId);
   const isShared = selectedPlayerId === 'shared';
   const isDM = userRole === 'dm';
+  const canPlayerEditSelectedItem = !isDM && !!selectedItem && (selectedItem.sourcebook || '').trim().toUpperCase() === 'PLAYER CUSTOM';
   const vaultCustomItems = currentCampaign?.customItemPool ?? [];
   const syncStatus: 'saving' | 'saved' = pendingWriteCount > 0 ? 'saving' : 'saved';
   const userRoleRef = useRef(userRole);
@@ -1078,9 +1092,9 @@ export default function VaultsPage() {
           <ItemDetailsModal
             item={selectedItem}
             onClose={() => setSelectedItem(null)}
-            onUpdate={isDM ? (updates: Partial<Item>) => handleUpdateSelectedItem(selectedItem, updates) : undefined}
+            onUpdate={isDM || canPlayerEditSelectedItem ? (updates: Partial<Item>) => handleUpdateSelectedItem(selectedItem, updates) : undefined}
             onDelete={() => handleDeleteSelectedItem(selectedItem)}
-            canEdit={isDM}
+            canEdit={isDM || canPlayerEditSelectedItem}
           />
         )}
 

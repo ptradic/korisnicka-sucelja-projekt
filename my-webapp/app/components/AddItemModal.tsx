@@ -570,10 +570,12 @@ function CustomItemForm({
   onCreate,
   onClose,
   targetName,
+  isDM,
 }: {
   onCreate: (item: Omit<Item, 'id'>) => Promise<void> | void;
   onClose: () => void;
   targetName: string;
+  isDM?: boolean;
 }) {
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
   const [showDescriptionScrollbar, setShowDescriptionScrollbar] = useState(false);
@@ -749,9 +751,9 @@ function CustomItemForm({
 
     const item: Omit<Item, 'id'> = {
       name: formData.name.trim(),
-      sourcebook: 'homebrew',
+      sourcebook: isDM ? 'homebrew' : 'PLAYER CUSTOM',
       category: formData.category,
-      rarity: formData.rarity,
+      rarity: isDM ? formData.rarity : 'common',
       quantity: formData.quantity,
       weight: formData.weight === '' ? 0 : Number(formData.weight),
       attunement: formData.attunement,
@@ -876,15 +878,21 @@ function CustomItemForm({
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Rarity <span className="text-[#8B3A3A]">*</span>
             </label>
-            <select
-              value={formData.rarity}
-              onChange={(e) => setFormData({ ...formData, rarity: e.target.value as Rarity })}
-              className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
-            >
-              {rarities.map((rar) => (
-                <option key={rar} value={rar} className="capitalize">{rar}</option>
-              ))}
-            </select>
+            {isDM ? (
+              <select
+                value={formData.rarity}
+                onChange={(e) => setFormData({ ...formData, rarity: e.target.value as Rarity })}
+                className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
+              >
+                {rarities.map((rar) => (
+                  <option key={rar} value={rar} className="capitalize">{rar}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="w-full px-3 py-2 bg-[#E8D5B7]/60 border-3 border-[#8B6F47]/50 rounded-xl text-[#3D1409] font-semibold">
+                common
+              </div>
+            )}
           </div>
 
           <div className="pt-6">
@@ -899,6 +907,12 @@ function CustomItemForm({
             </label>
           </div>
         </div>
+
+        {!isDM && (
+          <div className="rounded-xl border-2 border-[#D4C4A8] bg-white/40 px-3 py-2 text-xs text-[#5C4A2F]">
+            Player custom items are always saved with rarity Common and sourcebook PLAYER CUSTOM.
+          </div>
+        )}
 
         {/* Quantity + Weight + Value */}
         <div className="grid grid-cols-3 gap-2 shrink-0">
@@ -1012,8 +1026,8 @@ export function AddItemModal({
         className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl overflow-hidden"
         style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', height: 'min(90vh, 700px)' }}
       >
-        {/* GM gets tabs to switch between pool management and homebrew creation */}
-        {isDM && (
+        {/* Tabs */}
+        {isDM ? (
           <div className="flex border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] overflow-hidden">
             <button
               onClick={() => setMode('pick')}
@@ -1040,6 +1054,25 @@ export function AddItemModal({
               Create Homebrew
             </button>
           </div>
+        ) : (
+          <div className="flex border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] overflow-hidden">
+            <button
+              onClick={() => setMode('pick')}
+              className={
+                tabBaseClass + ' ' + (mode === 'pick' ? tabActiveClass : tabInactiveClass)
+              }
+            >
+              Add Items
+            </button>
+            <button
+              onClick={() => setMode('custom')}
+              className={
+                tabBaseClass + ' ' + (mode === 'custom' ? tabActiveClass : tabInactiveClass)
+              }
+            >
+              Create Custom
+            </button>
+          </div>
         )}
 
         {mode === 'pick' ? (
@@ -1060,7 +1093,12 @@ export function AddItemModal({
             targetName={targetName}
           />
         ) : (
-          <CustomItemForm onCreate={onCreateHomebrew || onAdd} onClose={onClose} targetName={targetName} />
+          <CustomItemForm
+            onCreate={isDM ? (onCreateHomebrew || onAdd) : onAdd}
+            onClose={onClose}
+            targetName={targetName}
+            isDM={isDM}
+          />
         )}
       </div>
     </div>

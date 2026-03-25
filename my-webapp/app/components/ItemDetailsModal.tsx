@@ -283,13 +283,15 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   )}
                 </div>
 
-                <div className="shrink-0 text-right leading-tight pt-0.5">
-                  <p className={`text-sm font-extrabold capitalize ${rarityColors[item.rarity]}`}>
-                    {item.rarity} {item.category}
-                    {item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
-                  </p>
-                  <p className="text-[10px] mt-0.5 text-[#5C4A2F] uppercase tracking-wide">Sourcebook: {item.sourcebook || 'unknown'}</p>
-                </div>
+                {!isEditing && (
+                  <div className="shrink-0 text-right leading-tight pt-0.5">
+                    <p className={`text-sm font-extrabold capitalize ${rarityColors[item.rarity]}`}>
+                      {item.rarity} {item.category}
+                      {item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
+                    </p>
+                    <p className="text-[10px] mt-0.5 text-[#5C4A2F] uppercase tracking-wide">Sourcebook: {item.sourcebook || 'unknown'}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -369,8 +371,8 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 shrink-0">
-                <div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 shrink-0">
+                <div className="order-1">
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
                     Category <span className="text-[#8B3A3A]">*</span>
                   </label>
@@ -385,7 +387,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   </select>
                 </div>
 
-                <div>
+                <div className="order-2">
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
                     Rarity <span className="text-[#8B3A3A]">*</span>
                   </label>
@@ -400,21 +402,26 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   </select>
                 </div>
 
-                <div className="pt-6">
-                  <label className="flex h-[42px] items-center gap-2.5 cursor-pointer px-3 bg-white/40 border-2 border-[#DCC8A8] rounded-xl hover:bg-white/60 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={formData.attunement}
-                      onChange={(e) => setFormData({ ...formData, attunement: e.target.checked })}
-                      className="w-4 h-4 rounded border-[#8B6F47] bg-white/70 text-[#5C1A1A] accent-[#5C1A1A]"
-                    />
-                    <span className="text-[#3D1409] text-sm font-semibold">Requires Attunement</span>
-                  </label>
+                <div className="order-3">
+                  <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Attunement</label>
+                  <select
+                    value={formData.attunement ? 'requires' : 'does-not-require'}
+                    onChange={(e) => {
+                      const requiresAttunement = e.target.value === 'requires';
+                      setFormData({
+                        ...formData,
+                        attunement: requiresAttunement,
+                        attuned: requiresAttunement ? formData.attuned : false,
+                      });
+                    }}
+                    className="w-full px-3 py-2 min-h-[42px] bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                  >
+                    <option value="requires">Requires</option>
+                    <option value="does-not-require">Doesn't require</option>
+                  </select>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-3 gap-2 shrink-0">
-                <div>
+                <div className="order-4">
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Quantity</label>
                   <input
                     type="number"
@@ -425,7 +432,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   />
                 </div>
 
-                <div>
+                <div className="order-5">
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Weight (lbs)</label>
                   <input
                     type="number"
@@ -438,7 +445,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   />
                 </div>
 
-                <div>
+                <div className="order-6">
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Value (gp)</label>
                   <input
                     type="number"
@@ -466,7 +473,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   className="btn-primary flex-1 group px-4 py-2.5"
                 >
                   <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
-                  Save Changes
+                  Save
                 </button>
               </div>
             </>

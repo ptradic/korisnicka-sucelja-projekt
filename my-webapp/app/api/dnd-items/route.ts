@@ -301,6 +301,7 @@ export async function GET(request: NextRequest) {
       source: item.document.display_name,
       editionKey: item.document.key,
       rarity: item.rarity?.key || 'none',
+      category: mapCategory(item),
     }));
 
     return NextResponse.json(items);

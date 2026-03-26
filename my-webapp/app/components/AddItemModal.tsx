@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Fuse from 'fuse.js';
-import { X, Search, Plus, Package, Loader2, Check } from 'lucide-react';
+import { X, Search, Plus, Package, Loader2, Check, Sword, Shield, Droplet, Sparkles, Backpack, Gem, Filter, ArrowUpDown, Repeat2 } from 'lucide-react';
 import type { Item, Category, Rarity } from '../types';
+import { normalizeCategory } from '../types';
 import { ItemDetailsModal } from './ItemDetailsModal';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 
@@ -25,6 +26,7 @@ interface DnDItemListItem {
   type: 'equipment' | 'magic';
   rarity?: string;
   editionKey?: string;
+  category?: string;
 }
 
 const categories: Category[] = ['weapons', 'armor', 'consumables', 'magic-gear', 'adventuring-gear', 'wealth-valuables'];
@@ -78,6 +80,18 @@ const dndRarityLabelByKey: Record<string, string> = {
   none: 'Mundane',
 };
 
+// Rarity rank for sorting (Open5e key format for DnD items)
+const dndRarityRank: Record<string, number> = {
+  none: 0, varies: 0, common: 1, uncommon: 2, rare: 3, 'very-rare': 4, legendary: 5, artifact: 6,
+};
+// Rarity rank for sorting (app Rarity format for custom items)
+const appRarityRank: Record<string, number> = {
+  common: 1, uncommon: 2, rare: 3, 'very rare': 4, legendary: 5, artifact: 6,
+};
+
+type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
+type SortDirection = 'asc' | 'desc';
+
 function TemplateItemPicker({
   customItems,
   onSelect,
@@ -94,8 +108,15 @@ function TemplateItemPicker({
   const [loading, setLoading] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState<string | null>(null);
   const [tab, setTab] = useState<'dnd' | 'custom'>('dnd');
+  const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('none');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const filterMenuRef = useRef<HTMLDivElement | null>(null);
+  const sortMenuRef = useRef<HTMLDivElement | null>(null);
 
   const {
     showScrollbar,
@@ -145,6 +166,45 @@ function TemplateItemPicker({
     };
   }, [search, tab]);
 
+  // Close filter dropdown on outside click
+  useEffect(() => {
+    if (!isFilterOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (filterMenuRef.current && !filterMenuRef.current.contains(e.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isFilterOpen]);
+
+  // Close sort dropdown on outside click
+  useEffect(() => {
+    if (!isSortMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+        setIsSortMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isSortMenuOpen]);
+
+  const handleSortSelect = (field: SortField, direction: SortDirection = 'asc') => {
+    setSortField(field);
+    setSortDirection(direction);
+    setIsSortMenuOpen(false);
+  };
+
+  const toggleSortField = (field: Exclude<SortField, 'none'>) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
   // Handle selecting a 5e or 5.5e item (fetch full details)
   const handleSelectDndItem = async (dndItem: DnDItemListItem) => {
     setLoadingDetails(dndItem.index);
@@ -181,12 +241,62 @@ function TemplateItemPicker({
     ignoreLocation: true,
   }), [dndItems]);
 
-  const sortedDndItems = search.length >= 2
+  const applyDndSort = (items: DnDItemListItem[]) => {
+    if (sortField === 'none') return items;
+    return [...items].sort((a, b) => {
+      let cmp = 0;
+      if (sortField === 'name') {
+        cmp = a.name.localeCompare(b.name);
+      } else if (sortField === 'rarity') {
+        cmp = (dndRarityRank[a.rarity || 'none'] ?? 0) - (dndRarityRank[b.rarity || 'none'] ?? 0);
+        if (cmp === 0) cmp = a.name.localeCompare(b.name);
+      } else {
+        // weight/value not available in list items — fall back to name
+        cmp = a.name.localeCompare(b.name);
+      }
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+  };
+
+  const applyCustomSort = (items: Item[]) => {
+    if (sortField === 'none') return items;
+    return [...items].sort((a, b) => {
+      let cmp = 0;
+      if (sortField === 'name') {
+        cmp = a.name.localeCompare(b.name);
+      } else if (sortField === 'rarity') {
+        cmp = (appRarityRank[a.rarity] ?? 0) - (appRarityRank[b.rarity] ?? 0);
+        if (cmp === 0) cmp = a.name.localeCompare(b.name);
+      } else if (sortField === 'weight') {
+        cmp = a.weight - b.weight;
+        if (cmp === 0) cmp = a.name.localeCompare(b.name);
+      } else {
+        cmp = (a.value || 0) - (b.value || 0);
+        if (cmp === 0) cmp = a.name.localeCompare(b.name);
+      }
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+  };
+
+  const baseRankedDndItems = search.length >= 2
     ? dndItemsFuse.search(search).map((r) => r.item)
     : [...dndItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-  const sortedCustomItems = search === ''
+
+  const rankedDndItems = applyDndSort(baseRankedDndItems);
+
+  const sortedDndItems = selectedCategory === 'all'
+    ? rankedDndItems
+    : rankedDndItems.filter((i) => i.category === selectedCategory);
+
+  const baseRankedCustomItems = search === ''
     ? [...filteredCustomItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
-    : filteredCustomItems; // Fuse already ranks by relevance
+    : filteredCustomItems;
+
+  const rankedCustomItems = applyCustomSort(baseRankedCustomItems);
+
+  const sortedCustomItems = selectedCategory === 'all'
+    ? rankedCustomItems
+    : rankedCustomItems.filter((i) => normalizeCategory(i.category) === selectedCategory);
 
 
   return (
@@ -246,6 +356,123 @@ function TemplateItemPicker({
           >
             {`Custom Items (${customItems.length})`}
           </button>
+          <div className="relative shrink-0" ref={filterMenuRef}>
+            <button
+              onClick={() => { setIsFilterOpen((o) => !o); setIsSortMenuOpen(false); }}
+              title={isFilterOpen ? 'Close filters' : 'Filter by category'}
+              className={
+                'w-9 h-9 !p-0 rounded-lg ' +
+                (isFilterOpen || selectedCategory !== 'all'
+                  ? 'btn-primary text-white border-[#3D1409]'
+                  : 'btn-secondary text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
+              }
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+
+            {isFilterOpen && (
+              <div
+                className="absolute right-0 top-full mt-2 z-30 min-w-[180px] bg-[#F5EFE0] border-3 border-[#8B6F47] rounded-xl p-1.5"
+                style={{ boxShadow: '0 8px 20px rgba(61, 20, 9, 0.25)' }}
+              >
+                {([
+                  { key: 'all', label: 'All Items', Icon: Package },
+                  { key: 'weapons', label: 'Weapons', Icon: Sword },
+                  { key: 'armor', label: 'Armor', Icon: Shield },
+                  { key: 'consumables', label: 'Consumables', Icon: Droplet },
+                  { key: 'magic-gear', label: 'Magic Gear', Icon: Sparkles },
+                  { key: 'adventuring-gear', label: 'Adventuring Gear', Icon: Backpack },
+                  { key: 'wealth-valuables', label: 'Wealth & Valuables', Icon: Gem },
+                ] as { key: string; label: string; Icon: React.ComponentType<{ className?: string }> }[]).map(({ key, label, Icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => { setSelectedCategory(key as Category | 'all'); setIsFilterOpen(false); }}
+                    className={
+                      'w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                      (selectedCategory === key
+                        ? 'bg-[#5C1A1A] text-white'
+                        : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                    }
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="relative shrink-0" ref={sortMenuRef}>
+            <button
+              onClick={() => { setIsSortMenuOpen((v) => !v); setIsFilterOpen(false); }}
+              title="Sort options"
+              className={
+                'w-9 h-9 !p-0 rounded-lg ' +
+                (isSortMenuOpen || sortField !== 'none'
+                  ? 'btn-primary text-white border-[#3D1409]'
+                  : 'btn-secondary text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
+              }
+            >
+              <ArrowUpDown className="w-4 h-4" />
+            </button>
+
+            {isSortMenuOpen && (
+              <div
+                className="absolute right-0 top-full mt-2 z-30 min-w-[190px] bg-[#F5EFE0] border-3 border-[#8B6F47] rounded-xl p-1.5"
+                style={{ boxShadow: '0 8px 20px rgba(61, 20, 9, 0.25)' }}
+              >
+                <button
+                  onClick={() => handleSortSelect('none', 'asc')}
+                  className={
+                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    (sortField === 'none' ? 'bg-[#5C1A1A] text-white' : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                  }
+                >
+                  No sorting
+                </button>
+                <button
+                  onClick={() => toggleSortField('name')}
+                  className={
+                    'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    (sortField === 'name' ? 'bg-[#5C1A1A] text-white' : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                  }
+                >
+                  <span>Name ({sortField === 'name' && sortDirection === 'desc' ? 'Z-A' : 'A-Z'})</span>
+                  <Repeat2 className="w-3 h-3 shrink-0 opacity-60" />
+                </button>
+                <button
+                  onClick={() => toggleSortField('rarity')}
+                  className={
+                    'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    (sortField === 'rarity' ? 'bg-[#5C1A1A] text-white' : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                  }
+                >
+                  <span>Rarity ({sortField === 'rarity' && sortDirection === 'desc' ? 'Artifact first' : 'Common first'})</span>
+                  <Repeat2 className="w-3 h-3 shrink-0 opacity-60" />
+                </button>
+                <button
+                  onClick={() => toggleSortField('weight')}
+                  className={
+                    'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    (sortField === 'weight' ? 'bg-[#5C1A1A] text-white' : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                  }
+                >
+                  <span>Weight ({sortField === 'weight' && sortDirection === 'desc' ? 'High to Low' : 'Low to High'})</span>
+                  <Repeat2 className="w-3 h-3 shrink-0 opacity-60" />
+                </button>
+                <button
+                  onClick={() => toggleSortField('value')}
+                  className={
+                    'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    (sortField === 'value' ? 'bg-[#5C1A1A] text-white' : 'text-[#3D1409] hover:bg-[#E8D5B7]')
+                  }
+                >
+                  <span>Value ({sortField === 'value' && sortDirection === 'desc' ? 'High to Low' : 'Low to High'})</span>
+                  <Repeat2 className="w-3 h-3 shrink-0 opacity-60" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

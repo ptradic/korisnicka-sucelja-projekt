@@ -182,9 +182,7 @@ function TemplateItemPicker({
           </div>
           <div>
             <h2 className="text-lg font-extrabold text-[#3D1409]">Add Item to {targetName}</h2>
-            <p className="text-[#5C4A2F] text-xs mt-0.5">
-              {tab === 'dnd' ? 'Search 5e or 5.5e items' : 'Choose from custom items'}
-            </p>
+            <p className="text-[#5C4A2F] text-xs mt-0.5">Tap an item to add it instantly</p>
           </div>
         </div>
         <button onClick={onClose} className="btn-ghost active:scale-100 !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50">

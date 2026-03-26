@@ -783,10 +783,10 @@ export function InventoryView({
       {/* Item list */}
       <div
         ref={itemListSectionRef}
-        className="relative flex-1 min-h-0"
+        className="relative flex-1 min-h-0 flex flex-col"
         style={{ minHeight: mobileListMinHeight ? `${mobileListMinHeight}px` : undefined }}
       >
-        <div className="h-full overflow-y-auto overflow-x-hidden p-4 pb-14 sm:p-5 sm:pb-16 custom-scrollbar" ref={itemListRef}>
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-5 custom-scrollbar" ref={itemListRef}>
           {filteredItems.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-[#5C4A2F] text-base mb-1">No items found</div>
@@ -845,11 +845,11 @@ export function InventoryView({
 
         </div>
 
-        {/* Add item button — pinned to bottom */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 pb-3 pt-6 bg-gradient-to-t from-[#D4C4A8] to-transparent pointer-events-none">
+        {/* Add item button — always at bottom */}
+        <div className="shrink-0 px-4 sm:px-5 pb-3 pt-4 bg-gradient-to-t from-[#D4C4A8] to-transparent">
           <button
             onClick={onAddItem}
-            className="pointer-events-auto w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 border-dashed border-[#8B6F47]/60 bg-[#D4C4A8]/60 text-[#5C4A2F] hover:border-[#5C1A1A] hover:text-[#5C1A1A] hover:bg-[#D4C4A8]/90 transition-all text-sm font-medium backdrop-blur-sm"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 border-dashed border-[#8B6F47]/60 bg-[#D4C4A8]/60 text-[#5C4A2F] hover:border-[#5C1A1A] hover:text-[#5C1A1A] hover:bg-[#D4C4A8]/90 transition-all text-sm font-medium backdrop-blur-sm"
           >
             <Plus className="w-4 h-4" />
             <span>Add Item</span>

@@ -20,11 +20,12 @@ interface InventoryViewProps {
   onMaxWeightChange?: (newMax: number) => void;
   currency?: Currency;
   onCurrencyChange?: (currency: Currency) => void;
+  onCoinTransfer?: (amounts: Currency) => void;
   isShared?: boolean;
   syncStatus?: 'saving' | 'saved';
 }
 
-// Simple inline coin display — click to edit
+// Simple inline coin display — click to edit (read-only if no onChange)
 function CoinDisplay({
   label,
   value,
@@ -34,19 +35,21 @@ function CoinDisplay({
   label: string;
   value: number;
   colorClass: string;
-  onChange: (val: number) => void;
+  onChange?: (val: number) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value.toString());
   const inputRef = useRef<HTMLInputElement>(null);
 
   const startEditing = () => {
+    if (!onChange) return;
     setEditValue(value.toString());
     setIsEditing(true);
     setTimeout(() => inputRef.current?.select(), 0);
   };
 
   const finishEditing = () => {
+    if (!onChange) return;
     const parsed = parseInt(editValue) || 0;
     onChange(Math.max(0, parsed));
     setIsEditing(false);
@@ -74,7 +77,7 @@ function CoinDisplay({
       ) : (
         <button
           onClick={startEditing}
-          className="btn-ghost text-sm font-bold tabular-nums !px-1.5 !py-0.5 border-transparent text-[#3D1409] hover:bg-white/60 cursor-text min-w-6 text-center"
+          className={'btn-ghost text-sm font-bold tabular-nums !px-1.5 !py-0.5 border-transparent text-[#3D1409] min-w-6 text-center ' + (onChange ? 'hover:bg-white/60 cursor-text' : 'cursor-default')}
         >
           {value}
         </button>
@@ -84,11 +87,13 @@ function CoinDisplay({
   );
 }
 
-// "Add coins" popover
+// "Add coins" popover (also used for deposit/withdraw in shared loot)
 function AddCoinsButton({
   onAdd,
+  transferMode = false,
 }: {
   onAdd: (currency: Currency) => void;
+  transferMode?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [amounts, setAmounts] = useState<Currency>({ pp: 0, gp: 0, sp: 0, cp: 0 });
@@ -135,9 +140,11 @@ function AddCoinsButton({
           >
             <div className="text-xs font-bold text-[#3D1409] mb-2 flex items-center gap-1.5">
               <span className="text-[11px] font-extrabold tracking-tight text-[#B8860B]">+/-</span>
-              Add / Subtract Coins
+              {transferMode ? 'Deposit / Withdraw' : 'Add / Subtract Coins'}
             </div>
-            <p className="text-[10px] text-[#8B6F47] mb-2 -mt-1">Use negative numbers to subtract</p>
+            <p className="text-[10px] text-[#8B6F47] mb-2 -mt-1">
+              {transferMode ? 'Positive to deposit, negative to withdraw from your wallet' : 'Use negative numbers to subtract'}
+            </p>
             <div className="grid grid-cols-2 gap-2 mb-3">
               {coinTypes.map(({ key, label, color }) => (
                 <div key={key} className="flex items-center gap-1.5">
@@ -188,6 +195,7 @@ export function InventoryView({
   onMaxWeightChange,
   currency,
   onCurrencyChange,
+  onCoinTransfer,
   isShared,
   syncStatus = 'saved',
 }: InventoryViewProps) {
@@ -511,8 +519,8 @@ export function InventoryView({
           </div>
         </div>
 
-        {/* Currency row (not for shared loot) */}
-        {currency && onCurrencyChange && (
+        {/* Currency row */}
+        {currency && (
           <div className="flex items-center gap-3 mb-2 py-2 px-3 bg-white/50 rounded-lg border border-[#8B6F47]/20">
             <Coins className="w-4 h-4 text-[#B8860B] shrink-0" />
             <div className="flex items-center gap-3 flex-1 flex-wrap">
@@ -520,37 +528,41 @@ export function InventoryView({
                 label="pp"
                 value={currency.pp}
                 colorClass="text-[#8B8B8B]"
-                onChange={(v) => onCurrencyChange({ ...currency, pp: v })}
+                onChange={onCurrencyChange ? (v) => onCurrencyChange({ ...currency, pp: v }) : undefined}
               />
               <CoinDisplay
                 label="gp"
                 value={currency.gp}
                 colorClass="text-[#B8860B]"
-                onChange={(v) => onCurrencyChange({ ...currency, gp: v })}
+                onChange={onCurrencyChange ? (v) => onCurrencyChange({ ...currency, gp: v }) : undefined}
               />
               <CoinDisplay
                 label="sp"
                 value={currency.sp}
                 colorClass="text-[#808080]"
-                onChange={(v) => onCurrencyChange({ ...currency, sp: v })}
+                onChange={onCurrencyChange ? (v) => onCurrencyChange({ ...currency, sp: v }) : undefined}
               />
               <CoinDisplay
                 label="cp"
                 value={currency.cp}
                 colorClass="text-[#B87333]"
-                onChange={(v) => onCurrencyChange({ ...currency, cp: v })}
+                onChange={onCurrencyChange ? (v) => onCurrencyChange({ ...currency, cp: v }) : undefined}
               />
             </div>
-            <AddCoinsButton
-              onAdd={(added) =>
-                onCurrencyChange({
-                  pp: Math.max(0, currency.pp + added.pp),
-                  gp: Math.max(0, currency.gp + added.gp),
-                  sp: Math.max(0, currency.sp + added.sp),
-                  cp: Math.max(0, currency.cp + added.cp),
-                })
-              }
-            />
+            {onCoinTransfer ? (
+              <AddCoinsButton onAdd={onCoinTransfer} transferMode={true} />
+            ) : onCurrencyChange ? (
+              <AddCoinsButton
+                onAdd={(added) =>
+                  onCurrencyChange({
+                    pp: Math.max(0, currency.pp + added.pp),
+                    gp: Math.max(0, currency.gp + added.gp),
+                    sp: Math.max(0, currency.sp + added.sp),
+                    cp: Math.max(0, currency.cp + added.cp),
+                  })
+                }
+              />
+            ) : null}
           </div>
         )}
 

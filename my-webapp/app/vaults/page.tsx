@@ -710,13 +710,45 @@ export default function VaultsPage() {
     }
   };
 
-  const handleSharedCurrencyChange = async (currency: Currency) => {
-    if (!currentCampaignId) return;
+  const handleSharedCoinTransfer = async (amounts: Currency) => {
+    if (!currentCampaignId || !currentCampaign) return;
+    const myInv = playerInventories.find((p) => p.playerId === userId);
+    if (!myInv) return;
+
+    const shared = currentCampaign.sharedCurrency ?? { pp: 0, gp: 0, sp: 0, cp: 0 };
+
+    // Clamp each coin: deposits limited by player's wallet, withdrawals limited by shared loot
+    const clamp = (amount: number, playerHas: number, sharedHas: number) =>
+      amount >= 0 ? Math.min(amount, playerHas) : Math.max(amount, -sharedHas);
+
+    const actual: Currency = {
+      pp: clamp(amounts.pp, myInv.currency.pp, shared.pp),
+      gp: clamp(amounts.gp, myInv.currency.gp, shared.gp),
+      sp: clamp(amounts.sp, myInv.currency.sp, shared.sp),
+      cp: clamp(amounts.cp, myInv.currency.cp, shared.cp),
+    };
+
+    const newShared: Currency = {
+      pp: shared.pp + actual.pp,
+      gp: shared.gp + actual.gp,
+      sp: shared.sp + actual.sp,
+      cp: shared.cp + actual.cp,
+    };
+    const newPlayerCurrency: Currency = {
+      pp: myInv.currency.pp - actual.pp,
+      gp: myInv.currency.gp - actual.gp,
+      sp: myInv.currency.sp - actual.sp,
+      cp: myInv.currency.cp - actual.cp,
+    };
+
     try {
-      await updateSharedCurrency(currentCampaignId, currency);
+      await Promise.all([
+        trackWrite(() => updateSharedCurrency(currentCampaignId, newShared)),
+        trackWrite(() => updatePlayerInventory(currentCampaignId, userId, myInv.inventory, newPlayerCurrency)),
+      ]);
     } catch (error) {
-      console.error('Failed to update shared currency:', error);
-      showActionError('Could not update shared currency', error, () => handleSharedCurrencyChange(currency));
+      console.error('Failed to transfer coins:', error);
+      showActionError('Could not transfer coins', error, () => handleSharedCoinTransfer(amounts));
     }
   };
 
@@ -1106,7 +1138,8 @@ export default function VaultsPage() {
               maxWeight={isShared ? undefined : selectedPlayer?.maxWeight}
               onMaxWeightChange={isShared ? undefined : (newMax: number) => handleMaxWeightChange(selectedPlayerId, newMax)}
               currency={isShared ? (currentCampaign?.sharedCurrency ?? { pp: 0, gp: 0, sp: 0, cp: 0 }) : selectedPlayer?.currency}
-              onCurrencyChange={isShared ? handleSharedCurrencyChange : (c: Currency) => handleCurrencyChange(selectedPlayerId, c)}
+              onCurrencyChange={isShared ? undefined : (c: Currency) => handleCurrencyChange(selectedPlayerId, c)}
+              onCoinTransfer={isShared && !isDM ? handleSharedCoinTransfer : undefined}
               isShared={isShared}
               syncStatus={syncStatus}
             />

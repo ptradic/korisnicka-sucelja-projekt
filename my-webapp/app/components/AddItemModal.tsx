@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import Fuse from 'fuse.js';
 import { X, Search, Plus, Package, Loader2, Check } from 'lucide-react';
 import type { Item, Category, Rarity } from '../types';
 import { ItemDetailsModal } from './ItemDetailsModal';
@@ -120,9 +121,12 @@ function TemplateItemPicker({
         return;
       }
 
+      // Use first 2 chars for the API query to get a broad result set,
+      // then Fuse.js filters/ranks client-side for typo tolerance.
+      const broadQuery = search.slice(0, 2);
       setLoading(true);
       try {
-        const response = await fetch(`/api/dnd-items?search=${encodeURIComponent(search)}`);
+        const response = await fetch(`/api/dnd-items?search=${encodeURIComponent(broadQuery)}`);
         if (response.ok) {
           const items = await response.json();
           setDndItems(items);
@@ -161,16 +165,28 @@ function TemplateItemPicker({
     }
   };
 
-  const filteredCustomItems = customItems.filter((item) => {
-    const matchesSearch =
-      search === '' ||
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      (item.description || '').toLowerCase().includes(search.toLowerCase());
-    return matchesSearch;
-  });
+  const customItemsFuse = useMemo(() => new Fuse(customItems, {
+    keys: ['name', 'description'],
+    threshold: 0.4,
+    ignoreLocation: true,
+  }), [customItems]);
 
-  const sortedDndItems = [...dndItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-  const sortedCustomItems = [...filteredCustomItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  const filteredCustomItems = search === ''
+    ? customItems
+    : customItemsFuse.search(search).map((r) => r.item);
+
+  const dndItemsFuse = useMemo(() => new Fuse(dndItems, {
+    keys: ['name'],
+    threshold: 0.4,
+    ignoreLocation: true,
+  }), [dndItems]);
+
+  const sortedDndItems = search.length >= 2
+    ? dndItemsFuse.search(search).map((r) => r.item)
+    : [...dndItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  const sortedCustomItems = search === ''
+    ? [...filteredCustomItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+    : filteredCustomItems; // Fuse already ranks by relevance
 
 
   return (
@@ -378,15 +394,19 @@ function CustomItemPoolManager({
     setSelectedPoolIds(customItemPool.map((item) => item.id));
   }, [customItemPool]);
 
-  const filteredHomebrewItems = userHomebrew.filter((item) => {
-    const matchesSearch =
-      search === '' ||
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      (item.description || '').toLowerCase().includes(search.toLowerCase());
-    return matchesSearch;
-  });
+  const homebrewFuse = useMemo(() => new Fuse(userHomebrew, {
+    keys: ['name', 'description'],
+    threshold: 0.4,
+    ignoreLocation: true,
+  }), [userHomebrew]);
 
-  const sortedHomebrewItems = [...filteredHomebrewItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  const filteredHomebrewItems = search === ''
+    ? userHomebrew
+    : homebrewFuse.search(search).map((r) => r.item);
+
+  const sortedHomebrewItems = search === ''
+    ? [...filteredHomebrewItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+    : filteredHomebrewItems;
 
   const handleTogglePool = (itemId: string) => {
     setSelectedPoolIds((prev) => {

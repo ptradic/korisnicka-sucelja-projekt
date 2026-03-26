@@ -43,6 +43,7 @@
     "dnd-multi-backend": "^9.0.0",
     "embla-carousel-react": "^8.0.0",
     "firebase": "^12.9.0",
+    "fuse.js": "^7.1.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.460.0",
     "next": "^16.1.6",

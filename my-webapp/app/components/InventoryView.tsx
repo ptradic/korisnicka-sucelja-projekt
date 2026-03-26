@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks, Repeat2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
@@ -656,46 +656,50 @@ export function InventoryView({
                 <button
                   onClick={() => toggleSortField('name')}
                   className={
-                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
                     (sortField === 'name'
                       ? 'bg-[#5C1A1A] text-white'
                       : 'text-[#3D1409] hover:bg-[#E8D5B7]')
                   }
                 >
-                  Name ({sortField === 'name' && sortDirection === 'desc' ? 'Z-A' : 'A-Z'})
+                  <span>Name ({sortField === 'name' && sortDirection === 'desc' ? 'Z-A' : 'A-Z'})</span>
+                  <Repeat2 className="w-3 h-3 shrink-0 opacity-60" />
                 </button>
                 <button
                   onClick={() => toggleSortField('rarity')}
                   className={
-                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
                     (sortField === 'rarity'
                       ? 'bg-[#5C1A1A] text-white'
                       : 'text-[#3D1409] hover:bg-[#E8D5B7]')
                   }
                 >
-                  Rarity ({sortField === 'rarity' && sortDirection === 'desc' ? 'Artifact to Common' : 'Common to Artifact'})
+                  <span>Rarity ({sortField === 'rarity' && sortDirection === 'desc' ? 'Artifact to Common' : 'Common to Artifact'})</span>
+                  <Repeat2 className="w-3 h-3 shrink-0 opacity-60" />
                 </button>
                 <button
                   onClick={() => toggleSortField('weight')}
                   className={
-                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
                     (sortField === 'weight'
                       ? 'bg-[#5C1A1A] text-white'
                       : 'text-[#3D1409] hover:bg-[#E8D5B7]')
                   }
                 >
-                  Weight ({sortField === 'weight' && sortDirection === 'desc' ? 'High to Low' : 'Low to High'})
+                  <span>Weight ({sortField === 'weight' && sortDirection === 'desc' ? 'High to Low' : 'Low to High'})</span>
+                  <Repeat2 className="w-3 h-3 shrink-0 opacity-60" />
                 </button>
                 <button
                   onClick={() => toggleSortField('value')}
                   className={
-                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
                     (sortField === 'value'
                       ? 'bg-[#5C1A1A] text-white'
                       : 'text-[#3D1409] hover:bg-[#E8D5B7]')
                   }
                 >
-                  Value ({sortField === 'value' && sortDirection === 'desc' ? 'High to Low' : 'Low to High'})
+                  <span>Value ({sortField === 'value' && sortDirection === 'desc' ? 'High to Low' : 'Low to High'})</span>
+                  <Repeat2 className="w-3 h-3 shrink-0 opacity-60" />
                 </button>
               </div>
             )}

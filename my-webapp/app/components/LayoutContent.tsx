@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 
 export function LayoutContent({ children }: { children: React.ReactNode }) {
@@ -15,8 +15,19 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
     handleThumbMouseDown,
   } = useCustomScrollbar(pageScrollRef);
 
+  // Use window.innerHeight to set a CSS variable that reflects the true
+  // visible viewport on all platforms (browser, PWA, Android nav bar, etc.)
+  useEffect(() => {
+    const setAppHeight = () => {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    };
+    setAppHeight();
+    window.addEventListener('resize', setAppHeight);
+    return () => window.removeEventListener('resize', setAppHeight);
+  }, []);
+
   return (
-    <div className="relative mt-20 h-[calc(100dvh-5rem)]">
+    <div className="relative mt-20" style={{ height: 'calc(var(--app-height, 100dvh) - 5rem)' }}>
       <div ref={pageScrollRef} className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         {children}
       </div>

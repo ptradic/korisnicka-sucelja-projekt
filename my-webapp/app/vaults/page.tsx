@@ -890,11 +890,12 @@ export default function VaultsPage() {
     if (!currentCampaignId || !currentCampaign) return;
 
     const isPlayerCustomItem = (baseItem.sourcebook || '').trim().toUpperCase() === 'PLAYER CUSTOM';
-    if (!isDM && !isPlayerCustomItem) {
+    const isHiddenToggleOnly = Object.keys(updates).length === 1 && 'hiddenFromOthers' in updates;
+    if (!isDM && !isPlayerCustomItem && !isHiddenToggleOnly) {
       return;
     }
 
-    const sanitizedUpdates = !isDM
+    const sanitizedUpdates = (!isDM && !isHiddenToggleOnly)
       ? {
           ...updates,
           sourcebook: 'PLAYER CUSTOM',

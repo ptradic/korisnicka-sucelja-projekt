@@ -1104,7 +1104,7 @@ export default function VaultsPage() {
   return (
     <DndProvider options={HTML5toTouch}>
       <TouchDragPreview />
-      <div className="h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-x-hidden">
+      <div className="h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
         <div className="flex flex-col h-full overflow-hidden sm:flex-row">
           <PlayerSidebar
             players={players}
@@ -1123,7 +1123,7 @@ export default function VaultsPage() {
             currentUserId={userId}
             onUpdateMyCharacterName={!isDM ? handleUpdateMyCharacterName : undefined}
           />
-          <div className="flex-1 min-w-0 min-h-0">
+          <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
             <InventoryView
               inventory={isShared
                 ? (currentCampaign?.sharedLoot ?? [])

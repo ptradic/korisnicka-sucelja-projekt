@@ -822,7 +822,7 @@ export function InventoryView({
           <div
             ref={itemListTrackRef}
             onClick={handleItemListTrackClick}
-            className="absolute top-2 right-0.5 bottom-2 w-3.5 flex items-stretch cursor-pointer z-10"
+            className="hidden sm:flex absolute top-2 right-0.5 bottom-2 w-3.5 items-stretch cursor-pointer z-10"
           >
             <div
               onMouseDown={handleItemListThumbMouseDown}

@@ -264,38 +264,28 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
         style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', maxHeight: 'min(90vh, 700px)' }}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-[#F5EFE0] p-4 sm:p-5 pb-3 flex items-start justify-between z-10 rounded-t-xl shrink-0">
-          <div className="flex flex-col min-w-0 flex-1 gap-1">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className={`w-10 h-10 bg-linear-to-br ${gradient} rounded-xl flex items-center justify-center shadow-md shrink-0`}>
-                <ItemTypeIcon className="w-5 h-5 text-white" />
-              </div>
+        <div className="sticky top-0 bg-[#F5EFE0] p-4 sm:p-5 pb-3 flex flex-col gap-1 z-10 rounded-t-xl shrink-0">
+          {/* Row 1: icon + name + buttons */}
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 bg-linear-to-br ${gradient} rounded-xl flex items-center justify-center shadow-md shrink-0`}>
+              <ItemTypeIcon className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
               {isEditing ? (
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="flex-1 min-w-0 px-3 py-1.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] font-extrabold focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                  className="w-full px-3 py-1.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] font-extrabold focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
                 />
               ) : (
-                <h2 className="text-lg font-extrabold text-[#3D1409] min-w-0 break-words">{item.name}</h2>
+                <h2 className="text-lg font-extrabold text-[#3D1409] break-words">{item.name}</h2>
               )}
             </div>
-            {!isEditing && (
-              <div className="leading-tight pl-1">
-                <p className={`text-sm font-extrabold capitalize ${rarityColors[item.rarity]}`}>
-                  {item.rarity} {item.category}
-                  {item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
-                </p>
-                <p className="text-[10px] mt-0.5 text-[#5C4A2F] uppercase tracking-wide">Sourcebook: {item.sourcebook || 'unknown'}</p>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-1 ml-3 shrink-0">
             {!isEditing && canEdit && onUpdate && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all"
+                className="w-10 h-10 flex items-center justify-center rounded-xl text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all shrink-0"
                 title="Edit"
               >
                 <Edit2 className="w-5 h-5" />
@@ -303,11 +293,21 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
             )}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all"
+              className="w-10 h-10 flex items-center justify-center rounded-xl text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50 transition-all shrink-0"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
           </div>
+          {/* Row 2: rarity + sourcebook — aligned to icon left / X right */}
+          {!isEditing && (
+            <div className="flex items-center justify-between gap-2">
+              <p className={`text-sm font-extrabold capitalize ${rarityColors[item.rarity]}`}>
+                {item.rarity} {item.category}
+                {item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
+              </p>
+              <p className="text-[10px] text-[#5C4A2F] uppercase tracking-wide shrink-0">Sourcebook: {item.sourcebook || 'unknown'}</p>
+            </div>
+          )}
         </div>
 
         {/* Divider */}

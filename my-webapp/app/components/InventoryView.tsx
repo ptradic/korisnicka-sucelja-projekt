@@ -223,9 +223,7 @@ export function InventoryView({
   const [isEditingMaxWeight, setIsEditingMaxWeight] = useState(false);
   const [maxWeightEditValue, setMaxWeightEditValue] = useState('');
   const [filtersOverflow, setFiltersOverflow] = useState(false);
-  const [mobileListMinHeight, setMobileListMinHeight] = useState<number | null>(null);
   const itemListRef = useRef<HTMLDivElement>(null);
-  const itemListSectionRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const filterMeasureRef = useRef<HTMLDivElement>(null);
   const previousQuantityByIdRef = useRef<Map<string, number>>(new Map());
@@ -440,32 +438,6 @@ export function InventoryView({
     }
   }, []);
 
-  useEffect(() => {
-    const updateMobileListMinHeight = () => {
-      if (window.innerWidth >= 640) {
-        setMobileListMinHeight(null);
-        return;
-      }
-
-      const section = itemListSectionRef.current;
-      if (!section) return;
-
-      const top = section.getBoundingClientRect().top;
-      const nextMinHeight = Math.max(180, Math.floor(window.innerHeight - top));
-      setMobileListMinHeight(nextMinHeight);
-    };
-
-    const rafId = window.requestAnimationFrame(updateMobileListMinHeight);
-    window.addEventListener('resize', updateMobileListMinHeight);
-    window.addEventListener('orientationchange', updateMobileListMinHeight);
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', updateMobileListMinHeight);
-      window.removeEventListener('orientationchange', updateMobileListMinHeight);
-    };
-  }, [isFilterOpen, filtersOverflow]);
-
   const closeHelpOverlay = (markSeen: boolean) => {
     setShowHelpOverlay(false);
     if (!markSeen) return;
@@ -487,7 +459,7 @@ export function InventoryView({
             .join(' ');
 
   return (
-    <div className="h-full w-full min-w-0 flex flex-col min-h-0 max-w-full overflow-x-hidden">
+    <div className="flex-1 h-full w-full min-w-0 flex flex-col min-h-0 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="bg-[#F5EFE0] border-b-[3px] border-[#3D1409] px-4 py-3 sm:px-5 sm:py-4 shadow-md">
         {/* Owner name + item count */}
@@ -781,11 +753,7 @@ export function InventoryView({
       )}
 
       {/* Item list */}
-      <div
-        ref={itemListSectionRef}
-        className="flex-1 min-h-0 flex flex-col"
-        style={{ minHeight: mobileListMinHeight ? `${mobileListMinHeight}px` : undefined }}
-      >
+      <div className="flex-1 min-h-0 flex flex-col">
         {/* Scroll area + gradient wrapper */}
         <div className="relative flex-1 min-h-0">
         <div className="h-full overflow-y-auto overflow-x-hidden p-4 sm:p-5 custom-scrollbar" ref={itemListRef}>

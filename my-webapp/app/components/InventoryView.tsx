@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
@@ -701,6 +701,13 @@ export function InventoryView({
             )}
           </div>
           <button
+            onClick={toggleBulkSelect}
+            title={bulkSelectEnabled ? 'Exit bulk select' : 'Bulk select'}
+            className={`shrink-0 w-9 h-9 !p-0 rounded-lg ${bulkSelectEnabled ? 'btn-primary border-[#3D1409]' : 'btn-secondary text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'}`}
+          >
+            <ListChecks className="w-4 h-4" />
+          </button>
+          <button
             onClick={() => setShowHelpOverlay(true)}
             title="Inventory help"
             className="btn-secondary shrink-0 w-9 h-9 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]"
@@ -767,35 +774,19 @@ export function InventoryView({
         ) : (
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2 px-1 pb-1">
-              <p className="text-[11px] font-semibold text-[#8B6F47]">
+              <p className="text-[11px] font-semibold text-[#8B6F47] shrink-0">
                 {selectedFilterLabel}
               </p>
-              <div className="flex items-center gap-2">
-                {bulkSelectEnabled && (
-                  <span className="text-[11px] text-[#5C4A2F] whitespace-nowrap">
-                    {selectedItemIds.length} selected
-                  </span>
-                )}
-                {bulkSelectEnabled && selectedItemIds.length > 0 && (
-                  <button
-                    onClick={() => setSelectedItemIds([])}
-                    className="btn-ghost h-7 px-2 text-[11px] border-transparent text-[#8B6F47] hover:text-[#3D1409]"
-                  >
-                    Clear
-                  </button>
-                )}
-                <button
-                  onClick={toggleBulkSelect}
-                  className={
-                    bulkSelectEnabled
-                      ? 'btn-primary h-7 px-2.5 text-[11px] border-[#3D1409]'
-                      : 'btn-secondary h-7 px-2.5 text-[11px] border-[#8B6F47]/60 text-[#5C4A2F]'
-                  }
-                  title="Toggle bulk select"
-                >
-                  {bulkSelectEnabled ? 'Bulk On' : 'Bulk Select'}
-                </button>
-              </div>
+              {bulkSelectEnabled && (
+                <p className="text-[11px] text-[#8B6F47]/70 italic flex-1 text-center">
+                  Tap items to select, then drag to move
+                </p>
+              )}
+              {bulkSelectEnabled && (
+                <span className="text-[11px] text-[#5C4A2F] whitespace-nowrap shrink-0">
+                  {selectedItemIds.length} selected
+                </span>
+              )}
             </div>
             {filteredItems.map((item) => (
               <ItemCard

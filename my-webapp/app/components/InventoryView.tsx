@@ -6,6 +6,7 @@ import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 import type { Item, Category, Currency } from '../types';
 import { normalizeCategory } from '../types';
+import { calcTotalWeight } from '@/lib/utils';
 
 interface InventoryViewProps {
   inventory: Item[];
@@ -126,47 +127,50 @@ function AddCoinsButton({
       </button>
 
       {open && (
-        <div
-          className="absolute right-0 top-full mt-2 z-30 bg-[#F5EFE0] border-3 border-[#8B6F47] rounded-xl p-3 shadow-2xl min-w-[200px]"
-          style={{ boxShadow: '0 8px 20px rgba(61, 20, 9, 0.25)' }}
-        >
-          <div className="text-xs font-bold text-[#3D1409] mb-2 flex items-center gap-1.5">
-            <span className="text-[11px] font-extrabold tracking-tight text-[#B8860B]">+/-</span>
-            Add / Subtract Coins
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+          <div
+            className="absolute right-0 top-full mt-2 z-30 bg-[#F5EFE0] border-3 border-[#8B6F47] rounded-xl p-3 shadow-2xl min-w-[200px]"
+            style={{ boxShadow: '0 8px 20px rgba(61, 20, 9, 0.25)' }}
+          >
+            <div className="text-xs font-bold text-[#3D1409] mb-2 flex items-center gap-1.5">
+              <span className="text-[11px] font-extrabold tracking-tight text-[#B8860B]">+/-</span>
+              Add / Subtract Coins
+            </div>
+            <p className="text-[10px] text-[#8B6F47] mb-2 -mt-1">Use negative numbers to subtract</p>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {coinTypes.map(({ key, label, color }) => (
+                <div key={key} className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    value={amounts[key] || ''}
+                    onChange={(e) =>
+                      setAmounts({ ...amounts, [key]: parseInt(e.target.value) || 0 })
+                    }
+                    onKeyDown={handleKeyDown}
+                    placeholder="0"
+                    className="w-14 px-2 py-1 text-xs bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] text-center outline-none focus:border-[#5C1A1A] tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span className={'text-[11px] font-bold ' + color}>{label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setOpen(false)}
+                className="btn-secondary flex-1 !px-2 !py-1.5 rounded-lg text-xs text-[#5C4A2F] border-[#8B6F47]/40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="btn-primary flex-1 !px-2 !py-1.5 rounded-lg text-xs font-semibold"
+              >
+                Apply
+              </button>
+            </div>
           </div>
-          <p className="text-[10px] text-[#8B6F47] mb-2 -mt-1">Use negative numbers to subtract</p>
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            {coinTypes.map(({ key, label, color }) => (
-              <div key={key} className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  value={amounts[key] || ''}
-                  onChange={(e) =>
-                    setAmounts({ ...amounts, [key]: parseInt(e.target.value) || 0 })
-                  }
-                  onKeyDown={handleKeyDown}
-                  placeholder="0"
-                  className="w-14 px-2 py-1 text-xs bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] text-center outline-none focus:border-[#5C1A1A] tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                <span className={'text-[11px] font-bold ' + color}>{label}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setOpen(false)}
-              className="btn-secondary flex-1 !px-2 !py-1.5 rounded-lg text-xs text-[#5C4A2F] border-[#8B6F47]/40"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              className="btn-primary flex-1 !px-2 !py-1.5 rounded-lg text-xs font-semibold"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );
@@ -264,7 +268,7 @@ export function InventoryView({
       return sortDirection === 'asc' ? baseCompare : -baseCompare;
     });
 
-  const totalWeight = visibleItems.reduce((sum, item) => sum + item.weight * item.quantity, 0);
+  const totalWeight = calcTotalWeight(visibleItems, currency);
   const weightPercentage = maxWeight ? (totalWeight / maxWeight) * 100 : 0;
 
   const handleCategoryChange = (category: Category | 'all') => {
@@ -651,8 +655,8 @@ export function InventoryView({
 
             {isSortMenuOpen && (
               <div
-                className="absolute right-0 top-full mt-2 z-30 min-w-[170px] bg-[#F5EFE0] border-2 border-[#8B6F47] rounded-lg p-1.5"
-                style={{ boxShadow: '0 8px 16px rgba(61, 20, 9, 0.2)' }}
+                className="absolute right-0 top-full mt-2 z-30 min-w-[170px] bg-[#F5EFE0] border-3 border-[#8B6F47] rounded-xl p-1.5"
+                style={{ boxShadow: '0 8px 20px rgba(61, 20, 9, 0.25)' }}
               >
                 <button
                   onClick={() => handleSortSelect('none', 'asc')}
@@ -750,8 +754,8 @@ export function InventoryView({
       {isFilterOpen && filtersOverflow && (
         <div className="relative">
           <div
-            className="absolute left-3 right-3 top-0 mt-2 z-20 rounded-lg border-2 border-[#8B6F47] bg-[#F5EFE0] p-2"
-            style={{ boxShadow: '0 8px 16px rgba(61, 20, 9, 0.2)' }}
+            className="absolute left-3 right-3 top-0 mt-2 z-20 rounded-xl border-3 border-[#8B6F47] bg-[#F5EFE0] p-2"
+            style={{ boxShadow: '0 8px 20px rgba(61, 20, 9, 0.25)' }}
           >
             <CategoryFilter
               selectedCategory={selectedCategory}
@@ -888,13 +892,13 @@ export function InventoryView({
             <div className="mt-4 flex gap-2">
               <button
                 onClick={() => closeHelpOverlay(false)}
-                className="btn-secondary flex-1 text-sm !py-2"
+                className="btn-secondary flex-1 px-4 py-2.5"
               >
                 Close
               </button>
               <button
                 onClick={() => closeHelpOverlay(true)}
-                className="btn-primary flex-1 text-sm !py-2"
+                className="btn-primary flex-1 px-4 py-2.5"
               >
                 Got it
               </button>

@@ -3,6 +3,7 @@ import { useDrop, useDragLayer } from 'react-dnd';
 import { Package, Users, User, Copy, Check, Settings, X, Eye, EyeOff, Save } from 'lucide-react';
 import type { Player } from '../types';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
+import { calcTotalWeight } from '@/lib/utils';
 
 interface PlayerSidebarProps {
   players: Player[];
@@ -87,8 +88,8 @@ function CharacterNameModal({
           )}
 
           <div className="flex gap-2">
-            <button onClick={onClose} className="btn-secondary flex-1 text-sm !py-2">Cancel</button>
-            <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 text-sm !py-2 disabled:opacity-60">
+            <button onClick={onClose} className="btn-secondary flex-1 px-4 py-2.5">Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 px-4 py-2.5 disabled:opacity-60">
               <Save className="w-4 h-4" />
               {saving ? 'Saving...' : 'Save'}
             </button>
@@ -216,8 +217,8 @@ function VaultSettingsModal({
           )}
 
           <div className="flex gap-2">
-            <button onClick={onClose} className="btn-secondary flex-1 text-sm !py-2">Cancel</button>
-            <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 text-sm !py-2 disabled:opacity-60">
+            <button onClick={onClose} className="btn-secondary flex-1 px-4 py-2.5">Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 px-4 py-2.5 disabled:opacity-60">
               <Save className="w-4 h-4" />
               {saving ? 'Saving...' : 'Save'}
             </button>
@@ -372,7 +373,7 @@ function PlayerSlot({
   onDrop: (itemIds: string[], fromId: string) => void;
   isBeingDraggedOver: boolean;
 }) {
-  const currentWeight = player.inventory.reduce((sum, item) => sum + item.weight * item.quantity, 0);
+  const currentWeight = calcTotalWeight(player.inventory, player.currency);
   const weightPercentage = (currentWeight / player.maxWeight) * 100;
 
   const [{ isOver, canDrop }, drop] = useDrop(

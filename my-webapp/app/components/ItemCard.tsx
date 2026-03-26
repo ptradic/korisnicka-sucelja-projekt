@@ -1,5 +1,5 @@
 import { useDrag } from 'react-dnd';
-import { GripVertical, Star } from 'lucide-react';
+import { GripVertical, Star, EyeOff } from 'lucide-react';
 import type { Item } from '../types';
 
 interface ItemCardProps {
@@ -94,6 +94,9 @@ export function ItemCard({
         <span className="text-sm text-[#3D1409] font-medium truncate block">{item.name}</span>
         <span className="text-[11px] text-[#8B6F47]">{item.weight} lbs</span>
       </div>
+      {item.hiddenFromOthers && (
+        <EyeOff className="w-4 h-4 shrink-0 text-[#5C1A1A]/60" aria-label="Hidden from others" />
+      )}
       {item.attunement && (
         <Star
           className={'w-4 h-4 shrink-0 ' + (item.attuned ? 'text-[#B8860B] fill-[#B8860B]' : 'text-[#8B6F47]/50')}

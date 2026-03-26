@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote, Sword, Shield, Droplet, Backpack, Gem } from 'lucide-react';
+import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote, Sword, Shield, Droplet, Backpack, Gem, EyeOff, Eye } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { normalizeCategory, type Item, type Category, type Rarity, type ValueUnit } from '../types';
@@ -13,6 +13,7 @@ interface ItemDetailsModalProps {
   onDelete?: () => void;
   showDeleteAction?: boolean;
   canEdit?: boolean;
+  canToggleHidden?: boolean;
 }
 
 const categories: Category[] = ['weapons', 'armor', 'consumables', 'magic-gear', 'adventuring-gear', 'wealth-valuables'];
@@ -77,7 +78,7 @@ function getValueColor(valueUnit: ValueUnit): string {
   return 'text-[#B8860B]';
 }
 
-export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, canEdit = true }: ItemDetailsModalProps) {
+export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, canEdit = true, canToggleHidden = false }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const backdropMouseDown = useRef(false);
@@ -568,6 +569,36 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   >
                     <Star className={'w-4 h-4 ' + (item.attuned ? 'text-[#B8860B] fill-[#B8860B]' : 'text-[#8B6F47]/60')} />
                     <span className="text-xs font-semibold">{item.attuned ? 'Attuned' : 'Not Attuned'}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Hidden from others toggle */}
+              {canToggleHidden && onUpdate && (
+                <div className={`flex items-center justify-between border-2 rounded-xl px-3.5 py-2.5 ${item.hiddenFromOthers ? 'bg-[#3D1409]/8 border-[#5C1A1A]/40' : 'bg-white/40 border-[#DCC8A8]'}`}>
+                  <div className="flex items-center gap-2">
+                    <EyeOff className={`w-4 h-4 ${item.hiddenFromOthers ? 'text-[#5C1A1A]' : 'text-[#8B6F47]/50'}`} />
+                    <div>
+                      <span className={`text-sm font-semibold ${item.hiddenFromOthers ? 'text-[#3D1409]' : 'text-[#8B6F47]'}`}>Hidden from others</span>
+                      <p className="text-[10px] text-[#8B6F47] mt-0.5">Only you and the GM can see this item</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpdate({ hiddenFromOthers: !item.hiddenFromOthers });
+                    }}
+                    className={'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer '
+                      + (item.hiddenFromOthers
+                        ? 'bg-[#5C1A1A]/20 text-[#5C1A1A] hover:bg-[#5C1A1A]/30'
+                        : 'bg-white/50 text-[#8B6F47] hover:bg-white/70')
+                    }
+                    title={item.hiddenFromOthers ? 'Click to make visible' : 'Click to hide'}
+                  >
+                    {item.hiddenFromOthers
+                      ? <><EyeOff className="w-4 h-4" /><span className="text-xs font-semibold">Hidden</span></>
+                      : <><Eye className="w-4 h-4" /><span className="text-xs font-semibold">Visible</span></>
+                    }
                   </button>
                 </div>
               )}

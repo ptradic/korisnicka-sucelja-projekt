@@ -1124,7 +1124,14 @@ export default function VaultsPage() {
           />
           <div className="flex-1 min-w-0 min-h-0">
             <InventoryView
-              inventory={isShared ? (currentCampaign?.sharedLoot ?? []) : (selectedPlayer?.inventory ?? [])}
+              inventory={isShared
+                ? (currentCampaign?.sharedLoot ?? [])
+                : (() => {
+                    const inv = selectedPlayer?.inventory ?? [];
+                    const isOwnerViewing = isDM || selectedPlayerId === userId;
+                    return isOwnerViewing ? inv : inv.filter((i) => !i.hiddenFromOthers);
+                  })()
+              }
               owner={
                 isShared
                   ? { name: 'Shared Loot', id: 'shared' }
@@ -1166,9 +1173,12 @@ export default function VaultsPage() {
           <ItemDetailsModal
             item={selectedItem}
             onClose={() => setSelectedItem(null)}
-            onUpdate={isDM || canPlayerEditSelectedItem ? (updates: Partial<Item>) => handleUpdateSelectedItem(selectedItem, updates) : undefined}
+            onUpdate={isDM || canPlayerEditSelectedItem || (!isShared && selectedPlayerId === userId)
+              ? (updates: Partial<Item>) => handleUpdateSelectedItem(selectedItem, updates)
+              : undefined}
             onDelete={() => handleDeleteSelectedItem(selectedItem)}
             canEdit={isDM || canPlayerEditSelectedItem}
+            canToggleHidden={!isShared && (isDM || selectedPlayerId === userId)}
           />
         )}
 

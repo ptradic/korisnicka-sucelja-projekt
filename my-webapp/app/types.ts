@@ -46,6 +46,7 @@ export interface Item {
   notes?: string;
   attunement?: boolean;
   attuned?: boolean;
+  hiddenFromOthers?: boolean;
   createdAt?: string;
 }
 

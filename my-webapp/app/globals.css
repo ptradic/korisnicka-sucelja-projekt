@@ -292,6 +292,15 @@ html {
 .delay-500 { animation-delay: 0.5s; }
 .delay-600 { animation-delay: 0.6s; }
 
+@keyframes gentle-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-10px); }
+}
+
+.animate-gentle-bob {
+  animation: gentle-bob 1.6s ease-in-out infinite;
+}
+
 /* Initial state for scroll-triggered elements */
 .scroll-reveal {
   opacity: 0;

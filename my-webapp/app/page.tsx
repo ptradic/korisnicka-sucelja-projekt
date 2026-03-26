@@ -52,9 +52,9 @@ export default function HomePage() {
         </p>
 
         {/* Scroll Indicator */}
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce fade-in delay-500">
-          <span className="text-sm text-[#5C1A1A] font-medium">Scroll for more</span>
-          <ChevronDown className="w-8 h-8 text-[#5C1A1A]" />
+        <div className="absolute bottom-24 left-1/2 flex flex-col items-center gap-2 animate-gentle-bob">
+          <span className="text-base text-[#5C1A1A] font-bold">Scroll for more</span>
+          <ChevronDown className="w-9 h-9 text-[#5C1A1A]" strokeWidth={2.5} />
         </div>
       </section>
 

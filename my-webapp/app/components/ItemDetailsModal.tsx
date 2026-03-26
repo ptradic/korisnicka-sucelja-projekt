@@ -264,36 +264,31 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
       >
         {/* Header */}
         <div className="sticky top-0 bg-[#F5EFE0] p-4 sm:p-5 pb-3 flex items-start justify-between z-10 rounded-t-xl shrink-0">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className={`w-10 h-10 bg-linear-to-br ${gradient} rounded-xl flex items-center justify-center shadow-md shrink-0`}>
-              <ItemTypeIcon className="w-5 h-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-1.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] font-extrabold focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
-                    />
-                  ) : (
-                    <h2 className="text-lg font-extrabold text-[#3D1409] truncate">{item.name}</h2>
-                  )}
-                </div>
-
-                {!isEditing && (
-                  <div className="shrink-0 text-right leading-tight pt-0.5">
-                    <p className={`text-sm font-extrabold capitalize ${rarityColors[item.rarity]}`}>
-                      {item.rarity} {item.category}
-                      {item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
-                    </p>
-                    <p className="text-[10px] mt-0.5 text-[#5C4A2F] uppercase tracking-wide">Sourcebook: {item.sourcebook || 'unknown'}</p>
-                  </div>
-                )}
+          <div className="flex flex-col min-w-0 flex-1 gap-1">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`w-10 h-10 bg-linear-to-br ${gradient} rounded-xl flex items-center justify-center shadow-md shrink-0`}>
+                <ItemTypeIcon className="w-5 h-5 text-white" />
               </div>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="flex-1 min-w-0 px-3 py-1.5 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] font-extrabold focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                />
+              ) : (
+                <h2 className="text-lg font-extrabold text-[#3D1409] min-w-0 break-words">{item.name}</h2>
+              )}
             </div>
+            {!isEditing && (
+              <div className="leading-tight pl-1">
+                <p className={`text-sm font-extrabold capitalize ${rarityColors[item.rarity]}`}>
+                  {item.rarity} {item.category}
+                  {item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
+                </p>
+                <p className="text-[10px] mt-0.5 text-[#5C4A2F] uppercase tracking-wide">Sourcebook: {item.sourcebook || 'unknown'}</p>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1 ml-3 shrink-0">
             {!isEditing && canEdit && onUpdate && (

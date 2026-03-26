@@ -16,7 +16,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
   } = useCustomScrollbar(pageScrollRef);
 
   return (
-    <div className="relative mt-20 h-[calc(100vh-5rem)]">
+    <div className="relative mt-20 h-[calc(100dvh-5rem)]">
       <div ref={pageScrollRef} className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         {children}
       </div>

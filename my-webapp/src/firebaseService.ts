@@ -93,6 +93,7 @@ export interface CampaignDoc {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   sharedLoot: Item[];
+  sharedCurrency?: Currency;
   customItemPool?: Item[];
   password?: string; // Optional password for joining
 }
@@ -614,6 +615,14 @@ export async function updateSharedLoot(campaignId: string, sharedLoot: Item[]): 
   const docRef = doc(db, 'campaigns', campaignId);
   await updateDoc(docRef, {
     sharedLoot: cleanItems(sharedLoot),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateSharedCurrency(campaignId: string, currency: Currency): Promise<void> {
+  const docRef = doc(db, 'campaigns', campaignId);
+  await updateDoc(docRef, {
+    sharedCurrency: currency,
     updatedAt: serverTimestamp(),
   });
 }

@@ -81,6 +81,7 @@ export interface Campaign {
   dmName: string;
   playerIds: string[];
   sharedLoot: Item[];
+  sharedCurrency?: Currency;
   customItemPool?: Item[];
   password?: string;
   createdAt?: any;

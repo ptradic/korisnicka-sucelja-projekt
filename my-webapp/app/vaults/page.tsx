@@ -51,6 +51,7 @@ import {
   updateCampaignCustomItemPool,
   updateUserHomebrewItem,
   deleteUserHomebrewItem,
+  updateSharedCurrency,
 } from '@/src/firebaseService';
 import type { CampaignDoc, PlayerInventoryDoc, TransferRequest } from '@/src/firebaseService';
 
@@ -709,6 +710,16 @@ export default function VaultsPage() {
     }
   };
 
+  const handleSharedCurrencyChange = async (currency: Currency) => {
+    if (!currentCampaignId) return;
+    try {
+      await updateSharedCurrency(currentCampaignId, currency);
+    } catch (error) {
+      console.error('Failed to update shared currency:', error);
+      showActionError('Could not update shared currency', error, () => handleSharedCurrencyChange(currency));
+    }
+  };
+
   // Max weight change
   const handleMaxWeightChange = async (playerId: string, newMax: number) => {
     if (!currentCampaignId) return;
@@ -1094,8 +1105,8 @@ export default function VaultsPage() {
               onMoveItem={handleMoveItem}
               maxWeight={isShared ? undefined : selectedPlayer?.maxWeight}
               onMaxWeightChange={isShared ? undefined : (newMax: number) => handleMaxWeightChange(selectedPlayerId, newMax)}
-              currency={isShared ? undefined : selectedPlayer?.currency}
-              onCurrencyChange={isShared ? undefined : (c: Currency) => handleCurrencyChange(selectedPlayerId, c)}
+              currency={isShared ? (currentCampaign?.sharedCurrency ?? { pp: 0, gp: 0, sp: 0, cp: 0 }) : selectedPlayer?.currency}
+              onCurrencyChange={isShared ? handleSharedCurrencyChange : (c: Currency) => handleCurrencyChange(selectedPlayerId, c)}
               isShared={isShared}
               syncStatus={syncStatus}
             />

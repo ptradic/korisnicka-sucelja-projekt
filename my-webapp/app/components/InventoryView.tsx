@@ -512,7 +512,7 @@ export function InventoryView({
         </div>
 
         {/* Currency row (not for shared loot) */}
-        {!isShared && currency && onCurrencyChange && (
+        {currency && onCurrencyChange && (
           <div className="flex items-center gap-3 mb-2 py-2 px-3 bg-white/50 rounded-lg border border-[#8B6F47]/20">
             <Coins className="w-4 h-4 text-[#B8860B] shrink-0" />
             <div className="flex items-center gap-3 flex-1 flex-wrap">

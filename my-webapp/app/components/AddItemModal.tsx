@@ -235,7 +235,7 @@ function TemplateItemPicker({
 
       {/* Item list */}
       <div className="relative flex-1 min-h-0">
-        <div ref={listRef} className="h-full overflow-y-auto p-3 min-h-0 custom-scrollbar">
+        <div ref={listRef} className="h-full overflow-y-auto p-3 pr-6 min-h-0 custom-scrollbar">
           {loading && tab === 'dnd' && search.length >= 2 ? (
           <div className="text-center py-8">
             <Loader2 className="w-10 h-10 text-[#8B6F47] mx-auto mb-2 animate-spin" />
@@ -451,7 +451,7 @@ function CustomItemPoolManager({
       </div>
 
       <div className="relative flex-1 min-h-0">
-        <div ref={listRef} className="h-full overflow-y-auto p-3 min-h-0 space-y-1.5 custom-scrollbar">
+        <div ref={listRef} className="h-full overflow-y-auto p-3 pr-6 min-h-0 space-y-1.5 custom-scrollbar">
           {sortedHomebrewItems.length === 0 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />

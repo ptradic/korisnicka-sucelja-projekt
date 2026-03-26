@@ -580,7 +580,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                     <EyeOff className={`w-4 h-4 ${item.hiddenFromOthers ? 'text-[#5C1A1A]' : 'text-[#8B6F47]/50'}`} />
                     <div>
                       <span className={`text-sm font-semibold ${item.hiddenFromOthers ? 'text-[#3D1409]' : 'text-[#8B6F47]'}`}>Hidden from others</span>
-                      <p className="text-[10px] text-[#8B6F47] mt-0.5">Only you and the GM can see this item</p>
+                      <p className="text-[10px] text-[#8B6F47] mt-0.5">{item.hiddenFromOthers ? 'Only you and the GM can see this item' : 'Visible to all players in the vault'}</p>
                     </div>
                   </div>
                   <button

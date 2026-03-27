@@ -101,20 +101,24 @@ function TouchDragPreview() {
   const preview = usePreview();
   if (!preview.display) return null;
 
-  const { item, style } = preview;
+  const { item, monitor } = preview;
+  const offset = monitor.getClientOffset();
+  if (!offset) return null;
+
   return (
     <div
       style={{
-        ...style,
+        position: 'fixed',
+        left: offset.x,
+        top: offset.y - 50,
         zIndex: 9999,
         pointerEvents: 'none',
-        opacity: 0.85,
-        transform: `${style.transform || ''} scale(1.05)`,
+        transform: 'translate(-50%, -50%) scale(1.05)',
       }}
     >
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-white/90 border-[#8B6F47] shadow-xl backdrop-blur-sm max-w-[200px]">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl border-2 bg-white/95 border-[#3D1409] shadow-2xl backdrop-blur-sm max-w-[200px]">
         <div className="w-2.5 h-2.5 rounded-full bg-[#8B6F47] shrink-0" />
-        <span className="text-sm text-[#3D1409] font-medium truncate">
+        <span className="text-sm text-[#3D1409] font-semibold truncate">
           {(item as any)?.name || 'Item'}
         </span>
       </div>

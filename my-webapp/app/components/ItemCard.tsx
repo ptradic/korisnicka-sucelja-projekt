@@ -1,4 +1,5 @@
 import { useDrag } from 'react-dnd';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { GripVertical, Star, EyeOff } from 'lucide-react';
 import type { Item } from '../types';
 
@@ -47,6 +48,44 @@ export function ItemCard({
     [item.id, ownerId, item.name, item.rarity, dragIds.join('|')],
   );
 
+  // Hold-to-drag visual hint: shows a "charging" state before the 400ms
+  // delayTouchStart fires, so the user knows they're about to drag.
+  const [isHolding, setIsHolding] = useState(false);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchMovedRef = useRef(false);
+
+  const clearHold = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    setIsHolding(false);
+    touchMovedRef.current = false;
+  }, []);
+
+  const handleTouchStart = useCallback(() => {
+    touchMovedRef.current = false;
+    // Start visual feedback after 150ms — shorter than the 400ms drag delay
+    // so the user sees feedback before the drag actually activates
+    holdTimerRef.current = setTimeout(() => {
+      if (!touchMovedRef.current) setIsHolding(true);
+    }, 150);
+  }, []);
+
+  const handleTouchMove = useCallback(() => {
+    touchMovedRef.current = true;
+    clearHold();
+  }, [clearHold]);
+
+  const handleTouchEnd = useCallback(() => {
+    clearHold();
+  }, [clearHold]);
+
+  // Clear hold state when drag actually starts
+  useEffect(() => {
+    if (isDragging) setIsHolding(false);
+  }, [isDragging]);
+
   const colors = rarityColors[item.rarity] || rarityColors.common;
 
   return (
@@ -59,6 +98,10 @@ export function ItemCard({
         }
         onClick();
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       // touch-action:pan-y lets the browser scroll vertically on a quick swipe.
       // React-dnd still receives all touch events; with delayTouchStart it waits
       // before committing to a drag, so a quick swipe stays a scroll.
@@ -68,7 +111,8 @@ export function ItemCard({
         colors.border + ' ' +
         colors.bg +
         (isSelected ? ' ring-2 ring-[#5C1A1A] bg-[#F5E6D2]' : '') +
-        (isDragging ? ' opacity-40 scale-95' : ' hover:shadow-sm')
+        (isDragging ? ' opacity-40 scale-95' : '') +
+        (isHolding ? ' scale-[0.97] shadow-md ring-2 ring-[#B8860B]/50 bg-[#FFF8E1]/60' : ' hover:shadow-sm')
       }
     >
       {bulkSelectEnabled && (

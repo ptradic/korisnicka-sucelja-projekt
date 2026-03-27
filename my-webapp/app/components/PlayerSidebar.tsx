@@ -586,32 +586,32 @@ export function PlayerSidebar({
       {/*  Mobile: horizontal bar on top  */}
       <div
         ref={sidebarDrop as any}
-        className="sm:hidden bg-[#D9C7AA] border-b-4 border-[#3D1409] px-3 py-2 shrink-0"
+        className="sm:hidden relative bg-[#D9C7AA] border-b-4 border-[#3D1409] px-3 py-2 shrink-0"
         style={{ boxShadow: '0 4px 8px rgba(61, 20, 9, 0.15)' }}
       >
+        {/* Gear icon — absolute top-right corner (GM settings or player character name) */}
+        {isGM && campaignId && onUpdateCampaignSettings && (
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            title="Vault settings"
+            className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-white/60 text-[#5C1A1A] transition-all"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        )}
+        {!isGM && currentPlayer && onUpdateMyCharacterName && (
+          <button
+            onClick={() => setShowCharacterModal(true)}
+            title="Change your character name"
+            className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-white/60 text-[#5C1A1A] transition-all"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        )}
+
         {/* Campaign name */}
         <div className="flex items-center gap-2 mb-2">
-          <h2 className="text-[#3D1409] text-sm font-bold truncate flex-1">{campaignName}</h2>
-          {!isGM && currentPlayer && onUpdateMyCharacterName && (
-            <button
-              onClick={() => setShowCharacterModal(true)}
-              title="Change your character name"
-              className="flex items-center gap-1 px-1.5 py-0.5 bg-white/60 hover:bg-white border border-[#8B6F47]/50 rounded text-[10px] font-bold text-[#5C1A1A] transition-all shrink-0"
-            >
-              <User className="w-3 h-3" />
-              <span>Name</span>
-            </button>
-          )}
-          {isGM && campaignId && onUpdateCampaignSettings && (
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              title="Vault settings"
-              className="flex items-center gap-1 px-1.5 py-0.5 bg-white/60 hover:bg-white border border-[#8B6F47]/50 rounded text-[10px] font-bold text-[#5C1A1A] transition-all shrink-0"
-            >
-              <Settings className="w-3 h-3" />
-              <span>Settings</span>
-            </button>
-          )}
+          <h2 className="text-[#3D1409] text-sm font-bold truncate flex-1 pr-8">{campaignName}</h2>
         </div>
 
         {/* Wrapping player pills */}
@@ -653,20 +653,18 @@ export function PlayerSidebar({
               <button
                 onClick={() => setShowCharacterModal(true)}
                 title="Change your character name"
-                className="flex items-center gap-1 px-1.5 py-0.5 bg-white/60 hover:bg-white border border-[#8B6F47]/50 rounded text-[10px] font-bold text-[#5C1A1A] transition-all shrink-0"
+                className="p-1.5 rounded-lg hover:bg-white/60 text-[#5C1A1A] transition-all shrink-0"
               >
-                <User className="w-3 h-3" />
-                <span>Name</span>
+                <Settings className="w-5 h-5" />
               </button>
             )}
             {isGM && campaignId && onUpdateCampaignSettings && (
               <button
                 onClick={() => setShowSettingsModal(true)}
                 title="Vault settings"
-                className="flex items-center gap-1 px-1.5 py-0.5 bg-white/60 hover:bg-white border border-[#8B6F47]/50 rounded text-[10px] font-bold text-[#5C1A1A] transition-all shrink-0"
+                className="p-1.5 rounded-lg hover:bg-white/60 text-[#5C1A1A] transition-all shrink-0"
               >
-                <Settings className="w-3 h-3" />
-                <span>Settings</span>
+                <Settings className="w-5 h-5" />
               </button>
             )}
           </div>

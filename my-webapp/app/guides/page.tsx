@@ -213,44 +213,59 @@ export default function GuidesPage() {
   const bonusRef = useScrollReveal<HTMLElement>({ delay: 100 });
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
+    <main
+      className="flex min-h-screen flex-col items-center overflow-hidden"
+      style={{
+        background: 'linear-gradient(to bottom, #3D1409 0vh, #5C1A1A 35vh, #7A2424 62vh, #C8A97A 85vh, #E8D5B7 100vh, #DCC8A8 140vh, #E0CFAF 200vh)',
+      }}
+    >
       {/* ─── Hero — fills first viewport ─── */}
-      <section className="w-full max-w-5xl text-center flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
-        <h1
-          className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 text-[#3D1409] leading-tight fade-in-up delay-200"
-          style={{ fontFamily: "var(--font-archivo-black)" }}
-        >
-          <span className="block sm:inline">Getting</span>{" "}
-          <span className="block sm:inline">Started</span>
-        </h1>
-
-        <p className="max-w-2xl mx-auto text-lg sm:text-xl text-[#5C4A2F] leading-relaxed mb-8 fade-in-up delay-300">
-          From creating your account to managing your first vault — follow this guide and you&apos;ll be running campaigns like a seasoned Game Master in no time.
-        </p>
-
-        {/* Quick-jump pills */}
-        <div className="flex flex-wrap justify-center gap-3 fade-in-up delay-400">
-          <Link
-            href={startNowHref}
-            className="btn-primary group"
+      <section className="w-full text-center flex flex-col justify-center items-center min-h-screen relative pb-32">
+        {/* SVG diamond pattern overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
+            backgroundSize: '40px 40px',
+          }}
+        />
+        <div className="w-full max-w-5xl px-4 sm:px-10 flex flex-col items-center">
+          <h1
+            className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 text-[#F5EDE0] leading-tight fade-in-up delay-200"
+            style={{ fontFamily: "var(--font-archivo-black)" }}
           >
-            <Wand2 className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
-            Start Now
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-          </Link>
+            <span className="block sm:inline">Getting</span>{" "}
+            <span className="block sm:inline">Started</span>
+          </h1>
 
-          <Link
-            href="/support"
-            className="btn-secondary group text-[#3D1409] font-bold"
-          >
-            Need Help?
-          </Link>
+          <p className="max-w-2xl mx-auto text-lg sm:text-xl text-[#F5EDE0]/75 leading-relaxed mb-8 fade-in-up delay-300">
+            From creating your account to managing your first vault — follow this guide and you&apos;ll be running campaigns like a seasoned Game Master in no time.
+          </p>
+
+          {/* Buttons */}
+          <div className="flex flex-wrap justify-center gap-4 fade-in-up delay-400">
+            <Link
+              href={startNowHref}
+              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[#F5EDE0] bg-[#F5EDE0] text-[#3D1409] font-bold text-lg shadow-xl transition-all duration-300 hover:bg-white hover:border-white hover:shadow-2xl hover:-translate-y-1 active:scale-95 group"
+            >
+              <Wand2 className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
+              Start Now
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+            </Link>
+
+            <Link
+              href="/support"
+              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[#F5EDE0]/50 bg-[#F5EDE0]/10 text-[#F5EDE0] font-semibold text-lg shadow-md backdrop-blur-sm transition-all duration-300 hover:bg-[#F5EDE0]/20 hover:border-[#F5EDE0]/75 hover:-translate-y-0.5 active:scale-95"
+            >
+              Need Help?
+            </Link>
+          </div>
         </div>
 
         {/* Scroll indicator */}
         <div className="absolute bottom-24 left-1/2 flex flex-col items-center gap-2 animate-gentle-bob">
-          <span className="text-base text-[#5C1A1A] font-bold">Scroll to begin</span>
-          <ChevronDown className="w-9 h-9 text-[#5C1A1A]" strokeWidth={2.5} />
+          <span className="text-base text-[#F5EDE0]/70 font-bold">Scroll to begin</span>
+          <ChevronDown className="w-9 h-9 text-[#F5EDE0]/70" strokeWidth={2.5} />
         </div>
       </section>
 

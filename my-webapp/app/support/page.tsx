@@ -168,63 +168,60 @@ export default function SupportPage() {
   }, [updateScrollbar]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
-
+    <main
+      className="flex min-h-screen flex-col items-center overflow-hidden"
+      style={{
+        background: 'linear-gradient(to bottom, #3D1409 0vh, #5C1A1A 35vh, #7A2424 62vh, #C8A97A 85vh, #E8D5B7 100vh, #DCC8A8 140vh, #E0CFAF 200vh)',
+      }}
+    >
       {/* Hero + Links — fills first viewport */}
-      <section className="w-full max-w-5xl text-center flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#3D1409] leading-tight fade-in-up delay-200" style={{ fontFamily: 'var(--font-archivo-black)' }}>
-          <span className="block sm:inline">Support &</span>{' '}
-          <span className="block sm:inline">Feedback</span>
-        </h1>
+      <section className="w-full text-center flex flex-col justify-center items-center min-h-screen relative pb-32">
+        {/* SVG diamond pattern overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
+            backgroundSize: '40px 40px',
+          }}
+        />
+        <div className="w-full max-w-5xl px-4 sm:px-10 flex flex-col items-center">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#F5EDE0] leading-tight fade-in-up delay-200" style={{ fontFamily: 'var(--font-archivo-black)' }}>
+            <span className="block sm:inline">Support &</span>{' '}
+            <span className="block sm:inline">Feedback</span>
+          </h1>
 
-        {/* Link Buttons */}
-        <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center items-center gap-4 mb-8 fade-in-up delay-300">
+          {/* Link Buttons */}
+          <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center items-center gap-4 mb-8 fade-in-up delay-300">
             {quickLinks.map((link) => {
               const Icon = link.icon;
-              const isInternal = !link.external && link.href !== "#";
-              
-              if (isInternal) {
-                return (
-                  <Link
-                    key={link.id}
-                    href={link.href}
-                    className="btn-secondary group justify-center px-8 text-[#3D1409] font-bold text-lg"
-                  >
-                    <Icon className="w-5 h-5 text-[#5C1A1A] group-hover:rotate-12 transition-transform duration-300" />
-                    <span className="font-bold text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
-                      {link.title}
-                    </span>
-                    {link.external && <ExternalLink className="w-3 h-3 text-[#8B6F47]" />}
-                  </Link>
-                );
+              const linkClass = "inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border-2 border-[#F5EDE0]/50 bg-[#F5EDE0]/10 text-[#F5EDE0] font-semibold text-lg shadow-md backdrop-blur-sm transition-all duration-300 hover:bg-[#F5EDE0]/20 hover:border-[#F5EDE0]/75 hover:-translate-y-0.5 active:scale-95 group";
+              const content = (
+                <>
+                  <Icon className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                  <span>{link.title}</span>
+                  {link.external && <ExternalLink className="w-3 h-3 opacity-70" />}
+                </>
+              );
+              if (!link.external) {
+                return <Link key={link.id} href={link.href} className={linkClass}>{content}</Link>;
               }
-              
               return (
-                <a
-                  key={link.id}
-                  href={link.href}
-                  target={link.external ? "_blank" : undefined}
-                  rel={link.external ? "noopener noreferrer" : undefined}
-                  className="btn-secondary group justify-center px-8 text-[#3D1409] font-bold text-lg"
-                >
-                  <Icon className="w-5 h-5 text-[#5C1A1A] group-hover:rotate-12 transition-transform duration-300" />
-                  <span className="font-bold text-lg text-[#3D1409] group-hover:text-[#5C1A1A] transition-colors">
-                    {link.title}
-                  </span>
-                  {link.external && <ExternalLink className="w-3 h-3 text-[#8B6F47]" />}
+                <a key={link.id} href={link.href} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                  {content}
                 </a>
               );
             })}
           </div>
-          
-        <p className="text-xl sm:text-2xl text-[#5C4A2F] font-medium fade-in-up delay-400">
-          "Report bugs, request features, or find quick help resources."
-        </p>
+
+          <p className="text-xl sm:text-2xl text-[#F5EDE0]/75 font-medium fade-in-up delay-400">
+            "Report bugs, request features, or find quick help resources."
+          </p>
+        </div>
 
         {/* Scroll Indicator — pinned near bottom */}
         <div className="absolute bottom-24 left-1/2 flex flex-col items-center gap-2 animate-gentle-bob">
-          <span className="text-base text-[#5C1A1A] font-bold">Scroll for more</span>
-          <ChevronDown className="w-9 h-9 text-[#5C1A1A]" strokeWidth={2.5} />
+          <span className="text-base text-[#F5EDE0]/70 font-bold">Scroll for more</span>
+          <ChevronDown className="w-9 h-9 text-[#F5EDE0]/70" strokeWidth={2.5} />
         </div>
       </section>
 

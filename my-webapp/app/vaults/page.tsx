@@ -7,7 +7,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import { MouseTransition, TouchTransition } from 'dnd-multi-backend';
 import { usePreview } from 'react-dnd-multi-backend';
-import { HomePage } from '@/app/components/HomePage';
+import { VaultLobby } from '@/app/components/VaultLobby';
 import { PlayerSidebar } from '@/app/components/PlayerSidebar';
 import { InventoryView } from '@/app/components/InventoryView';
 import { AddItemModal } from '@/app/components/AddItemModal';
@@ -1027,7 +1027,7 @@ export default function VaultsPage() {
     (isCampaignsLoading || campaigns.some((campaign) => campaign.id === requestedCampaignId))
   );
 
-  // Convert campaigns to vault format for HomePage component
+  // Convert campaigns to vault format for VaultLobby component
   const vaults = campaigns.map((c) => ({
     id: c.id,
     name: c.name,
@@ -1058,7 +1058,7 @@ export default function VaultsPage() {
 
     return (
       <>
-        <HomePage
+        <VaultLobby
           vaults={vaults}
           userType={userRole === 'gm' ? 'gm' : 'player'}
           onSelectVault={handleSelectCampaign}

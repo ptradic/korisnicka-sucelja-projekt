@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
 import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save, Trash2, AlertTriangle } from "lucide-react";
@@ -35,21 +35,25 @@ const pages: Page[] = [
   { title: "Vaults", path: "/vaults", icon: Scroll },
 ];
 
-function processPage(page: Page, index: number, currentPath?: string, isMobile: boolean = false, onClick?: () => void) {
+function processPage(page: Page, index: number, currentPath?: string, isMobile: boolean = false, onClick?: () => void, transparent: boolean = false) {
   const isActive = page.path === "/" ? currentPath === page.path : currentPath?.startsWith(page.path);
   const Icon = page.icon;
-  
+
   return (
     <li key={index} className={isMobile ? "w-full" : ""}>
-      <Link 
+      <Link
         href={page.path}
         onClick={onClick}
         className={cn(
-          "btn-secondary inline-flex whitespace-nowrap rounded-lg px-4 py-2.5",
+          "inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 font-semibold transition-all duration-200",
           isMobile ? "w-full justify-start px-5 py-4" : "justify-center",
-          isActive 
-            ? "btn-primary text-white border-[#3D1409] shadow-lg" 
-            : "text-[#3D1409]"
+          isActive
+            ? transparent
+              ? "bg-white/15 border-2 border-white/30 text-white shadow-md backdrop-blur-sm"
+              : "btn-primary text-white border-[#3D1409] shadow-lg"
+            : transparent
+              ? "border-2 border-transparent text-[#F5EDE0]/80 hover:bg-white/10 hover:text-[#F5EDE0]"
+              : "btn-secondary text-[#3D1409]"
         )}
       >
         {Icon && <Icon className={cn("w-5 h-5", !isMobile && "xl:block hidden")} />}
@@ -421,7 +425,11 @@ export function Navigation() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [showLogoutToast, setShowLogoutToast] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const isDarkHeroPage = currentPath === '/' || currentPath === '/guides' || currentPath === '/support';
+  const navTransparent = isDarkHeroPage && !scrolled;
 
   // Compute short initials from user name
   const initials = authData?.name
@@ -453,6 +461,25 @@ export function Navigation() {
     
     return () => unsubscribe();
   }, []);
+
+  // Synchronously set the correct scroll state before paint (avoids beige flash on home page)
+  useLayoutEffect(() => {
+    const darkPage = currentPath === '/' || currentPath === '/guides' || currentPath === '/support';
+    if (!darkPage) { setScrolled(false); return; }
+    const container = document.getElementById('page-scroll');
+    setScrolled(!!container && container.scrollTop > window.innerHeight * 0.8);
+  }, [currentPath]);
+
+  // Ongoing scroll listener on the custom scroll container
+  useEffect(() => {
+    const darkPage = currentPath === '/' || currentPath === '/guides' || currentPath === '/support';
+    if (!darkPage) return;
+    const container = document.getElementById('page-scroll');
+    if (!container) return;
+    const onScroll = () => setScrolled(container.scrollTop > window.innerHeight * 0.8);
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => container.removeEventListener('scroll', onScroll);
+  }, [currentPath]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -568,12 +595,12 @@ export function Navigation() {
   return (
     <div>
       {/* Mobile Header */}
-      <div 
-        className="md:hidden fixed top-0 left-0 right-0 z-40 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl"
+      <div
+        className={cn("md:hidden fixed top-0 left-0 right-0 z-40 backdrop-blur-md border-b-4 transition-all duration-300", navTransparent && !isOpen ? "border-transparent shadow-none" : "border-[#3D1409] shadow-xl")}
         style={{
-          background: isOpen 
-            ? 'linear-gradient(to right, #5C1A1A, #7A2424)' 
-            : 'rgba(245, 239, 224, 0.95)',
+          background: isOpen
+            ? 'linear-gradient(to right, #5C1A1A, #7A2424)'
+            : navTransparent ? 'linear-gradient(to right, #5C1A1A, #7A2424)' : 'rgba(245, 239, 224, 0.95)',
           transition: 'background 0.3s ease-in-out'
         }}
       >
@@ -582,11 +609,11 @@ export function Navigation() {
             <div 
               className="w-12 h-12 rounded-xl flex items-center justify-center border-4 shadow-lg"
               style={{
-                background: isOpen 
-                  ? 'rgba(255, 255, 255, 0.1)' 
+                background: isOpen || navTransparent
+                  ? 'rgba(255, 255, 255, 0.1)'
                   : 'linear-gradient(to bottom right, #5C1A1A, #7A2424)',
-                borderColor: isOpen ? 'rgba(255, 255, 255, 0.2)' : '#3D1409',
-                backdropFilter: isOpen ? 'blur(4px)' : 'none',
+                borderColor: isOpen || navTransparent ? 'rgba(255, 255, 255, 0.2)' : '#3D1409',
+                backdropFilter: isOpen || navTransparent ? 'blur(4px)' : 'none',
                 transition: 'all 0.4s ease-in-out'
               }}
             >
@@ -596,7 +623,7 @@ export function Navigation() {
               className="text-xl font-extrabold"
               style={{ 
                 fontFamily: 'var(--font-archivo-black)',
-                color: isOpen ? '#ffffff' : '#3D1409',
+                color: isOpen ? '#ffffff' : navTransparent ? '#F5EDE0' : '#3D1409',
                 transition: 'color 0.4s ease-in-out'
               }}
             >
@@ -622,9 +649,9 @@ export function Navigation() {
             }}
             aria-label="Toggle menu"
           >
-            <span className={cn("block w-7 h-1 rounded-full transition-all duration-300 ease-in-out", isOpen ? "rotate-45 translate-y-2.5 bg-white" : "bg-[#3D1409]")} />
-            <span className={cn("block w-7 h-1 rounded-full transition-all duration-300 ease-in-out", isOpen ? "opacity-0 bg-white" : "bg-[#3D1409]")} />
-            <span className={cn("block w-7 h-1 rounded-full transition-all duration-300 ease-in-out", isOpen ? "-rotate-45 -translate-y-2.5 bg-white" : "bg-[#3D1409]")} />
+            <span className={cn("block w-7 h-1 rounded-full transition-all duration-300 ease-in-out", isOpen ? "rotate-45 translate-y-2.5 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
+            <span className={cn("block w-7 h-1 rounded-full transition-all duration-300 ease-in-out", isOpen ? "opacity-0 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
+            <span className={cn("block w-7 h-1 rounded-full transition-all duration-300 ease-in-out", isOpen ? "-rotate-45 -translate-y-2.5 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
           </button>
         </div>
       </div>
@@ -712,20 +739,34 @@ export function Navigation() {
       </Sheet>
 
       {/* Desktop Navigation */}
-      <nav className="hidden md:block fixed top-0 left-0 right-0 bg-[#F5EFE0]/95 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl z-50">
+      <nav
+        className={cn(
+          "hidden md:block fixed top-0 left-0 right-0 backdrop-blur-md border-b-4 z-50 transition-all duration-300",
+          navTransparent ? "border-transparent shadow-none" : "bg-[#F5EFE0]/95 border-[#3D1409] shadow-xl"
+        )}
+        style={navTransparent ? { background: 'linear-gradient(to right, #5C1A1A, #7A2424)' } : undefined}
+      >
         <div className="max-w-7xl mx-auto px-3 md:px-4 xl:px-6">
           <div className="flex items-center h-20 gap-2 xl:gap-6">
             {/* Brand Logo */}
             <Link href="/" className="group flex items-center gap-2 xl:gap-3 shrink-0 transition-all duration-300 w-auto xl:w-64">
-              <div className="w-12 h-12 xl:w-14 xl:h-14 shrink-0 aspect-square bg-linear-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] rounded-2xl flex items-center justify-center border-4 border-[#3D1409] shadow-lg hover:rotate-6 transition-all duration-300">
+              <div
+                className={cn(
+                  "w-12 h-12 xl:w-14 xl:h-14 shrink-0 aspect-square rounded-2xl flex items-center justify-center border-4 shadow-lg hover:rotate-6 transition-all duration-300",
+                  navTransparent
+                    ? "border-white/20"
+                    : "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] border-[#3D1409]"
+                )}
+                style={navTransparent ? { background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)' } : undefined}
+              >
                 <Scroll className="w-6 h-6 xl:w-7 xl:h-7 text-white" />
               </div>
-              <h1 className="text-2xl font-extrabold text-[#3D1409] hidden xl:block" style={{ fontFamily: 'var(--font-archivo-black)' }}>Trailblazers' Vault</h1>
+              <h1 className={cn("text-2xl font-extrabold hidden xl:block transition-colors duration-300", navTransparent ? "text-[#F5EDE0]" : "text-[#3D1409]")} style={{ fontFamily: 'var(--font-archivo-black)' }}>Trailblazers' Vault</h1>
             </Link>
             
             {/* Navigation Links */}
             <ul className="flex gap-1.5 md:gap-2 xl:gap-3 items-center flex-1 justify-center">
-              {navPages.map((page, index) => processPage(page, index, currentPath, false, page.path === '/vaults' ? () => window.dispatchEvent(new Event('vaults-go-home')) : undefined))}
+              {navPages.map((page, index) => processPage(page, index, currentPath, false, page.path === '/vaults' ? () => window.dispatchEvent(new Event('vaults-go-home')) : undefined, navTransparent))}
             </ul>
 
             {/* Right side: Profile or Login */}
@@ -735,12 +776,11 @@ export function Navigation() {
                   {/* Profile icon button */}
                   <button
                     onClick={() => setProfileDropdownOpen(v => !v)}
-                    className={cn(
-                      "w-12 h-12 xl:w-14 xl:h-14 rounded-2xl flex items-center justify-center transition-all duration-300 border-4 transform hover:-translate-y-0.5 hover:rotate-6 active:scale-95",
-                      profileDropdownOpen
-                        ? "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-lg"
-                        : "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] border-[#3D1409] shadow-lg hover:from-[#4A1515] hover:to-[#5C1A1A]"
-                    )}
+                    className="w-12 h-12 xl:w-14 xl:h-14 rounded-2xl flex items-center justify-center transition-all duration-300 border-4 transform hover:-translate-y-0.5 hover:rotate-6 active:scale-95 shadow-lg"
+                    style={navTransparent
+                      ? { background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }
+                      : { background: 'linear-gradient(to bottom right, #5C1A1A, #7A2424)', borderColor: '#3D1409' }
+                    }
                   >
                     <span className="text-sm xl:text-base font-bold text-white leading-none">{initials}</span>
                   </button>

@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/app/components/u
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Package, BookOpen, ChevronRight, Sparkles, ChevronDown, Zap, Archive, HelpCircle, GripVertical } from "lucide-react";
+import { Package, BookOpen, ChevronRight, Sparkles, ChevronDown, Zap, Archive, GripVertical } from "lucide-react";
 import { useScrollReveal } from "@/app/hooks/useScrollReveal";
 import { auth } from "@/src/firebase";
 
@@ -20,42 +20,64 @@ export default function HomePage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] overflow-hidden">
-      
-      {/* Hero Section */}
-      <section className="w-full max-w-5xl text-center flex flex-col justify-center items-center min-h-screen px-4 sm:px-10 relative pb-32">
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#3D1409] leading-tight fade-in-up delay-200" style={{ fontFamily: 'var(--font-archivo-black)' }}>
-          <span className="block sm:inline">Trailblazers'</span>{' '}
-          <span className="block sm:inline">Vault</span>
-        </h1>
+    <main
+      className="flex min-h-screen flex-col items-center overflow-hidden"
+      style={{
+        background: 'linear-gradient(to bottom, #3D1409 0vh, #5C1A1A 35vh, #7A2424 62vh, #C8A97A 85vh, #E8D5B7 100vh, #DCC8A8 140vh, #E0CFAF 200vh)',
+      }}
+    >
 
-        <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8 fade-in-up delay-300">
-          <button onClick={handleManageVaults} className="btn-primary group cursor-pointer w-full sm:w-auto text-lg">
-            <Package className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
-            Manage Vaults
-            <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-          </button>
-          
-          <Link href="/guides" className="btn-secondary group w-full sm:w-auto text-lg text-[#5C1A1A] font-bold">
-            <Zap className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-            Quick Start
-          </Link>
-          
-          <Link href="/support" className="btn-ghost group w-full sm:w-auto text-lg text-[#5C1A1A] font-bold shadow-md hover:shadow-lg hover:-translate-y-1 active:scale-95 px-6 py-4 border-[#8B6F47] hover:border-[#5C1A1A] hover:bg-[#F5EFE0]/50">
-            <HelpCircle className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-            Need Support
-          </Link>
+      {/* Hero Section — diamond pattern overlay only, main handles the gradient */}
+      <section
+        className="w-full text-center flex flex-col justify-center items-center min-h-screen relative pb-32"
+      >
+        {/* SVG diamond pattern — absolute overlay covering just the hero */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
+            backgroundSize: '40px 40px',
+          }}
+        />
+        <div className="w-full max-w-5xl px-4 sm:px-10 flex flex-col items-center">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#F5EDE0] leading-tight fade-in-up delay-200" style={{ fontFamily: 'var(--font-archivo-black)' }}>
+            <span className="block sm:inline">Trailblazers'</span>{' '}
+            <span className="block sm:inline">Vault</span>
+          </h1>
+
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8 fade-in-up delay-300">
+            {/* Primary — cream solid, dark red text: stands out most on dark bg */}
+            <button
+              onClick={handleManageVaults}
+              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[#F5EDE0] bg-[#F5EDE0] text-[#3D1409] font-bold text-lg shadow-xl transition-all duration-300 hover:bg-white hover:border-white hover:shadow-2xl hover:-translate-y-1 active:scale-95 cursor-pointer group w-full sm:w-auto"
+            >
+              <Package className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+              Manage Vaults
+              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+            </button>
+
+            {/* Secondary — frosted outline */}
+            <Link
+              href="/guides"
+              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[#F5EDE0]/50 bg-[#F5EDE0]/10 text-[#F5EDE0] font-semibold text-lg shadow-md backdrop-blur-sm transition-all duration-300 hover:bg-[#F5EDE0]/20 hover:border-[#F5EDE0]/75 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 group w-full sm:w-auto"
+            >
+              <Zap className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+              Quick Start
+            </Link>
+
+          </div>
+
+          <p className="text-xl sm:text-2xl text-[#F5EDE0]/75 font-medium fade-in-up delay-400">
+            "Your party's loot, safely stashed."
+          </p>
         </div>
-
-        <p className="text-xl sm:text-2xl text-[#5C1A1A] font-medium fade-in-up delay-400">
-          "Your party's loot, safely stashed."
-        </p>
 
         {/* Scroll Indicator */}
         <div className="absolute bottom-24 left-1/2 flex flex-col items-center gap-2 animate-gentle-bob">
-          <span className="text-base text-[#5C1A1A] font-bold">Scroll for more</span>
-          <ChevronDown className="w-9 h-9 text-[#5C1A1A]" strokeWidth={2.5} />
+          <span className="text-base text-[#F5EDE0]/70 font-bold">Scroll for more</span>
+          <ChevronDown className="w-9 h-9 text-[#F5EDE0]/70" strokeWidth={2.5} />
         </div>
+
       </section>
 
       {/* Features Section */}
@@ -137,7 +159,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="w-full max-w-5xl text-center py-8">
+      <footer className="w-full max-w-5xl text-center py-10 px-4 flex flex-col items-center gap-4">
         <p className="text-base text-[#5C4A2F] font-medium">Born from play — designed to keep your sessions flowing.</p>
       </footer>
     </main>

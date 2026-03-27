@@ -29,7 +29,7 @@ interface HomePageProps {
   topContent?: React.ReactNode;
 }
 
-export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, onDeleteVault, onLeaveVault, userType, topContent }: HomePageProps) {
+export function VaultLobby({ onSelectVault, onCreateVault, onJoinVault, vaults, onDeleteVault, onLeaveVault, userType, topContent }: HomePageProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const isGM = userType === 'gm';

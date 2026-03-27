@@ -12,7 +12,7 @@ interface InventoryViewProps {
   inventory: Item[];
   owner: { name: string; id: string } | null;
   ownerId: string | 'shared';
-  isDM: boolean;
+  isGM: boolean;
   onAddItem: () => void;
   onItemClick: (item: Item) => void;
   onMoveItem: (itemIds: string[], fromId: string, toId: string) => void;
@@ -187,7 +187,7 @@ export function InventoryView({
   inventory,
   owner,
   ownerId,
-  isDM,
+  isGM,
   onAddItem,
   onItemClick,
   onMoveItem,

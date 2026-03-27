@@ -138,7 +138,7 @@ export default function VaultsPage() {
   const [isCampaignsLoading, setIsCampaignsLoading] = useState(true);
   const [userId, setUserId] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
-  const [userRole, setUserRole] = useState<'dm' | 'player'>('player');
+  const [userRole, setUserRole] = useState<'gm' | 'player'>('player');
   const [userHomebrew, setUserHomebrew] = useState<Item[]>([]);
   const [campaigns, setCampaigns] = useState<CampaignDoc[]>([]);
   const [currentCampaignId, setCurrentCampaignId] = useState<string | null>(null);
@@ -281,9 +281,9 @@ export default function VaultsPage() {
     };
   }, [currentCampaignId]);
 
-  // Subscribe to transfer requests for current user (only for players, not DM)
+  // Subscribe to transfer requests for current user (only for players, not GM)
   useEffect(() => {
-    if (!currentCampaignId || !userId || userRole === 'dm') {
+    if (!currentCampaignId || !userId || userRole === 'gm') {
       setPendingTransferRequests([]);
       return;
     }
@@ -321,7 +321,7 @@ export default function VaultsPage() {
 
   // Subscribe to rejected/expired transfers (as sender) and auto-restore items
   useEffect(() => {
-    if (!currentCampaignId || !userId || userRole === 'dm') return;
+    if (!currentCampaignId || !userId || userRole === 'gm') return;
 
     const unsubscribe = subscribeToRejectedTransfers(currentCampaignId, userId, async (rejectedOrExpiredRequests) => {
       // Process each request to handle rejected vs expired differently
@@ -354,7 +354,7 @@ export default function VaultsPage() {
   // Subscribe to pending transfers from me (sender) to check for expired ones
   // This ensures expiration works even if recipient is offline
   useEffect(() => {
-    if (!currentCampaignId || !userId || userRole === 'dm') return;
+    if (!currentCampaignId || !userId || userRole === 'gm') return;
 
     const unsubscribe = subscribeToPendingTransfersFromMe(currentCampaignId, userId, () => {
       // The callback doesn't need to do anything - the subscription itself
@@ -366,7 +366,7 @@ export default function VaultsPage() {
 
   // Periodically check for expired transfers (since Firestore subscriptions don't trigger on time)
   useEffect(() => {
-    if (!currentCampaignId || !userId || userRole === 'dm') return;
+    if (!currentCampaignId || !userId || userRole === 'gm') return;
 
     const runExpirationCheck = async () => {
       try {
@@ -388,9 +388,9 @@ export default function VaultsPage() {
     return () => clearInterval(interval);
   }, [currentCampaignId, userId, userRole]);
 
-  // DM cleanup: remove stale inventory docs for users no longer in campaign.playerIds.
+  // GM cleanup: remove stale inventory docs for users no longer in campaign.playerIds.
   useEffect(() => {
-    if (!currentCampaignId || userRole !== 'dm' || !currentCampaign) return;
+    if (!currentCampaignId || userRole !== 'gm' || !currentCampaign) return;
 
     const staleInventories = playerInventories.filter(
       (inventoryDoc) => !currentCampaign.playerIds.includes(inventoryDoc.playerId)
@@ -406,7 +406,7 @@ export default function VaultsPage() {
   }, [currentCampaignId, currentCampaign, playerInventories, userRole, trackWrite]);
 
   // Handle role switch from vault page tabs
-  const handleRoleSwitch = async (nextRole: 'dm' | 'player') => {
+  const handleRoleSwitch = async (nextRole: 'gm' | 'player') => {
     if (!userId || nextRole === userRole) return;
 
     try {
@@ -583,9 +583,9 @@ export default function VaultsPage() {
     if (!currentCampaignId) return;
     if (itemIds.length === 0) return;
 
-    // Check if this is a player-to-player transfer (not DM, not involving shared loot)
-    const isDM = userRole === 'dm';
-    const isPlayerToPlayer = !isDM && fromId !== 'shared' && toId !== 'shared' && fromId === userId && toId !== userId;
+    // Check if this is a player-to-player transfer (not GM, not involving shared loot)
+    const isGM = userRole === 'gm';
+    const isPlayerToPlayer = !isGM && fromId !== 'shared' && toId !== 'shared' && fromId === userId && toId !== userId;
 
     if (isPlayerToPlayer) {
       // Create a transfer request instead of moving directly
@@ -639,7 +639,7 @@ export default function VaultsPage() {
         showActionError('Could not send transfer request', error, () => handleMoveItem(itemIds, fromId, toId));
       }
     } else {
-      // Direct move (DM, or to/from shared loot, or to own inventory)
+      // Direct move (GM, or to/from shared loot, or to own inventory)
       try {
         for (const itemId of itemIds) {
           await trackWrite(() => moveItemBetweenInventories(
@@ -648,7 +648,7 @@ export default function VaultsPage() {
             fromId,
             toId,
             userId,
-            isDM
+            isGM
           ));
         }
       } catch (error) {
@@ -891,11 +891,11 @@ export default function VaultsPage() {
 
     const isPlayerCustomItem = (baseItem.sourcebook || '').trim().toUpperCase() === 'PLAYER CUSTOM';
     const isHiddenToggleOnly = Object.keys(updates).length === 1 && 'hiddenFromOthers' in updates;
-    if (!isDM && !isPlayerCustomItem && !isHiddenToggleOnly) {
+    if (!isGM && !isPlayerCustomItem && !isHiddenToggleOnly) {
       return;
     }
 
-    const sanitizedUpdates = (!isDM && !isHiddenToggleOnly)
+    const sanitizedUpdates = (!isGM && !isHiddenToggleOnly)
       ? {
           ...updates,
           sourcebook: 'PLAYER CUSTOM',
@@ -993,8 +993,8 @@ export default function VaultsPage() {
 
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId);
   const isShared = selectedPlayerId === 'shared';
-  const isDM = userRole === 'dm';
-  const canPlayerEditSelectedItem = !isDM && !!selectedItem && (selectedItem.sourcebook || '').trim().toUpperCase() === 'PLAYER CUSTOM';
+  const isGM = userRole === 'gm';
+  const canPlayerEditSelectedItem = !isGM && !!selectedItem && (selectedItem.sourcebook || '').trim().toUpperCase() === 'PLAYER CUSTOM';
   const vaultCustomItems = currentCampaign?.customItemPool ?? [];
   const syncStatus: 'saving' | 'saved' = pendingWriteCount > 0 ? 'saving' : 'saved';
   const userRoleRef = useRef(userRole);
@@ -1056,7 +1056,7 @@ export default function VaultsPage() {
       <>
         <HomePage
           vaults={vaults}
-          userType={userRole === 'dm' ? 'dm' : 'player'}
+          userType={userRole === 'gm' ? 'gm' : 'player'}
           onSelectVault={handleSelectCampaign}
           onCreateVault={handleCreateCampaign}
           onJoinVault={handleJoinCampaign}
@@ -1075,9 +1075,9 @@ export default function VaultsPage() {
                     Player
                   </button>
                   <button
-                    onClick={() => void handleRoleSwitch('dm')}
+                    onClick={() => void handleRoleSwitch('gm')}
                     className={
-                      tabBaseClass + ' ' + (userRole === 'dm' ? tabActiveClass : tabInactiveClass)
+                      tabBaseClass + ' ' + (userRole === 'gm' ? tabActiveClass : tabInactiveClass)
                     }
                   >
                     GM
@@ -1117,11 +1117,11 @@ export default function VaultsPage() {
             campaignName={currentCampaign?.name ?? 'Campaign'}
             campaignId={currentCampaignId ?? undefined}
             campaignPassword={currentCampaign?.password || ''}
-            isDM={isDM}
+            isGM={isGM}
             totalSlots={currentCampaign?.playerIds.length || players.length}
-            onUpdateCampaignSettings={isDM ? handleUpdateCampaignSettings : undefined}
+            onUpdateCampaignSettings={isGM ? handleUpdateCampaignSettings : undefined}
             currentUserId={userId}
-            onUpdateMyCharacterName={!isDM ? handleUpdateMyCharacterName : undefined}
+            onUpdateMyCharacterName={!isGM ? handleUpdateMyCharacterName : undefined}
           />
           <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
             <InventoryView
@@ -1129,7 +1129,7 @@ export default function VaultsPage() {
                 ? (currentCampaign?.sharedLoot ?? [])
                 : (() => {
                     const inv = selectedPlayer?.inventory ?? [];
-                    const isOwnerViewing = isDM || selectedPlayerId === userId;
+                    const isOwnerViewing = isGM || selectedPlayerId === userId;
                     return isOwnerViewing ? inv : inv.filter((i) => !i.hiddenFromOthers);
                   })()
               }
@@ -1139,7 +1139,7 @@ export default function VaultsPage() {
                   : selectedPlayer ? { name: selectedPlayer.name, id: selectedPlayer.id } : null
               }
               ownerId={selectedPlayerId}
-              isDM={isDM}
+              isGM={isGM}
               onAddItem={() => setShowAddItemModal(true)}
               onItemClick={setSelectedItem}
               onMoveItem={handleMoveItem}
@@ -1147,7 +1147,7 @@ export default function VaultsPage() {
               onMaxWeightChange={isShared ? undefined : (newMax: number) => handleMaxWeightChange(selectedPlayerId, newMax)}
               currency={isShared ? (currentCampaign?.sharedCurrency ?? { pp: 0, gp: 0, sp: 0, cp: 0 }) : selectedPlayer?.currency}
               onCurrencyChange={isShared ? undefined : (c: Currency) => handleCurrencyChange(selectedPlayerId, c)}
-              onCoinTransfer={isShared && !isDM ? handleSharedCoinTransfer : undefined}
+              onCoinTransfer={isShared && !isGM ? handleSharedCoinTransfer : undefined}
               isShared={isShared}
               syncStatus={syncStatus}
             />
@@ -1158,7 +1158,7 @@ export default function VaultsPage() {
           <AddItemModal
             onClose={() => setShowAddItemModal(false)}
             targetName={isShared ? 'Shared Loot' : (selectedPlayer?.name ?? 'Unknown')}
-            isDM={isDM}
+            isGM={isGM}
             customItems={vaultCustomItems}
             userHomebrew={userHomebrew}
             customItemPool={vaultCustomItems}
@@ -1174,12 +1174,12 @@ export default function VaultsPage() {
           <ItemDetailsModal
             item={selectedItem}
             onClose={() => setSelectedItem(null)}
-            onUpdate={isDM || canPlayerEditSelectedItem || (!isShared && selectedPlayerId === userId)
+            onUpdate={isGM || canPlayerEditSelectedItem || (!isShared && selectedPlayerId === userId)
               ? (updates: Partial<Item>) => handleUpdateSelectedItem(selectedItem, updates)
               : undefined}
             onDelete={() => handleDeleteSelectedItem(selectedItem)}
-            canEdit={isDM || canPlayerEditSelectedItem}
-            canToggleHidden={!isShared && (isDM || selectedPlayerId === userId)}
+            canEdit={isGM || canPlayerEditSelectedItem}
+            canToggleHidden={!isShared && (isGM || selectedPlayerId === userId)}
           />
         )}
 

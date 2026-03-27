@@ -10,7 +10,7 @@ interface AddItemModalProps {
   onClose: () => void;
   onAdd: (item: Omit<Item, 'id'>) => void;
   targetName: string;
-  isDM?: boolean;
+  isGM?: boolean;
   customItems?: Item[];
   userHomebrew?: Item[];
   customItemPool?: Item[];
@@ -852,12 +852,12 @@ function CustomItemForm({
   onCreate,
   onClose,
   targetName,
-  isDM,
+  isGM,
 }: {
   onCreate: (item: Omit<Item, 'id'>) => Promise<void> | void;
   onClose: () => void;
   targetName: string;
-  isDM?: boolean;
+  isGM?: boolean;
 }) {
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
   const [showDescriptionScrollbar, setShowDescriptionScrollbar] = useState(false);
@@ -1035,9 +1035,9 @@ function CustomItemForm({
 
     const item: Omit<Item, 'id'> = {
       name: formData.name.trim(),
-      sourcebook: isDM ? 'homebrew' : 'PLAYER CUSTOM',
+      sourcebook: isGM ? 'homebrew' : 'PLAYER CUSTOM',
       category: formData.category,
-      rarity: isDM ? formData.rarity : 'common',
+      rarity: isGM ? formData.rarity : 'common',
       quantity: formData.quantity,
       weight: formData.weight === '' ? 0 : Number(formData.weight),
       attunement: formData.attunement,
@@ -1169,7 +1169,7 @@ function CustomItemForm({
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Rarity <span className="text-[#8B3A3A]">*</span>
             </label>
-            {isDM ? (
+            {isGM ? (
               <select
                 value={formData.rarity}
                 onChange={(e) => setFormData({ ...formData, rarity: e.target.value as Rarity })}
@@ -1257,7 +1257,7 @@ function CustomItemForm({
           </div>
         </div>
 
-        {!isDM && (
+        {!isGM && (
           <div className="rounded-xl border-2 border-[#D4C4A8] bg-white/40 px-3 py-2 text-xs text-[#5C4A2F]">
             Player custom items are always saved with rarity Common and sourcebook PLAYER CUSTOM.
           </div>
@@ -1290,7 +1290,7 @@ export function AddItemModal({
   onClose,
   onAdd,
   targetName,
-  isDM,
+  isGM,
   customItems = [],
   userHomebrew = [],
   customItemPool = [],
@@ -1325,7 +1325,7 @@ export function AddItemModal({
         style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)', height: 'min(90vh, 700px)' }}
       >
         {/* Tabs */}
-        {isDM ? (
+        {isGM ? (
           <div className="flex border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] overflow-hidden">
             <button
               onClick={() => setMode('pick')}
@@ -1393,10 +1393,10 @@ export function AddItemModal({
           />
         ) : (
           <CustomItemForm
-            onCreate={isDM ? (onCreateHomebrew || onAdd) : onAdd}
+            onCreate={isGM ? (onCreateHomebrew || onAdd) : onAdd}
             onClose={onClose}
             targetName={targetName}
-            isDM={isDM}
+            isGM={isGM}
           />
         )}
       </div>

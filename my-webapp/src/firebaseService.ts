@@ -75,10 +75,10 @@ export interface UserDoc {
   uid: string;
   email: string;
   name: string;
-  role: 'dm' | 'player'; // Current active role
+  role: 'gm' | 'player'; // Current active role
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  dmCampaigns: string[]; // Campaign IDs where user is DM
+  dmCampaigns: string[]; // Campaign IDs where user is GM
   playerCampaigns: string[]; // Campaign IDs where user is a player
   userHomebrew: Item[];
 }
@@ -114,7 +114,7 @@ export interface PlayerInventoryDoc {
 
 // ==================== Authentication ====================
 
-export async function signUpUser(email: string, password: string, name: string, role: 'dm' | 'player') {
+export async function signUpUser(email: string, password: string, name: string, role: 'gm' | 'player') {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
@@ -186,7 +186,7 @@ export async function getUserDoc(uid: string): Promise<UserDoc | null> {
   return null;
 }
 
-export async function updateUserRole(uid: string, role: 'dm' | 'player') {
+export async function updateUserRole(uid: string, role: 'gm' | 'player') {
   const docRef = doc(db, 'users', uid);
   await updateDoc(docRef, {
     role,
@@ -303,20 +303,20 @@ export async function deleteUserHomebrewItem(uid: string, itemId: string): Promi
 // ==================== Campaign Management ====================
 
 export async function createCampaign(
-  dmId: string,
-  dmName: string,
+  gmId: string,
+  gmName: string,
   name: string,
   description: string,
   password?: string
 ): Promise<string> {
   const campaignId = generateCampaignId();
-  
+
   const campaignDoc: CampaignDoc = {
     id: campaignId,
     name,
     description,
-    dmId,
-    dmName,
+    dmId: gmId,
+    dmName: gmName,
     playerIds: [],
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
@@ -327,8 +327,8 @@ export async function createCampaign(
 
   await setDoc(doc(db, 'campaigns', campaignId), campaignDoc);
 
-  // Add to DM's campaign list
-  const userRef = doc(db, 'users', dmId);
+  // Add to GM's campaign list
+  const userRef = doc(db, 'users', gmId);
   await updateDoc(userRef, {
     dmCampaigns: arrayUnion(campaignId),
     updatedAt: serverTimestamp(),
@@ -348,15 +348,15 @@ export async function getCampaign(campaignId: string): Promise<CampaignDoc | nul
 
 export async function updateCampaignSettings(
   campaignId: string,
-  dmId: string,
+  gmId: string,
   updates: { name: string; password: string }
 ): Promise<void> {
   const campaign = await getCampaign(campaignId);
   if (!campaign) {
     throw new Error('Campaign not found');
   }
-  if (campaign.dmId !== dmId) {
-    throw new Error('Only the campaign DM can update vault settings.');
+  if (campaign.dmId !== gmId) {
+    throw new Error('Only the campaign GM can update vault settings.');
   }
 
   await updateDoc(doc(db, 'campaigns', campaignId), {
@@ -368,15 +368,15 @@ export async function updateCampaignSettings(
 
 export async function updateCampaignCustomItemPool(
   campaignId: string,
-  dmId: string,
+  gmId: string,
   customItemPool: Item[]
 ): Promise<void> {
   const campaign = await getCampaign(campaignId);
   if (!campaign) {
     throw new Error('Campaign not found');
   }
-  if (campaign.dmId !== dmId) {
-    throw new Error('Only the campaign DM can update custom items.');
+  if (campaign.dmId !== gmId) {
+    throw new Error('Only the campaign GM can update custom items.');
   }
 
   await updateDoc(doc(db, 'campaigns', campaignId), {
@@ -385,7 +385,7 @@ export async function updateCampaignCustomItemPool(
   });
 }
 
-export async function deleteCampaign(campaignId: string, dmId: string): Promise<void> {
+export async function deleteCampaign(campaignId: string, gmId: string): Promise<void> {
   const batch = writeBatch(db);
 
   // Delete all playerInventories subcollection docs
@@ -399,8 +399,8 @@ export async function deleteCampaign(campaignId: string, dmId: string): Promise<
   // Delete the campaign document itself
   batch.delete(doc(db, 'campaigns', campaignId));
 
-  // Remove campaign from DM's own user doc (allowed by rules)
-  batch.update(doc(db, 'users', dmId), {
+  // Remove campaign from GM's own user doc (allowed by rules)
+  batch.update(doc(db, 'users', gmId), {
     dmCampaigns: arrayRemove(campaignId),
     updatedAt: serverTimestamp(),
   });
@@ -420,7 +420,7 @@ export async function leaveCampaign(campaignId: string, playerId: string): Promi
   }
 
   if (campaign.dmId === playerId) {
-    throw new Error('DM cannot leave their own campaign. Delete the vault instead.');
+    throw new Error('GM cannot leave their own campaign. Delete the vault instead.');
   }
 
   if (!campaign.playerIds.includes(playerId)) {
@@ -530,11 +530,11 @@ export async function joinCampaign(
   await setDoc(doc(db, 'campaigns', campaignId, 'playerInventories', playerId), playerInventory);
 }
 
-export async function getUserCampaigns(uid: string, role: 'dm' | 'player'): Promise<CampaignDoc[]> {
+export async function getUserCampaigns(uid: string, role: 'gm' | 'player'): Promise<CampaignDoc[]> {
   const userDoc = await getUserDoc(uid);
   if (!userDoc) return [];
 
-  const campaignIds = role === 'dm' ? userDoc.dmCampaigns : userDoc.playerCampaigns;
+  const campaignIds = role === 'gm' ? userDoc.dmCampaigns : userDoc.playerCampaigns;
   if (campaignIds.length === 0) return [];
 
   const campaigns: CampaignDoc[] = [];
@@ -678,13 +678,13 @@ export async function moveItemBetweenInventories(
   fromId: string | 'shared',
   toId: string | 'shared',
   currentUserId?: string,
-  isDM?: boolean
+  isGM?: boolean
 ): Promise<void> {
   const campaign = await getCampaign(campaignId);
   if (!campaign) throw new Error('Campaign not found');
 
-  // Validation: non-DM players can only move items FROM shared loot TO their own inventory
-  if (currentUserId && !isDM && fromId === 'shared' && toId !== 'shared' && toId !== currentUserId) {
+  // Validation: non-GM players can only move items FROM shared loot TO their own inventory
+  if (currentUserId && !isGM && fromId === 'shared' && toId !== 'shared' && toId !== currentUserId) {
     throw new Error('You can only move items from shared loot to your own inventory.');
   }
 
@@ -1138,49 +1138,36 @@ export async function deleteUserProfile(uid: string): Promise<void> {
   const userDocData = await getUserDoc(uid);
   if (!userDocData) throw new Error('User profile not found');
 
-  console.log('[deleteUserProfile] Starting deletion for uid:', uid);
-  console.log('[deleteUserProfile] dmCampaigns:', userDocData.dmCampaigns);
-  console.log('[deleteUserProfile] playerCampaigns:', userDocData.playerCampaigns);
-
-  // 1. Delete all DM-owned campaigns (vaults the user created)
+  // 1. Delete all GM-owned campaigns (vaults the user created)
   for (const campaignId of userDocData.dmCampaigns) {
     try {
-      console.log('[deleteUserProfile] Deleting DM campaign:', campaignId);
       await deleteCampaign(campaignId, uid);
-      console.log('[deleteUserProfile] DM campaign deleted OK');
     } catch (e) {
-      console.error('[deleteUserProfile] Failed to delete DM campaign:', campaignId, e);
+      // Ignore — best effort cleanup
     }
   }
 
   // 2. Leave all joined player campaigns
   for (const campaignId of userDocData.playerCampaigns) {
     try {
-      console.log('[deleteUserProfile] Removing from campaign playerIds:', campaignId);
       await updateDoc(doc(db, 'campaigns', campaignId), {
         playerIds: arrayRemove(uid),
         updatedAt: serverTimestamp(),
       });
-      console.log('[deleteUserProfile] Removed from playerIds OK');
     } catch (e) {
-      console.error('[deleteUserProfile] Failed to remove from playerIds:', e);
+      // Ignore — best effort cleanup
     }
     try {
-      console.log('[deleteUserProfile] Deleting player inventory:', campaignId);
       await deleteDoc(doc(db, 'campaigns', campaignId, 'playerInventories', uid));
-      console.log('[deleteUserProfile] Player inventory deleted OK');
     } catch (e) {
-      console.error('[deleteUserProfile] Failed to delete player inventory:', e);
+      // Ignore — best effort cleanup
     }
   }
 
   // 3. Clear/delete user Firestore document
   try {
-    console.log('[deleteUserProfile] Deleting user doc');
     await deleteDoc(doc(db, 'users', uid));
-    console.log('[deleteUserProfile] User doc deleted OK');
   } catch (e) {
-    console.warn('[deleteUserProfile] deleteDoc blocked by rules, clearing doc instead');
     // Rules may not allow delete — wipe the doc contents instead
     try {
       await setDoc(doc(db, 'users', uid), {
@@ -1194,24 +1181,15 @@ export async function deleteUserProfile(uid: string): Promise<void> {
         deleted: true,
         updatedAt: serverTimestamp(),
       });
-      console.log('[deleteUserProfile] User doc cleared OK');
     } catch (e2) {
-      console.error('[deleteUserProfile] Failed to clear user doc:', e2);
       throw e2;
     }
   }
 
   // 4. Delete Firebase Auth account (must be last — loses auth after this)
-  try {
-    console.log('[deleteUserProfile] Deleting auth account');
-    const firebaseUser = auth.currentUser;
-    if (firebaseUser && firebaseUser.uid === uid) {
-      await deleteUser(firebaseUser);
-      console.log('[deleteUserProfile] Auth account deleted OK');
-    }
-  } catch (e) {
-    console.error('[deleteUserProfile] Failed to delete auth account:', e);
-    throw e;
+  const firebaseUser = auth.currentUser;
+  if (firebaseUser && firebaseUser.uid === uid) {
+    await deleteUser(firebaseUser);
   }
 }
 

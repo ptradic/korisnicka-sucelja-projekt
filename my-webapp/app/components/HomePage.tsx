@@ -32,7 +32,7 @@ interface HomePageProps {
 export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, onDeleteVault, onLeaveVault, userType, topContent }: HomePageProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const isDM = userType === 'dm';
+  const isGM = userType === 'gm';
 
   return (
     <div className="min-h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
@@ -41,7 +41,7 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
       <div className="max-w-7xl mx-auto px-6 py-8 pt-8">
         {/* Create / Join Vault Section */}
         <div className="mb-8">
-          {isDM ? (
+          {isGM ? (
             <button
               onClick={() => setShowCreateModal(true)}
               className="btn-secondary w-full border-dashed p-8 hover:bg-[#F0E8D5] text-[#3D1409] group"
@@ -91,7 +91,7 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
             >
               <Package className="w-12 h-12 text-[#8B6F47] mx-auto mb-4" />
               <h3 className="text-[#3D1409] mb-2">No vaults yet</h3>
-              <p className="text-[#5C4A2F] text-sm">{isDM ? 'Create your first campaign vault to get started' : 'Join your first campaign vault to get started'}</p>
+              <p className="text-[#5C4A2F] text-sm">{isGM ? 'Create your first campaign vault to get started' : 'Join your first campaign vault to get started'}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -99,9 +99,9 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
                 <VaultCard
                   key={vault.id}
                   vault={vault}
-                  isDM={isDM}
+                  isGM={isGM}
                   onOpen={() => onSelectVault(vault.id)}
-                  onAction={() => (isDM ? onDeleteVault(vault.id) : onLeaveVault(vault.id))}
+                  onAction={() => (isGM ? onDeleteVault(vault.id) : onLeaveVault(vault.id))}
                 />
               ))}
             </div>
@@ -131,7 +131,7 @@ export function HomePage({ onSelectVault, onCreateVault, onJoinVault, vaults, on
   );
 }
 
-function VaultCard({ vault, isDM, onOpen, onAction }: { vault: Vault; isDM: boolean; onOpen: () => void; onAction: () => void }) {
+function VaultCard({ vault, isGM, onOpen, onAction }: { vault: Vault; isGM: boolean; onOpen: () => void; onAction: () => void }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -154,9 +154,9 @@ function VaultCard({ vault, isDM, onOpen, onAction }: { vault: Vault; isDM: bool
           <button
             onClick={handleDelete}
             className="btn-ghost ml-2 !p-2 rounded-lg border-2 text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#FFEBEE] border-transparent"
-            title={isDM ? 'Delete vault' : 'Leave vault'}
+            title={isGM ? 'Delete vault' : 'Leave vault'}
           >
-            {isDM ? <Trash2 className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
+            {isGM ? <Trash2 className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
           </button>
         </div>
 
@@ -180,13 +180,13 @@ function VaultCard({ vault, isDM, onOpen, onAction }: { vault: Vault; isDM: bool
 
       {showDeleteConfirm && (
         <ConfirmDeleteModal
-          title={isDM ? 'Delete Vault' : 'Leave Vault'}
+          title={isGM ? 'Delete Vault' : 'Leave Vault'}
           message={
-            isDM
+            isGM
               ? `Are you sure you want to delete "${vault.name}"? This cannot be undone.`
               : `Are you sure you want to leave "${vault.name}"? You will be removed from this vault, but the vault and other players will remain.`
           }
-          confirmLabel={isDM ? 'Delete' : 'Leave'}
+          confirmLabel={isGM ? 'Delete' : 'Leave'}
           onConfirm={() => {
             setShowDeleteConfirm(false);
             onAction();

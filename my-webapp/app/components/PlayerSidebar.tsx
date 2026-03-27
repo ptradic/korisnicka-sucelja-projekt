@@ -16,7 +16,7 @@ interface PlayerSidebarProps {
   campaignName: string;
   campaignId?: string;
   campaignPassword?: string;
-  isDM?: boolean;
+  isGM?: boolean;
   totalSlots: number;
   onUpdateCampaignSettings?: (updates: { name: string; password: string }) => Promise<void>;
   currentUserId?: string;
@@ -540,7 +540,7 @@ export function PlayerSidebar({
   campaignName,
   campaignId,
   campaignPassword,
-  isDM,
+  isGM,
   totalSlots,
   onUpdateCampaignSettings,
   currentUserId,
@@ -592,7 +592,7 @@ export function PlayerSidebar({
         {/* Campaign name */}
         <div className="flex items-center gap-2 mb-2">
           <h2 className="text-[#3D1409] text-sm font-bold truncate flex-1">{campaignName}</h2>
-          {!isDM && currentPlayer && onUpdateMyCharacterName && (
+          {!isGM && currentPlayer && onUpdateMyCharacterName && (
             <button
               onClick={() => setShowCharacterModal(true)}
               title="Change your character name"
@@ -602,7 +602,7 @@ export function PlayerSidebar({
               <span>Name</span>
             </button>
           )}
-          {isDM && campaignId && onUpdateCampaignSettings && (
+          {isGM && campaignId && onUpdateCampaignSettings && (
             <button
               onClick={() => setShowSettingsModal(true)}
               title="Vault settings"
@@ -649,7 +649,7 @@ export function PlayerSidebar({
             <h2 className="text-[#3D1409] text-sm font-bold truncate leading-tight flex-1">
               {campaignName}
             </h2>
-            {!isDM && currentPlayer && onUpdateMyCharacterName && (
+            {!isGM && currentPlayer && onUpdateMyCharacterName && (
               <button
                 onClick={() => setShowCharacterModal(true)}
                 title="Change your character name"
@@ -659,7 +659,7 @@ export function PlayerSidebar({
                 <span>Name</span>
               </button>
             )}
-            {isDM && campaignId && onUpdateCampaignSettings && (
+            {isGM && campaignId && onUpdateCampaignSettings && (
               <button
                 onClick={() => setShowSettingsModal(true)}
                 title="Vault settings"
@@ -737,7 +737,7 @@ export function PlayerSidebar({
         </div>
       </div>
 
-      {showSettingsModal && isDM && campaignId && onUpdateCampaignSettings && (
+      {showSettingsModal && isGM && campaignId && onUpdateCampaignSettings && (
         <VaultSettingsModal
           campaignId={campaignId}
           initialName={campaignName}
@@ -747,7 +747,7 @@ export function PlayerSidebar({
         />
       )}
 
-      {showCharacterModal && !isDM && currentPlayer && onUpdateMyCharacterName && (
+      {showCharacterModal && !isGM && currentPlayer && onUpdateMyCharacterName && (
         <CharacterNameModal
           initialName={currentPlayer.name}
           onClose={() => setShowCharacterModal(false)}

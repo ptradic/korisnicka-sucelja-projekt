@@ -70,7 +70,7 @@ export interface Player {
 export interface VaultData {
   players: Player[];
   sharedLoot: Item[];
-  isDM: boolean;
+  isGM: boolean;
 }
 
 // Campaign and user types
@@ -93,7 +93,7 @@ export interface User {
   uid: string;
   email: string;
   name: string;
-  role: 'dm' | 'player';
+  role: 'gm' | 'player';
   dmCampaigns: string[];
   playerCampaigns: string[];
   userHomebrew?: Item[];

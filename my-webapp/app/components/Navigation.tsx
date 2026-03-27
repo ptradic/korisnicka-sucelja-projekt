@@ -18,7 +18,7 @@ type Page = {
 };
 
 type AuthData = {
-  userType: 'dm' | 'player';
+  userType: 'gm' | 'player';
   name: string;
   email: string;
   uid: string;

@@ -169,7 +169,7 @@ function buildInitialData(playerCount: number): VaultData {
     { ...TEMPLATE_ITEMS[4], id: `item-shared-1` },
   ];
 
-  return { isDM: true, players, sharedLoot };
+  return { isGM: true, players, sharedLoot };
 }
 
 export default function VaultsPage() {
@@ -178,7 +178,7 @@ export default function VaultsPage() {
   const [userType, setUserType] = useState<string>('player');
   const [vaults, setVaults] = useState<Vault[]>([]);
   const [currentVaultId, setCurrentVaultId] = useState<string | null>(null);
-  const [vaultData, setVaultData] = useState<VaultData>({ isDM: true, players: [], sharedLoot: [] });
+  const [vaultData, setVaultData] = useState<VaultData>({ isGM: true, players: [], sharedLoot: [] });
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | 'shared'>('shared');
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -362,7 +362,7 @@ export default function VaultsPage() {
   const currentVault = vaults.find((v) => v.id === currentVaultId);
   const selectedPlayer = vaultData.players.find((p) => p.id === selectedPlayerId);
   const isShared = selectedPlayerId === 'shared';
-  const isDM = userType === 'gm';
+  const isGM = userType === 'gm';
 
   if (!isAuthenticated) return null;
 
@@ -404,7 +404,7 @@ export default function VaultsPage() {
                   : selectedPlayer ? { name: selectedPlayer.name, id: selectedPlayer.id } : null
               }
               ownerId={selectedPlayerId}
-              isDM={isDM}
+              isGM={isGM}
               onAddItem={() => setShowAddItemModal(true)}
               onItemClick={setSelectedItem}
               onMoveItem={handleMoveItem}
@@ -421,7 +421,7 @@ export default function VaultsPage() {
           <AddItemModal
             onClose={() => setShowAddItemModal(false)}
             targetName={isShared ? 'Shared Loot' : (selectedPlayer?.name ?? 'Unknown')}
-            isDM={isDM}
+            isGM={isGM}
             customItems={TEMPLATE_ITEMS}
             onAdd={(item: Omit<Item, 'id'>) => {
               setVaultData((prev) => {

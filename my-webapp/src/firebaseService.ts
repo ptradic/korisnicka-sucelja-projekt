@@ -4,6 +4,7 @@ import {
   signInWithPopup,
   signOut,
   onAuthStateChanged,
+  deleteUser,
   User as FirebaseUser,
 } from 'firebase/auth';
 import {
@@ -1130,6 +1131,89 @@ export function subscribeToRejectedOrExpiredTransfers(
 
 // Keep backward compatibility alias
 export const subscribeToRejectedTransfers = subscribeToRejectedOrExpiredTransfers;
+
+// ==================== Delete User Profile ====================
+
+export async function deleteUserProfile(uid: string): Promise<void> {
+  const userDocData = await getUserDoc(uid);
+  if (!userDocData) throw new Error('User profile not found');
+
+  console.log('[deleteUserProfile] Starting deletion for uid:', uid);
+  console.log('[deleteUserProfile] dmCampaigns:', userDocData.dmCampaigns);
+  console.log('[deleteUserProfile] playerCampaigns:', userDocData.playerCampaigns);
+
+  // 1. Delete all DM-owned campaigns (vaults the user created)
+  for (const campaignId of userDocData.dmCampaigns) {
+    try {
+      console.log('[deleteUserProfile] Deleting DM campaign:', campaignId);
+      await deleteCampaign(campaignId, uid);
+      console.log('[deleteUserProfile] DM campaign deleted OK');
+    } catch (e) {
+      console.error('[deleteUserProfile] Failed to delete DM campaign:', campaignId, e);
+    }
+  }
+
+  // 2. Leave all joined player campaigns
+  for (const campaignId of userDocData.playerCampaigns) {
+    try {
+      console.log('[deleteUserProfile] Removing from campaign playerIds:', campaignId);
+      await updateDoc(doc(db, 'campaigns', campaignId), {
+        playerIds: arrayRemove(uid),
+        updatedAt: serverTimestamp(),
+      });
+      console.log('[deleteUserProfile] Removed from playerIds OK');
+    } catch (e) {
+      console.error('[deleteUserProfile] Failed to remove from playerIds:', e);
+    }
+    try {
+      console.log('[deleteUserProfile] Deleting player inventory:', campaignId);
+      await deleteDoc(doc(db, 'campaigns', campaignId, 'playerInventories', uid));
+      console.log('[deleteUserProfile] Player inventory deleted OK');
+    } catch (e) {
+      console.error('[deleteUserProfile] Failed to delete player inventory:', e);
+    }
+  }
+
+  // 3. Clear/delete user Firestore document
+  try {
+    console.log('[deleteUserProfile] Deleting user doc');
+    await deleteDoc(doc(db, 'users', uid));
+    console.log('[deleteUserProfile] User doc deleted OK');
+  } catch (e) {
+    console.warn('[deleteUserProfile] deleteDoc blocked by rules, clearing doc instead');
+    // Rules may not allow delete — wipe the doc contents instead
+    try {
+      await setDoc(doc(db, 'users', uid), {
+        uid,
+        email: '',
+        name: '[deleted]',
+        role: 'player',
+        dmCampaigns: [],
+        playerCampaigns: [],
+        userHomebrew: [],
+        deleted: true,
+        updatedAt: serverTimestamp(),
+      });
+      console.log('[deleteUserProfile] User doc cleared OK');
+    } catch (e2) {
+      console.error('[deleteUserProfile] Failed to clear user doc:', e2);
+      throw e2;
+    }
+  }
+
+  // 4. Delete Firebase Auth account (must be last — loses auth after this)
+  try {
+    console.log('[deleteUserProfile] Deleting auth account');
+    const firebaseUser = auth.currentUser;
+    if (firebaseUser && firebaseUser.uid === uid) {
+      await deleteUser(firebaseUser);
+      console.log('[deleteUserProfile] Auth account deleted OK');
+    }
+  } catch (e) {
+    console.error('[deleteUserProfile] Failed to delete auth account:', e);
+    throw e;
+  }
+}
 
 export function subscribeToPendingTransfersFromMe(
   campaignId: string,

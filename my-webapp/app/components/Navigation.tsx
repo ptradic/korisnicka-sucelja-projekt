@@ -5,11 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
-import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save } from "lucide-react";
+import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save, Trash2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { updateUserName, signOutUser, onAuthChange, getUserDoc } from "@/src/firebaseService";
+import { updateUserName, signOutUser, onAuthChange, getUserDoc, deleteUserProfile } from "@/src/firebaseService";
 import { auth } from "@/src/firebase";
-import { reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
+import { reauthenticateWithCredential, reauthenticateWithPopup, EmailAuthProvider, GoogleAuthProvider, updatePassword } from "firebase/auth";
 
 type Page = {
   title: string;
@@ -22,6 +22,7 @@ type AuthData = {
   name: string;
   email: string;
   uid: string;
+  isGoogleUser: boolean;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -63,10 +64,12 @@ function ProfileModal({
   auth,
   onClose,
   onSave,
+  onDelete,
 }: {
   auth: AuthData;
   onClose: () => void;
   onSave: (updated: { name: string; email: string; currentPassword?: string; newPassword?: string }) => Promise<{ success: boolean; error?: string }>;
+  onDelete: (password?: string) => Promise<{ success: boolean; error?: string }>;
 }) {
   const [name, setName] = useState(auth.name);
   const [email, setEmail] = useState(auth.email);
@@ -81,6 +84,14 @@ function ProfileModal({
   const [successMsg, setSuccessMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const mouseDownOnBackdrop = useRef(false);
+
+  // Delete profile state
+  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0); // 0=hidden, 1=warning, 2=confirm
+  const [deletePassword, setDeletePassword] = useState("");
+  const [showDeletePw, setShowDeletePw] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const inputCls =
     "w-full px-3 py-2.5 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all text-sm";
@@ -175,8 +186,10 @@ function ProfileModal({
             {errors.email && <p className="mt-1 text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>}
           </div>
 
-          {/* Password section */}
-          {!changingPassword ? (
+          {/* Password section — hidden for Google users */}
+          {auth.isGoogleUser ? (
+            <p className="text-xs text-[#5C4A2F] italic">Password is managed by Google. You can change it in your Google account settings.</p>
+          ) : !changingPassword ? (
             <button
               type="button"
               onClick={() => setChangingPassword(true)}
@@ -274,6 +287,125 @@ function ProfileModal({
             {isSubmitting ? "Saving..." : "Save Changes"}
           </button>
         </form>
+
+        {/* ── Danger Zone: Delete Profile ── */}
+        <div className="mt-5 border-t-2 border-red-200 pt-4">
+          {deleteStep === 0 && (
+            <button
+              type="button"
+              onClick={() => setDeleteStep(1)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-300 rounded-xl transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Profile
+            </button>
+          )}
+
+          {deleteStep === 1 && (
+            <div className="space-y-3 p-3 bg-red-50 border-2 border-red-300 rounded-xl">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-red-700">This action is permanent</p>
+                  <p className="text-xs text-red-600 mt-1">Deleting your profile will:</p>
+                  <ul className="text-xs text-red-600 mt-1 space-y-0.5 list-disc ml-4">
+                    <li>Delete your account permanently</li>
+                    <li>Delete all vaults you created (as Game Master)</li>
+                    <li>Remove you from all joined vaults</li>
+                    <li>Delete all your custom homebrew items</li>
+                  </ul>
+                  <p className="text-xs text-red-600 mt-1.5 font-semibold">Vaults you joined (but didn't create) will not be deleted.</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setDeleteStep(0); setDeleteError(""); }}
+                  className="flex-1 px-3 py-2 text-xs font-semibold text-[#3D1409] bg-white border-2 border-[#8B6F47]/40 rounded-lg hover:bg-[#F5EFE0] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteStep(2)}
+                  className="flex-1 px-3 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 border-2 border-red-700 rounded-lg transition-colors"
+                >
+                  I understand, continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          {deleteStep === 2 && (
+            <div className="space-y-3 p-3 bg-red-50 border-2 border-red-300 rounded-xl">
+              <p className="text-xs font-bold text-red-700 uppercase tracking-wider">Final Confirmation</p>
+              <div>
+                <label className="block text-red-700 font-semibold text-xs mb-1">
+                  Type &quot;DELETE&quot; to confirm
+                </label>
+                <input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border-2 border-red-300 rounded-lg text-[#3D1409] placeholder:text-red-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-300/30 transition-all text-sm"
+                  placeholder="DELETE"
+                />
+              </div>
+              {!auth.isGoogleUser && (
+                <div>
+                  <label className="block text-red-700 font-semibold text-xs mb-1">Enter your password</label>
+                  <div className="relative">
+                    <input
+                      type={showDeletePw ? "text" : "password"}
+                      value={deletePassword}
+                      onChange={(e) => { setDeletePassword(e.target.value); setDeleteError(""); }}
+                      className="w-full px-3 py-2 bg-white border-2 border-red-300 rounded-lg text-[#3D1409] placeholder:text-red-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-300/30 transition-all text-sm"
+                      placeholder="Your password"
+                    />
+                    <button type="button" onClick={() => setShowDeletePw(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-red-400 hover:text-red-600" tabIndex={-1}>
+                      {showDeletePw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {auth.isGoogleUser && (
+                <p className="text-xs text-red-600">You will be asked to sign in with Google to confirm deletion.</p>
+              )}
+              {deleteError && (
+                <p className="text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {deleteError}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setDeleteStep(0); setDeletePassword(""); setDeleteConfirmText(""); setDeleteError(""); }}
+                  className="flex-1 px-3 py-2 text-xs font-semibold text-[#3D1409] bg-white border-2 border-[#8B6F47]/40 rounded-lg hover:bg-[#F5EFE0] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting || deleteConfirmText !== "DELETE" || (!auth.isGoogleUser && !deletePassword)}
+                  onClick={async () => {
+                    setIsDeleting(true);
+                    setDeleteError("");
+                    const result = await onDelete(auth.isGoogleUser ? undefined : deletePassword);
+                    if (!result.success) {
+                      setDeleteError(result.error || "Failed to delete profile.");
+                      setIsDeleting(false);
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 border-2 border-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {isDeleting ? "Deleting..." : "Delete Forever"}
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -311,6 +443,7 @@ export function Navigation() {
           userType: userDoc?.role ?? 'player',
           name: userDoc?.name ?? firebaseUser.displayName ?? 'Adventurer',
           email: userDoc?.email ?? firebaseUser.email ?? '',
+          isGoogleUser: firebaseUser.providerData.some(p => p.providerId === 'google.com'),
         });
       } else {
         setIsLoggedIn(false);
@@ -388,6 +521,44 @@ export function Navigation() {
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || "Failed to update profile." };
+    }
+  };
+
+  const handleProfileDelete = async (password?: string): Promise<{ success: boolean; error?: string }> => {
+    if (!authData) return { success: false, error: "Not logged in." };
+
+    try {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) return { success: false, error: "Session expired. Please log in again." };
+
+      // Reauthenticate before deletion
+      if (authData.isGoogleUser) {
+        try {
+          await reauthenticateWithPopup(firebaseUser, new GoogleAuthProvider());
+        } catch {
+          return { success: false, error: "Google sign-in cancelled or failed." };
+        }
+      } else {
+        if (!password) return { success: false, error: "Password is required." };
+        const credential = EmailAuthProvider.credential(firebaseUser.email!, password);
+        try {
+          await reauthenticateWithCredential(firebaseUser, credential);
+        } catch {
+          return { success: false, error: "Incorrect password." };
+        }
+      }
+
+      // Delete profile (campaigns, inventories, user doc, auth account)
+      await deleteUserProfile(authData.uid);
+
+      // Clear local state and redirect
+      setIsLoggedIn(false);
+      setAuthData(null);
+      setProfileModalOpen(false);
+      router.push('/');
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || "Failed to delete profile." };
     }
   };
 
@@ -626,6 +797,7 @@ export function Navigation() {
           auth={authData}
           onClose={() => setProfileModalOpen(false)}
           onSave={handleProfileSave}
+          onDelete={handleProfileDelete}
         />
       )}
 

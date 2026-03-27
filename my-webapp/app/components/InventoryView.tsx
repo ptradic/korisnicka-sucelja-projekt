@@ -222,6 +222,9 @@ export function InventoryView({
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [isEditingMaxWeight, setIsEditingMaxWeight] = useState(false);
   const [maxWeightEditValue, setMaxWeightEditValue] = useState('');
+  const [useStrScore, setUseStrScore] = useState(false);
+  const [strScoreValue, setStrScoreValue] = useState('');
+  const maxWeightPopupRef = useRef<HTMLDivElement>(null);
   const [filtersOverflow, setFiltersOverflow] = useState(false);
   const itemListRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -395,6 +398,27 @@ export function InventoryView({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close max weight popup on outside click, auto-saving if edited
+  useEffect(() => {
+    if (!isEditingMaxWeight) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (maxWeightPopupRef.current && !maxWeightPopupRef.current.contains(event.target as Node)) {
+        if (onMaxWeightChange) {
+          if (useStrScore && strScoreValue) {
+            const str = parseInt(strScoreValue);
+            if (!isNaN(str)) onMaxWeightChange(Math.max(0, str * 15));
+          } else if (!useStrScore && maxWeightEditValue) {
+            const parsed = parseInt(maxWeightEditValue);
+            if (!isNaN(parsed)) onMaxWeightChange(Math.max(0, parsed));
+          }
+        }
+        setIsEditingMaxWeight(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isEditingMaxWeight, useStrScore, strScoreValue, maxWeightEditValue, onMaxWeightChange]);
+
   useEffect(() => {
     const EARLY_COLLAPSE_PX = 220;
 
@@ -538,66 +562,124 @@ export function InventoryView({
           </div>
         )}
 
-        {/* Carry capacity (compact)  not for shared */}
+        {/* Carry capacity — not for shared */}
         {!isShared && maxWeight !== undefined && (
-          <div className="flex items-center gap-2 mb-2">
-            <Weight className="w-3 h-3 text-[#5C4A2F] shrink-0" />
-            <div className="flex-1 h-1.5 bg-[#D4C4A8] rounded-full overflow-hidden border border-[#8B6F47]/30">
-              <div
-                className={
-                  'h-full transition-all ' +
-                  (weightPercentage > 90
-                    ? 'bg-[#8B3A3A]'
-                    : weightPercentage > 70
-                      ? 'bg-[#B8860B]'
-                      : 'bg-[#5C7A3B]')
-                }
-                style={{ width: Math.min(weightPercentage, 100) + '%' }}
-              />
-            </div>
-            <span className="text-[10px] text-[#5C4A2F] tabular-nums whitespace-nowrap">
-              {totalWeight.toFixed(1)}/
-            </span>
-            {onMaxWeightChange ? (
-              isEditingMaxWeight ? (
-                <input
-                  type="number"
-                  min="0"
-                  autoFocus
-                  value={maxWeightEditValue}
-                  onChange={(e) => setMaxWeightEditValue(e.target.value)}
-                  onBlur={() => {
-                    const parsed = parseInt(maxWeightEditValue);
-                    onMaxWeightChange(isNaN(parsed) ? 0 : Math.max(0, parsed));
-                    setIsEditingMaxWeight(false);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const parsed = parseInt(maxWeightEditValue);
-                      onMaxWeightChange(isNaN(parsed) ? 0 : Math.max(0, parsed));
-                      setIsEditingMaxWeight(false);
-                    }
-                    if (e.key === 'Escape') setIsEditingMaxWeight(false);
-                  }}
-                  className="w-10 text-[10px] text-[#3D1409] bg-white border border-[#8B6F47]/50 rounded outline-none tabular-nums text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          <div className="relative mb-2" ref={maxWeightPopupRef}>
+            {/* Bar row */}
+            <div className="flex items-center gap-2">
+              <Weight className="w-3 h-3 text-[#5C4A2F] shrink-0" />
+              <div className="flex-1 h-1.5 bg-[#D4C4A8] rounded-full overflow-hidden border border-[#8B6F47]/30">
+                <div
+                  className={
+                    'h-full transition-all ' +
+                    (weightPercentage > 90 ? 'bg-[#8B3A3A]' : weightPercentage > 70 ? 'bg-[#B8860B]' : 'bg-[#5C7A3B]')
+                  }
+                  style={{ width: Math.min(weightPercentage, 100) + '%' }}
                 />
-              ) : (
-                <button
-                  onClick={() => {
-                    setMaxWeightEditValue((maxWeight ?? 0).toString());
-                    setIsEditingMaxWeight(true);
-                  }}
-                  className="inline-flex items-center justify-center w-10 px-0 py-0 text-[10px] text-[#3D1409] tabular-nums text-center cursor-text bg-transparent border-0 border-b border-[#8B6F47]/50 rounded-none hover:bg-white/60 transition-colors"
-                >
-                  {maxWeight ?? 0}
-                </button>
-              )
-            ) : (
-              <span className="text-[10px] text-[#3D1409] tabular-nums">{maxWeight}</span>
-            )}
-            <span className="text-[10px] text-[#5C4A2F]">lbs</span>
-            {weightPercentage > 100 && (
-              <span className="text-[9px] text-[#8B3A3A] ml-1">Overencumbered!</span>
+              </div>
+              <span className="text-[10px] text-[#5C4A2F] tabular-nums whitespace-nowrap">
+                {totalWeight.toFixed(1)}&nbsp;/&nbsp;
+                {onMaxWeightChange ? (
+                  <button
+                    onClick={() => {
+                      setMaxWeightEditValue((maxWeight ?? 0).toString());
+                      setUseStrScore(false);
+                      setStrScoreValue('');
+                      setIsEditingMaxWeight(true);
+                    }}
+                    className="text-[10px] text-[#3D1409] tabular-nums underline underline-offset-2 decoration-dotted hover:text-[#5C1A1A] transition-colors"
+                    title="Click to set carry capacity"
+                  >
+                    {maxWeight ?? 0}
+                  </button>
+                ) : (
+                  <span className="text-[10px] text-[#3D1409] tabular-nums">{maxWeight}</span>
+                )}
+                &nbsp;lbs
+              </span>
+              {weightPercentage > 100 && (
+                <span className="text-[9px] font-semibold text-[#8B3A3A] whitespace-nowrap">Overencumbered!</span>
+              )}
+            </div>
+
+            {/* Popup */}
+            {isEditingMaxWeight && onMaxWeightChange && (
+              <div className="absolute right-0 top-full mt-1 z-30 w-56 bg-[#F5EFE0] border-2 border-[#3D1409] rounded-xl shadow-xl p-3">
+                {/* Mode toggle */}
+                <div className="flex gap-1 mb-3 bg-[#DCC8A8]/50 rounded-lg p-0.5">
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => { setUseStrScore(false); setStrScoreValue(''); }}
+                    className={'flex-1 text-[11px] font-semibold py-1 rounded-md transition-colors ' +
+                      (!useStrScore ? 'bg-[#5C1A1A] text-white shadow-sm' : 'text-[#5C4A2F] hover:text-[#3D1409]')}
+                  >
+                    Direct
+                  </button>
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => { setUseStrScore(true); setMaxWeightEditValue(''); }}
+                    className={'flex-1 text-[11px] font-semibold py-1 rounded-md transition-colors ' +
+                      (useStrScore ? 'bg-[#5C1A1A] text-white shadow-sm' : 'text-[#5C4A2F] hover:text-[#3D1409]')}
+                  >
+                    STR × 15
+                  </button>
+                </div>
+
+                {useStrScore ? (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <label className="block text-[9px] font-bold text-[#5C4A2F] uppercase tracking-wider mb-1">Strength</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="30"
+                        autoFocus
+                        value={strScoreValue}
+                        onChange={(e) => setStrScoreValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const str = parseInt(strScoreValue);
+                            if (!isNaN(str)) onMaxWeightChange(Math.max(0, str * 15));
+                            setIsEditingMaxWeight(false);
+                          }
+                          if (e.key === 'Escape') setIsEditingMaxWeight(false);
+                        }}
+                        placeholder="10"
+                        className="w-full px-2 py-1.5 text-sm font-bold text-[#3D1409] bg-white/70 border-2 border-[#8B6F47] rounded-lg outline-none focus:border-[#5C1A1A] tabular-nums text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                      />
+                    </div>
+                    <div className="text-[#5C4A2F] font-bold text-sm pt-4">=</div>
+                    <div className="flex-1 text-center pt-4">
+                      <p className="text-base font-extrabold text-[#3D1409]">
+                        {strScoreValue && !isNaN(parseInt(strScoreValue)) ? parseInt(strScoreValue) * 15 : '—'}
+                      </p>
+                      <p className="text-[9px] text-[#5C4A2F]">lbs max</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-[9px] font-bold text-[#5C4A2F] uppercase tracking-wider mb-1">Max Weight (lbs)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      autoFocus
+                      value={maxWeightEditValue}
+                      onChange={(e) => setMaxWeightEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const parsed = parseInt(maxWeightEditValue);
+                          if (!isNaN(parsed)) onMaxWeightChange(Math.max(0, parsed));
+                          setIsEditingMaxWeight(false);
+                        }
+                        if (e.key === 'Escape') setIsEditingMaxWeight(false);
+                      }}
+                      placeholder="150"
+                      className="w-full px-2 py-1.5 text-sm font-bold text-[#3D1409] bg-white/70 border-2 border-[#8B6F47] rounded-lg outline-none focus:border-[#5C1A1A] tabular-nums text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    />
+                  </div>
+                )}
+                <p className="text-[9px] text-[#8B6F47] text-center mt-2">Click anywhere outside to save</p>
+              </div>
             )}
           </div>
         )}

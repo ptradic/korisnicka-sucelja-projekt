@@ -102,10 +102,14 @@ export function ItemCard({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
+      // Prevent the browser's native long-press context menu (download/share/print)
+      // which fires at ~500ms and conflicts with the drag delay on tablets.
+      onContextMenu={(e) => e.preventDefault()}
       // touch-action:pan-y lets the browser scroll vertically on a quick swipe.
       // React-dnd still receives all touch events; with delayTouchStart it waits
       // before committing to a drag, so a quick swipe stays a scroll.
-      style={{ touchAction: 'pan-y', WebkitUserSelect: 'none', userSelect: 'none' }}
+      // WebkitTouchCallout:none suppresses the iOS/iPadOS long-press callout menu.
+      style={{ touchAction: 'pan-y', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' } as React.CSSProperties}
       className={
         'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all border bg-white/40 select-none ' +
         colors.border + ' ' +

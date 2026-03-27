@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { HomePage } from '@/app/components/HomePage';
+import { VaultLobby } from '@/app/components/VaultLobby';
 import { PlayerSidebar } from '@/app/components/PlayerSidebar';
 import { InventoryView } from '@/app/components/InventoryView';
 import { AddItemModal } from '@/app/components/AddItemModal';
@@ -368,7 +368,7 @@ export default function VaultsPage() {
 
   if (!currentVaultId) {
     return (
-      <HomePage
+      <VaultLobby
         vaults={vaults}
         userType={userType}
         onSelectVault={handleSelectVault}

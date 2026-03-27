@@ -1103,9 +1103,9 @@ function CustomItemForm({
           </div>
         </div>
 
-        {/* Category + Rarity + Attunement */}
-        <div className="grid grid-cols-3 gap-2 shrink-0">
-          <div>
+        {/* Category + Rarity + Attunement + Stats */}
+        <div className="grid grid-cols-2 gap-2 shrink-0">
+          <div className="order-1">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Category <span className="text-[#8B3A3A]">*</span>
             </label>
@@ -1119,7 +1119,7 @@ function CustomItemForm({
               ))}
             </select>
           </div>
-          <div>
+          <div className="order-2">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Rarity <span className="text-[#8B3A3A]">*</span>
             </label>
@@ -1134,34 +1134,28 @@ function CustomItemForm({
                 ))}
               </select>
             ) : (
-              <div className="w-full px-3 py-2 bg-[#E8D5B7]/60 border-3 border-[#8B6F47]/50 rounded-xl text-[#3D1409] font-semibold">
+              <div className="w-full px-3 py-2 min-h-[42px] bg-[#E8D5B7]/60 border-3 border-[#8B6F47]/50 rounded-xl text-[#3D1409] font-semibold">
                 common
               </div>
             )}
           </div>
 
-          <div className="pt-6">
-            <label className="flex h-[42px] items-center gap-2.5 cursor-pointer px-3 bg-white/40 border-2 border-[#DCC8A8] rounded-xl hover:bg-white/60 transition-colors">
-              <input
-                type="checkbox"
-                checked={formData.attunement}
-                onChange={(e) => setFormData({ ...formData, attunement: e.target.checked })}
-                className="w-4 h-4 rounded border-[#8B6F47] bg-white/70 text-[#5C1A1A] accent-[#5C1A1A]"
-              />
-              <span className="text-[#3D1409] text-sm font-semibold">Requires Attunement</span>
-            </label>
+          <div className="order-3">
+            <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Attunement</label>
+            <select
+              value={formData.attunement ? 'requires' : 'does-not-require'}
+              onChange={(e) => {
+                const requiresAttunement = e.target.value === 'requires';
+                setFormData({ ...formData, attunement: requiresAttunement });
+              }}
+              className="w-full px-3 py-2 min-h-[42px] bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+            >
+              <option value="requires">Requires</option>
+              <option value="does-not-require">Doesn't require</option>
+            </select>
           </div>
-        </div>
 
-        {!isDM && (
-          <div className="rounded-xl border-2 border-[#D4C4A8] bg-white/40 px-3 py-2 text-xs text-[#5C4A2F]">
-            Player custom items are always saved with rarity Common and sourcebook PLAYER CUSTOM.
-          </div>
-        )}
-
-        {/* Quantity + Weight + Value */}
-        <div className="grid grid-cols-3 gap-2 shrink-0">
-          <div>
+          <div className="order-4">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Quantity <span className="text-[#8B3A3A]">*</span>
             </label>
@@ -1180,7 +1174,7 @@ function CustomItemForm({
             {errors.quantity && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.quantity}</p>}
           </div>
 
-          <div>
+          <div className="order-5">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Weight (lbs)</label>
             <input
               type="number"
@@ -1198,7 +1192,7 @@ function CustomItemForm({
             {errors.weight && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.weight}</p>}
           </div>
 
-          <div>
+          <div className="order-6">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Value (gp)</label>
               <input
                 type="number"
@@ -1217,9 +1211,22 @@ function CustomItemForm({
           </div>
         </div>
 
+        {!isDM && (
+          <div className="rounded-xl border-2 border-[#D4C4A8] bg-white/40 px-3 py-2 text-xs text-[#5C4A2F]">
+            Player custom items are always saved with rarity Common and sourcebook PLAYER CUSTOM.
+          </div>
+        )}
+
         <div className="border-t-2 border-[#DCC8A8] shrink-0" />
 
         <div className="flex gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-secondary flex-1 px-4 py-2.5"
+          >
+            Cancel
+          </button>
           <button
             type="submit"
             className="btn-primary flex-1 group px-4 py-2.5"

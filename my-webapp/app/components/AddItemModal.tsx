@@ -589,6 +589,7 @@ function CustomItemPoolManager({
   userHomebrew,
   customItemPool,
   onSaveCustomItemPool,
+  onAddToPlayer,
   onUpdateHomebrewItem,
   onDeleteHomebrewItem,
   onClose,
@@ -597,6 +598,7 @@ function CustomItemPoolManager({
   userHomebrew: Item[];
   customItemPool: Item[];
   onSaveCustomItemPool?: (items: Item[]) => Promise<void> | void;
+  onAddToPlayer?: (item: Omit<Item, 'id'>) => Promise<void> | void;
   onUpdateHomebrewItem?: (item: Item) => Promise<void> | void;
   onDeleteHomebrewItem?: (itemId: string) => Promise<void> | void;
   onClose: () => void;
@@ -604,6 +606,7 @@ function CustomItemPoolManager({
 }) {
   const [search, setSearch] = useState('');
   const [isSavingPool, setIsSavingPool] = useState(false);
+  const [addingToPlayerItemId, setAddingToPlayerItemId] = useState<string | null>(null);
   const [selectedPoolIds, setSelectedPoolIds] = useState<string[]>(() => customItemPool.map((item) => item.id));
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -667,6 +670,23 @@ function CustomItemPoolManager({
     return false;
   })();
 
+  const handleAddToPlayer = async (item: Item) => {
+    if (!onAddToPlayer) return;
+    const { id, ...rest } = item;
+    void id;
+
+    setAddingToPlayerItemId(item.id);
+    try {
+      await onAddToPlayer({
+        ...rest,
+        hiddenFromOthers: true,
+        createdAt: new Date().toISOString(),
+      });
+    } finally {
+      setAddingToPlayerItemId(null);
+    }
+  };
+
   return (
     <>
       <div className="sticky top-0 bg-[#F5EFE0] p-4 sm:p-5 pb-3 flex items-start justify-between z-10">
@@ -727,6 +747,23 @@ function CustomItemPoolManager({
                   <div className="text-sm text-[#3D1409] font-medium truncate">{item.name}</div>
                   <div className="text-[11px] text-[#8B6F47] capitalize">{item.category}</div>
                 </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleAddToPlayer(item);
+                  }}
+                  disabled={!onAddToPlayer || addingToPlayerItemId === item.id}
+                  className="active:scale-100 h-8 px-2 rounded-lg border-2 border-[#8B6F47]/60 bg-white/70 text-[#3D1409] text-[11px] font-semibold shrink-0 transition-colors hover:bg-[#F5EFE0] disabled:opacity-60 disabled:cursor-not-allowed"
+                  aria-label={`Add ${item.name} to ${targetName} hidden`}
+                  title={`Add to ${targetName} (hidden)`}
+                >
+                  {addingToPlayerItemId === item.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    `Add hidden`
+                  )}
+                </button>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -929,7 +966,7 @@ function CustomItemForm({
     return { value: Number(value.toFixed(2)), valueUnit: 'gp' };
   };
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     name: '',
     description: '',
     category: 'adventuring-gear' as Category,
@@ -938,7 +975,9 @@ function CustomItemForm({
     weight: '',
     value: '',
     attunement: false,
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   const [errors, setErrors] = useState<{
     name?: string;
@@ -1018,7 +1057,14 @@ function CustomItemForm({
       item.valueUnknown = true;
     }
     await onCreate(item);
-    onClose();
+    setFormData(initialFormData);
+    setErrors({});
+    setShowDescriptionScrollbar(false);
+    setDescriptionThumbTop(0);
+    setDescriptionThumbHeight(0);
+    if (descriptionRef.current) {
+      descriptionRef.current.scrollTop = 0;
+    }
   };
 
   return (
@@ -1066,7 +1112,7 @@ function CustomItemForm({
           <div className="relative flex-1 min-h-0">
             <textarea
               ref={descriptionRef}
-              defaultValue={formData.description}
+              value={formData.description}
               onInput={(e) => {
                 const el = e.currentTarget;
                 setFormData((prev) => ({ ...prev, description: el.value }));
@@ -1339,6 +1385,7 @@ export function AddItemModal({
             userHomebrew={userHomebrew}
             customItemPool={customItemPool}
             onSaveCustomItemPool={onSaveCustomItemPool}
+            onAddToPlayer={onAdd}
             onUpdateHomebrewItem={onUpdateHomebrewItem}
             onDeleteHomebrewItem={onDeleteHomebrewItem}
             onClose={onClose}

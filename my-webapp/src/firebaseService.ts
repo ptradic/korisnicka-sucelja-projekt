@@ -1164,29 +1164,14 @@ export async function deleteUserProfile(uid: string): Promise<void> {
     }
   }
 
-  // 3. Clear/delete user Firestore document
+  // 3. Delete user Firestore document
   try {
     await deleteDoc(doc(db, 'users', uid));
-  } catch (e) {
-    // Rules may not allow delete — wipe the doc contents instead
-    try {
-      await setDoc(doc(db, 'users', uid), {
-        uid,
-        email: '',
-        name: '[deleted]',
-        role: 'player',
-        dmCampaigns: [],
-        playerCampaigns: [],
-        userHomebrew: [],
-        deleted: true,
-        updatedAt: serverTimestamp(),
-      });
-    } catch (e2) {
-      throw e2;
-    }
+  } catch {
+    // Continue — still need to delete Auth account
   }
 
-  // 4. Delete Firebase Auth account (must be last — loses auth after this)
+  // 4. Delete Firebase Auth account (always attempt, even if Firestore steps failed)
   const firebaseUser = auth.currentUser;
   if (firebaseUser && firebaseUser.uid === uid) {
     await deleteUser(firebaseUser);

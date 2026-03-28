@@ -61,7 +61,7 @@ function getItemStackSignature(item: Item): string {
 }
 
 // Generate random campaign ID
-export function generateCampaignId(): string {
+function generateCampaignId(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
   for (let i = 0; i < 8; i++) {
@@ -200,11 +200,6 @@ export async function updateUserName(uid: string, name: string) {
     name,
     updatedAt: serverTimestamp(),
   });
-}
-
-export async function getUserHomebrew(uid: string): Promise<Item[]> {
-  const userDoc = await getUserDoc(uid);
-  return userDoc?.userHomebrew ?? [];
 }
 
 export async function createUserHomebrewItem(uid: string, item: Omit<Item, 'id'>): Promise<Item> {
@@ -550,7 +545,7 @@ export async function getUserCampaigns(uid: string, role: 'gm' | 'player'): Prom
 
 // ==================== Inventory Management ====================
 
-export async function getPlayerInventory(
+async function getPlayerInventory(
   campaignId: string,
   playerId: string
 ): Promise<PlayerInventoryDoc | null> {
@@ -560,15 +555,6 @@ export async function getPlayerInventory(
     return docSnap.data() as PlayerInventoryDoc;
   }
   return null;
-}
-
-export async function getAllPlayerInventories(campaignId: string): Promise<PlayerInventoryDoc[]> {
-  const inventories: PlayerInventoryDoc[] = [];
-  const querySnapshot = await getDocs(collection(db, 'campaigns', campaignId, 'playerInventories'));
-  querySnapshot.forEach((doc) => {
-    inventories.push(doc.data() as PlayerInventoryDoc);
-  });
-  return inventories;
 }
 
 export async function deletePlayerInventoryDoc(campaignId: string, playerId: string): Promise<void> {
@@ -626,50 +612,6 @@ export async function updateSharedCurrency(campaignId: string, currency: Currenc
     sharedCurrency: currency,
     updatedAt: serverTimestamp(),
   });
-}
-
-export async function addItemToInventory(
-  campaignId: string,
-  playerId: string,
-  item: Item
-): Promise<void> {
-  const inventory = await getPlayerInventory(campaignId, playerId);
-  if (!inventory) throw new Error('Inventory not found');
-  
-  // Check if item already exists (same full metadata signature)
-  const existingIndex = inventory.inventory.findIndex(
-    (i) => getItemStackSignature(i) === getItemStackSignature(item)
-  );
-  
-  if (existingIndex >= 0) {
-    // Stack items by increasing quantity
-    inventory.inventory[existingIndex].quantity += item.quantity;
-  } else {
-    // Add as new item
-    inventory.inventory.push(cleanItem(item));
-  }
-  
-  await updatePlayerInventory(campaignId, playerId, inventory.inventory);
-}
-
-export async function addItemToSharedLoot(campaignId: string, item: Item): Promise<void> {
-  const campaign = await getCampaign(campaignId);
-  if (!campaign) throw new Error('Campaign not found');
-  
-  // Check if item already exists (same full metadata signature)
-  const existingIndex = campaign.sharedLoot.findIndex(
-    (i) => getItemStackSignature(i) === getItemStackSignature(item)
-  );
-  
-  if (existingIndex >= 0) {
-    // Stack items by increasing quantity
-    campaign.sharedLoot[existingIndex].quantity += item.quantity;
-  } else {
-    // Add as new item
-    campaign.sharedLoot.push(cleanItem(item));
-  }
-  
-  await updateSharedLoot(campaignId, campaign.sharedLoot);
 }
 
 export async function moveItemBetweenInventories(
@@ -800,21 +742,6 @@ export function subscribeToPlayerInventories(
       inventories.push(doc.data() as PlayerInventoryDoc);
     });
     callback(inventories);
-  });
-}
-
-export function subscribeToPlayerInventory(
-  campaignId: string,
-  playerId: string,
-  callback: (inventory: PlayerInventoryDoc | null) => void
-): () => void {
-  const docRef = doc(db, 'campaigns', campaignId, 'playerInventories', playerId);
-  return onSnapshot(docRef, (doc) => {
-    if (doc.exists()) {
-      callback(doc.data() as PlayerInventoryDoc);
-    } else {
-      callback(null);
-    }
   });
 }
 

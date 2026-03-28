@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(ls *.tsx *.ts)",
+      "Bash(grep -v -E '^\\(accordion|button|card|sheet\\)\\\\.tsx$')",
+      "Bash(while read:*)",
+      "Bash(do rm:*)",
+      "Bash(done)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }

@@ -640,6 +640,7 @@ export function PlayerSidebar({
 
       {/*  Desktop: vertical sidebar on left  */}
       <div
+        data-tutorial="sidebar"
         className="hidden sm:flex w-52 bg-[#D9C7AA] border-r-4 border-[#3D1409] p-3 flex-col shrink-0 overflow-hidden"
         style={{ boxShadow: '4px 0 8px rgba(61, 20, 9, 0.15)' }}
       >
@@ -651,6 +652,7 @@ export function PlayerSidebar({
             </h2>
             {!isGM && currentPlayer && onUpdateMyCharacterName && (
               <button
+                data-tutorial="character-settings"
                 onClick={() => setShowCharacterModal(true)}
                 title="Change your character name"
                 className="p-1.5 rounded-lg hover:bg-white/60 text-[#5C1A1A] transition-all shrink-0"
@@ -660,6 +662,7 @@ export function PlayerSidebar({
             )}
             {isGM && campaignId && onUpdateCampaignSettings && (
               <button
+                data-tutorial="vault-settings"
                 onClick={() => setShowSettingsModal(true)}
                 title="Vault settings"
                 className="p-1.5 rounded-lg hover:bg-white/60 text-[#5C1A1A] transition-all shrink-0"
@@ -694,7 +697,7 @@ export function PlayerSidebar({
             </div>
 
             {/* Shared Loot */}
-            <div className="mt-3 pt-2 border-t-2 border-[#8B6F47]/30">
+            <div data-tutorial="shared-loot" className="mt-3 pt-2 border-t-2 border-[#8B6F47]/30">
               <div className="flex items-center gap-1.5 text-[#5C4A2F] text-[10px] font-semibold uppercase tracking-wider mb-1 px-0.5">
                 <Package className="w-3 h-3" />
                 <span>Shared</span>

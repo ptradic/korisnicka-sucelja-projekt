@@ -23,6 +23,7 @@ interface InventoryViewProps {
   onCoinTransfer?: (amounts: Currency) => void;
   isShared?: boolean;
   syncStatus?: 'saving' | 'saved';
+  onTutorialStart?: () => void;
 }
 
 // Simple inline coin display — click to edit (read-only if no onChange)
@@ -198,6 +199,7 @@ export function InventoryView({
   onCoinTransfer,
   isShared,
   syncStatus = 'saved',
+  onTutorialStart,
 }: InventoryViewProps) {
   type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
   type SortDirection = 'asc' | 'desc';
@@ -217,7 +219,6 @@ export function InventoryView({
   const [sortField, setSortField] = useState<SortField>('none');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
-  const [showHelpOverlay, setShowHelpOverlay] = useState(false);
   const [bulkSelectEnabled, setBulkSelectEnabled] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [isEditingMaxWeight, setIsEditingMaxWeight] = useState(false);
@@ -230,7 +231,6 @@ export function InventoryView({
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const filterMeasureRef = useRef<HTMLDivElement>(null);
   const previousQuantityByIdRef = useRef<Map<string, number>>(new Map());
-  const helpSeenKey = 'vault-inventory-help-seen';
 
   // Enable auto-scroll when dragging items near the top
   useAutoScroll(itemListRef, { scrollThreshold: 100, scrollSpeed: 10 });
@@ -451,27 +451,6 @@ export function InventoryView({
     };
   }, [visibleItems]);
 
-  useEffect(() => {
-    try {
-      const seen = localStorage.getItem(helpSeenKey);
-      if (!seen) {
-        setShowHelpOverlay(true);
-      }
-    } catch {
-      // Ignore storage errors and keep default behavior.
-    }
-  }, []);
-
-  const closeHelpOverlay = (markSeen: boolean) => {
-    setShowHelpOverlay(false);
-    if (!markSeen) return;
-    try {
-      localStorage.setItem(helpSeenKey, '1');
-    } catch {
-      // Ignore storage errors.
-    }
-  };
-
   const selectedFilterLabel =
     selectedCategory === 'all'
       ? 'All items'
@@ -517,7 +496,7 @@ export function InventoryView({
 
         {/* Currency row */}
         {currency && (
-          <div className="flex items-center gap-3 mb-2 py-2 px-3 bg-white/50 rounded-lg border border-[#8B6F47]/20">
+          <div data-tutorial="coins-row" className="flex items-center gap-3 mb-2 py-2 px-3 bg-white/50 rounded-lg border border-[#8B6F47]/20">
             <Coins className="w-4 h-4 text-[#B8860B] shrink-0" />
             <div className="flex items-center gap-3 flex-1 flex-wrap">
               <CoinDisplay
@@ -564,7 +543,7 @@ export function InventoryView({
 
         {/* Carry capacity — not for shared */}
         {!isShared && maxWeight !== undefined && (
-          <div className="relative mb-2" ref={maxWeightPopupRef}>
+          <div data-tutorial="weight-bar" className="relative mb-2" ref={maxWeightPopupRef}>
             {/* Bar row */}
             <div className="flex items-center gap-2">
               <Weight className="w-3 h-3 text-[#5C4A2F] shrink-0" />
@@ -685,7 +664,7 @@ export function InventoryView({
         )}
 
         {/* Search */}
-        <div className="flex items-center gap-2">
+        <div data-tutorial="search-toolbar" className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
             <input
@@ -794,7 +773,7 @@ export function InventoryView({
             <ListChecks className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setShowHelpOverlay(true)}
+            onClick={onTutorialStart}
             title="Inventory help"
             className="btn-secondary shrink-0 w-9 h-9 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]"
           >
@@ -846,7 +825,7 @@ export function InventoryView({
       )}
 
       {/* Item list */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div data-tutorial="item-list" className="flex-1 min-h-0 flex flex-col">
         {/* Scroll area + gradient wrapper */}
         <div className="relative flex-1 min-h-0">
         <div className="h-full overflow-y-auto overflow-x-hidden p-4 sm:p-5 custom-scrollbar" ref={itemListRef}>
@@ -914,7 +893,7 @@ export function InventoryView({
         </div>{/* end scroll+gradient wrapper */}
 
         {/* Add item button — always at bottom */}
-        <div className="shrink-0 px-4 sm:px-5 pb-3 pt-2 bg-[#D4C4A8]">
+        <div data-tutorial="add-item" className="shrink-0 px-4 sm:px-5 pb-3 pt-2 bg-[#D4C4A8]">
           <button
             onClick={onAddItem}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 border-dashed border-[#8B6F47]/60 bg-[#D4C4A8]/60 text-[#5C4A2F] hover:border-[#5C1A1A] hover:text-[#5C1A1A] hover:bg-[#D4C4A8]/90 transition-all text-sm font-medium"
@@ -925,53 +904,6 @@ export function InventoryView({
         </div>
       </div>
 
-      {showHelpOverlay && (
-        <div
-          className="fixed inset-0 z-60 bg-black/40 backdrop-blur-[1px] flex items-center justify-center p-4"
-          onClick={() => closeHelpOverlay(true)}
-        >
-          <div
-            className="w-full max-w-md bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl p-5 shadow-2xl"
-            style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2">
-                <CircleHelp className="w-5 h-5 text-[#5C1A1A]" />
-                <h3 className="text-[#3D1409] font-extrabold text-base">Quick Vault Help</h3>
-              </div>
-              <button
-                onClick={() => closeHelpOverlay(true)}
-                className="btn-ghost !p-1 border-transparent text-[#8B6F47] hover:text-[#3D1409]"
-                title="Close help"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-2 text-sm text-[#3D1409]">
-              <p><span className="font-semibold">Drag and drop:</span> drag any item card and drop it on a player in the sidebar.</p>
-              <p><span className="font-semibold">Shared loot:</span> drop items onto Shared Loot to make them available to everyone.</p>
-              <p><span className="font-semibold">Sort and filter:</span> use the sort and filter buttons near search to quickly find items.</p>
-            </div>
-
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => closeHelpOverlay(false)}
-                className="btn-secondary flex-1 px-4 py-2.5"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => closeHelpOverlay(true)}
-                className="btn-primary flex-1 px-4 py-2.5"
-              >
-                Got it
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

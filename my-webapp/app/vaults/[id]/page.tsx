@@ -14,6 +14,7 @@ import { AddItemModal } from '@/app/components/AddItemModal';
 import { ItemDetailsModal } from '@/app/components/ItemDetailsModal';
 import { TransferRequestModal, TransferSentToast, TransferExpiredToast } from '@/app/components/TransferRequestModal';
 import { VaultDetailSkeleton } from '@/app/components/skeletons/SkeletonLoader';
+import { VaultTutorial, useVaultTutorial } from '@/app/components/VaultTutorial';
 import type { Item, Player, Currency } from '@/app/types';
 import {
   getCampaign,
@@ -338,6 +339,7 @@ export default function VaultDetailPage() {
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId);
   const isShared = selectedPlayerId === 'shared';
   const isGM = userRole === 'gm';
+  const { showTutorial, startTutorial, completeTutorial } = useVaultTutorial(isGM);
   const canPlayerEditSelectedItem = !isGM && !!selectedItem && (selectedItem.sourcebook || '').trim().toUpperCase() === 'PLAYER CUSTOM';
   const vaultCustomItems = currentCampaign?.customItemPool ?? [];
   const syncStatus: 'saving' | 'saved' = pendingWriteCount > 0 ? 'saving' : 'saved';
@@ -801,6 +803,7 @@ export default function VaultDetailPage() {
               onCoinTransfer={isShared && !isGM ? handleSharedCoinTransfer : undefined}
               isShared={isShared}
               syncStatus={syncStatus}
+              onTutorialStart={startTutorial}
             />
           </div>
         </div>
@@ -862,6 +865,9 @@ export default function VaultDetailPage() {
             isReceiver={expiredTransferInfo.isReceiver}
             onDismiss={() => setExpiredTransferInfo(null)}
           />
+        )}
+        {showTutorial && (
+          <VaultTutorial isGM={isGM} onComplete={completeTutorial} />
         )}
       </div>
     </DndProvider>

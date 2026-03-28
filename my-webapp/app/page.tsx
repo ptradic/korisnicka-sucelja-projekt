@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Package, BookOpen, ChevronRight, ChevronDown, Zap, GripVertical } from "lucide-react";
 import { useScrollReveal } from "@/app/hooks/useScrollReveal";
@@ -54,13 +53,16 @@ export default function HomePage() {
             </button>
 
             {/* Secondary — frosted outline */}
-            <Link
-              href="/guides"
-              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[#F5EDE0]/50 bg-[#F5EDE0]/10 text-[#F5EDE0] font-semibold text-lg shadow-md backdrop-blur-sm transition-all duration-300 hover:bg-[#F5EDE0]/20 hover:border-[#F5EDE0]/75 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 group w-full sm:w-auto"
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                router.push(auth.currentUser ? '/vaults?tutorial=true' : '/login');
+              }}
+              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[#F5EDE0]/50 bg-[#F5EDE0]/10 text-[#F5EDE0] font-semibold text-lg shadow-md backdrop-blur-sm transition-all duration-300 hover:bg-[#F5EDE0]/20 hover:border-[#F5EDE0]/75 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 cursor-pointer group w-full sm:w-auto"
             >
               <Zap className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
               Quick Start
-            </Link>
+            </button>
 
           </div>
 

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useVaultAuth } from './VaultAuthProvider';
 import { VaultLobby } from '@/app/components/VaultLobby';
 import { CampaignIdModal } from '@/app/components/CampaignIdModal';
 import { VaultListSkeleton } from '@/app/components/skeletons/SkeletonLoader';
+import { VaultsTutorial } from '@/app/components/VaultsTutorial';
 import {
   updateUserRole,
   getUserCampaigns,
@@ -19,6 +20,7 @@ import type { CampaignDoc } from '@/src/firebaseService';
 
 export default function VaultsLobbyPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     userId, userName, userRole, setUserRole,
     isAuthenticated, isLoading,
@@ -29,6 +31,16 @@ export default function VaultsLobbyPage() {
   const [isCampaignsLoading, setIsCampaignsLoading] = useState(true);
   const [newCampaignId, setNewCampaignId] = useState<string | null>(null);
   const [newCampaignName, setNewCampaignName] = useState('');
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Show tutorial when ?tutorial=true is in the URL
+  useEffect(() => {
+    if (searchParams.get('tutorial') === 'true' && !isLoading && !isCampaignsLoading) {
+      setShowTutorial(true);
+      // Clean up the URL
+      router.replace('/vaults', { scroll: false });
+    }
+  }, [searchParams, isLoading, isCampaignsLoading, router]);
 
   // Load campaigns for current role
   useEffect(() => {
@@ -156,7 +168,7 @@ export default function VaultsLobbyPage() {
         onDeleteVault={handleDeleteCampaign}
         onLeaveVault={handleLeaveCampaign}
         topContent={(
-          <div className="px-6 pt-8">
+          <div className="px-6 pt-8" data-tutorial="role-tabs">
             <div className="max-w-7xl mx-auto">
               <div className="flex w-full border-b-2 border-[#F5EDE0]/15 bg-white/5 backdrop-blur-sm overflow-hidden rounded-xl">
                 <button
@@ -189,6 +201,9 @@ export default function VaultsLobbyPage() {
             setNewCampaignName('');
           }}
         />
+      )}
+      {showTutorial && (
+        <VaultsTutorial onComplete={() => setShowTutorial(false)} />
       )}
     </>
   );

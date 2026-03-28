@@ -57,7 +57,7 @@ export function VaultLobby({ onSelectVault, onCreateVault, onJoinVault, vaults, 
 
         {/* Create / Join Vault Section */}
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="mb-8">
+          <div className="mb-8" data-tutorial="action-button">
             {isGM ? (
               <button
                 onClick={() => setShowCreateModal(true)}
@@ -94,7 +94,7 @@ export function VaultLobby({ onSelectVault, onCreateVault, onJoinVault, vaults, 
       </section>
 
       {/* Vault list section — on the beige portion of the gradient */}
-      <div className="w-full max-w-7xl mx-auto px-6 pb-12">
+      <div className="w-full max-w-7xl mx-auto px-6 pb-12" data-tutorial="vault-list">
         <div className="flex items-center gap-2 mb-4">
           <Package className="w-5 h-5 text-[#3D1409]" />
           <h2 className="text-[#3D1409] font-bold">Your Campaign Vaults</h2>

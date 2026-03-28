@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   ChevronDown,
-  ChevronRight,
   LogIn,
   UserPlus,
   Plus,
@@ -20,7 +18,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useScrollReveal } from "@/app/hooks/useScrollReveal";
-import { onAuthChange } from "@/src/firebaseService";
 
 /* ── Tutorial step data ─────────────────────────────────────────────── */
 const steps = [
@@ -29,53 +26,53 @@ const steps = [
     title: "Create Your Account",
     icon: UserPlus,
     description:
-      "Head to the Sign-In page and create a new account. Pick a display name, enter your email and a password, then choose your role — Game Master or Player.",
+      "Head to the Login page and create a new account. Pick a display name, enter your email and a password — you're ready to go.",
     details: [
-      'Click "Sign In" in the navigation bar.',
-      'Switch to the "Create Account" tab.',
-      "Fill in your Name, Email and Password.",
-      'Select your role: Game Master (GM) or Player.',
+      'Click "Login" in the navigation bar.',
+      'Click "Sign up" to switch to account creation.',
+      "Fill in your Profile Name, Email, and Password.",
+      "Follow the guided hints as you fill each field.",
       'Hit "Create Account" – you\'re in!',
     ],
-    tip: "Game Masters can create vaults and manage items for the whole party. Players can view and interact with their own inventory.",
+    tip: "Your profile name is your account identity. You'll choose a character name later when joining a vault.",
   },
   {
     number: 2,
     title: "Sign In (Email or Google)",
     icon: LogIn,
     description:
-      "Log in with email/password or Google. If your account already exists, you\'ll be redirected to your vault dashboard.",
+      "Log in with email/password or use Google sign-in. After login you'll be taken straight to your vault dashboard.",
     details: [
-      "Use your email/password, or click Google sign-in.",
-      "After successful login, open Vaults from navigation.",
-      "Your role (GM or Player) determines what actions you can perform.",
+      "Use your email/password, or click Continue with Google.",
+      "After successful login, you're automatically redirected to Vaults.",
+      "Already signed in? The login page will forward you to Vaults automatically.",
     ],
-    tip: "Already signed in? Opening Login will forward you to Vaults automatically.",
+    tip: "You can switch between Game Master and Player roles anytime from the Vaults page — no need to pick during signup.",
   },
   {
     number: 3,
-    title: "GM: Create a Vault",
+    title: "Choose Your Role & Create a Vault",
     icon: Plus,
     description:
-      "As a Game Master, create a campaign vault with a name, password, and optional description.",
+      "On the Vaults page, switch to the Game Master tab to create a campaign vault with a name, password, and optional description.",
     details: [
+      'Switch to the "Game Master" tab at the top of the Vaults page.',
       'Click "Create New Campaign Vault".',
       "Set your campaign name and vault password.",
       "Optionally add a short campaign description.",
-      'Click "Create Vault" to generate your campaign.',
-      "Copy the 8-character invite code shown after creation.",
+      'Click "Create Vault" and copy the 8-character invite code shown after creation.',
     ],
-    tip: "Players need both the invite code and the vault password to join.",
+    tip: "Players need both the invite code and the vault password to join. You can switch between Player and Game Master tabs anytime.",
   },
   {
     number: 4,
-    title: "Player: Join a Campaign",
+    title: "Join a Campaign",
     icon: Users,
     description:
-      "As a Player, join an existing vault using the GM\'s invite code and password.",
+      "From either the Player or Game Master tab, join an existing vault using the invite code and password.",
     details: [
       'Click "Join Campaign Vault".',
-      "Enter the 8-character invite code.",
+      "Enter the 8-character invite code from the GM.",
       "Enter the campaign password.",
       "Choose your character name for this vault.",
       'Click "Join Campaign" to enter the party.',
@@ -177,24 +174,14 @@ const steps = [
       "GM: open Vault Settings to rename vault, update password, and copy invite code.",
       "Player: change your character name for this vault from the sidebar.",
       "Any user: open Account Settings from navigation to update profile details.",
-      "Switch GM/Player role from account settings when needed.",
+      "Switch between Player and Game Master using the tabs on the Vaults page.",
     ],
-    tip: "Role changes update what actions are available the next time vault state refreshes.",
+    tip: "Switching between Player and Game Master tabs on the Vaults page changes what actions are available to you.",
   },
 ];
 
 /* ── Component ──────────────────────────────────────────────────────── */
 export default function GuidesPage() {
-  const [startNowHref, setStartNowHref] = useState("/login");
-
-  useEffect(() => {
-    const unsubscribe = onAuthChange((firebaseUser) => {
-      setStartNowHref(firebaseUser ? "/vaults" : "/login");
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   /* scroll-reveal refs – one per below-the-fold section */
   const stepRefs = [
     useScrollReveal<HTMLElement>({ delay: 0 }),
@@ -210,6 +197,7 @@ export default function GuidesPage() {
     useScrollReveal<HTMLElement>({ delay: 0 }),
   ];
   const bonusRef = useScrollReveal<HTMLElement>({ delay: 100 });
+
 
   return (
     <main
@@ -241,24 +229,6 @@ export default function GuidesPage() {
             From creating your account to managing your first vault — follow this guide and you&apos;ll be running campaigns like a seasoned Game Master in no time.
           </p>
 
-          {/* Buttons */}
-          <div className="flex flex-wrap justify-center gap-4 fade-in-up delay-400">
-            <Link
-              href={startNowHref}
-              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[#F5EDE0] bg-[#F5EDE0] text-[#3D1409] font-bold text-lg shadow-xl transition-all duration-300 hover:bg-white hover:border-white hover:shadow-2xl hover:-translate-y-1 active:scale-95 group"
-            >
-              <Wand2 className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
-              Start Now
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-            </Link>
-
-            <Link
-              href="/support"
-              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[#F5EDE0]/50 bg-[#F5EDE0]/10 text-[#F5EDE0] font-semibold text-lg shadow-md backdrop-blur-sm transition-all duration-300 hover:bg-[#F5EDE0]/20 hover:border-[#F5EDE0]/75 hover:-translate-y-0.5 active:scale-95"
-            >
-              Need Help?
-            </Link>
-          </div>
         </div>
 
         {/* Scroll indicator */}

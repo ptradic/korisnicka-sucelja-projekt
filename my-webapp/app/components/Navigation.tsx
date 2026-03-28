@@ -684,7 +684,7 @@ export function Navigation() {
             <ul className="space-y-2">
               {navPages.map((page, index) => (
                 <div key={index} onClick={() => setIsOpen(false)}>
-                  {processPage(page, index, currentPath, true, page.path === '/vaults' ? () => window.dispatchEvent(new Event('vaults-go-home')) : undefined)}
+                  {processPage(page, index, currentPath, true)}
                 </div>
               ))}
               {!isLoggedIn && (
@@ -766,7 +766,7 @@ export function Navigation() {
             
             {/* Navigation Links */}
             <ul className="flex gap-1.5 md:gap-2 xl:gap-3 items-center flex-1 justify-center">
-              {navPages.map((page, index) => processPage(page, index, currentPath, false, page.path === '/vaults' ? () => window.dispatchEvent(new Event('vaults-go-home')) : undefined, navTransparent))}
+              {navPages.map((page, index) => processPage(page, index, currentPath, false, undefined, navTransparent))}
             </ul>
 
             {/* Right side: Profile or Login */}

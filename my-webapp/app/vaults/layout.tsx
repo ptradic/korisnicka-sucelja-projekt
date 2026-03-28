@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { VaultAuthProvider } from './VaultAuthProvider';
 
 function LoadingFallback() {
   return (
@@ -13,5 +14,9 @@ export default function VaultsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <Suspense fallback={<LoadingFallback />}>{children}</Suspense>;
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <VaultAuthProvider>{children}</VaultAuthProvider>
+    </Suspense>
+  );
 }

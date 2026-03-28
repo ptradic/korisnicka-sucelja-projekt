@@ -94,7 +94,7 @@ export default function LoginPage() {
     : 4;
 
   const tutorialMessages: Record<number, string> = {
-    0: "Choose your profile name \u2014 this is your account identity. Inside the vault you\u2019ll go by your character name.",
+    0: "Choose your account display name. You\u2019ll pick a character name later.",
     1: "Enter your email address. We\u2019ll use this for login and account recovery.",
     2: "Create a strong password \u2014 at least 6 characters to protect your vault.",
     3: "Almost there! Re-enter your password to make sure there are no typos.",
@@ -218,16 +218,16 @@ export default function LoginPage() {
 
 
   const inputClass =
-    "w-full px-3.5 py-2.5 bg-[#FDFAF6] border border-[#C8B89A] rounded-xl text-sm text-[#1A0A00] placeholder:text-[#A89070] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/10 transition";
+    "w-full px-3.5 py-2.5 bg-white/70 border-2 border-[#8B6F47] rounded-xl text-sm text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition";
   const inputErrorClass =
-    "w-full px-3.5 py-2.5 bg-[#FDFAF6] border border-red-300 rounded-xl text-sm text-[#1A0A00] placeholder:text-[#A89070] focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-200/30 transition";
+    "w-full px-3.5 py-2.5 bg-white/70 border-2 border-red-400 rounded-xl text-sm text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200/30 transition";
 
   const googleButton = (
     <button
       type="button"
       onClick={handleGoogleSignIn}
       disabled={isGoogleLoading}
-      className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white border border-[#D4C4A8] rounded-xl text-sm font-medium text-[#3D1409] hover:bg-[#FAF8F4] active:bg-[#F5F0E8] transition shadow-sm disabled:opacity-60"
+      className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white/70 border-2 border-[#8B6F47] rounded-xl text-sm font-medium text-[#3D1409] hover:bg-white hover:border-[#5C1A1A] active:bg-[#F5EFE0] transition shadow-sm disabled:opacity-60"
     >
       {isGoogleLoading ? (
         <div className="w-4 h-4 border-2 border-[#5C1A1A] border-t-transparent rounded-full animate-spin" />
@@ -246,22 +246,36 @@ export default function LoginPage() {
   const divider = (
     <div className="relative my-1">
       <div className="absolute inset-0 flex items-center">
-        <div className="w-full border-t border-[#DDD0BE]" />
+        <div className="w-full border-t-2 border-[#DCC8A8]" />
       </div>
       <div className="relative flex justify-center">
-        <span className="px-3 bg-white text-xs text-[#A89070]">or</span>
+        <span className="px-3 bg-[#F5EFE0] text-xs text-[#8B6F47]">or</span>
       </div>
     </div>
   );
 
   //  Render
   return (
-    <div className="min-h-[calc(100vh-5rem)] bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF] flex items-center justify-center px-4 py-8">
-      <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden" style={{ boxShadow: '0 8px 40px rgba(61,20,9,0.13), 0 1.5px 4px rgba(61,20,9,0.07)' }}>
+    <div
+      className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4 py-8 relative"
+      style={{
+        background: 'linear-gradient(to bottom, #3D1409 0%, #5C1A1A 40%, #7A2424 70%, #5C1A1A 100%)',
+      }}
+    >
+      {/* Diamond pattern overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
+          backgroundSize: '40px 40px',
+        }}
+      />
+
+      <div className="bg-[#F5EFE0] rounded-2xl w-full max-w-sm overflow-hidden relative z-10 border-0" style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}>
 
         {/* ── Header ── */}
-        <div className="bg-[#F5EFE0] px-8 pt-7 pb-6 text-center border-b border-[#E2D5C0]">
-          <h1 className="text-xl font-extrabold text-[#1A0A00] tracking-tight" style={{ fontFamily: 'var(--font-archivo-black)' }}>
+        <div className="px-8 pt-5 pb-3 text-center">
+          <h1 className="text-xl font-extrabold text-[#3D1409] tracking-tight" style={{ fontFamily: 'var(--font-archivo-black)' }}>
             {mode === "login" ? "Log In" : "Create Account"}
           </h1>
           <p className="text-xs text-[#8B6F47] mt-0.5">
@@ -271,13 +285,13 @@ export default function LoginPage() {
 
         {/* ── Login form ── */}
         {mode === "login" && (
-          <div className="px-7 py-6 space-y-4">
+          <div className="px-7 py-4 space-y-3 bg-[#F5EFE0]">
             {googleButton}
             {divider}
 
             <form onSubmit={handleLogin} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-[#5C4A2F] uppercase tracking-wide mb-1.5">Email</label>
+                <label className="block text-xs font-semibold text-[#3D1409] uppercase tracking-wide mb-1.5">Email</label>
                 <input
                   type="email"
                   value={loginEmail}
@@ -290,7 +304,7 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#5C4A2F] uppercase tracking-wide mb-1.5">Password</label>
+                <label className="block text-xs font-semibold text-[#3D1409] uppercase tracking-wide mb-1.5">Password</label>
                 <div className="relative">
                   <input
                     type={showLoginPassword ? "text" : "password"}
@@ -319,7 +333,7 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <button type="submit" className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#5C1A1A] hover:bg-[#3D1409] active:bg-[#2A0D06] text-white text-sm font-semibold rounded-xl transition shadow-sm shadow-[#5C1A1A]/30">
+              <button type="submit" className="w-full flex items-center justify-center gap-2 py-2.5 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] active:from-[#3D1409] active:to-[#4A1515] text-white text-sm font-bold rounded-xl border-2 border-[#3D1409] transition shadow-lg">
                 <LogIn className="w-4 h-4" />
                 Log In
               </button>
@@ -336,16 +350,11 @@ export default function LoginPage() {
 
         {/* ── Sign-up form ── */}
         {mode === "signup" && !signupSuccess && (
-          <div className="px-7 py-6">
-            <button onClick={() => setMode("login")} className="flex items-center gap-1.5 text-xs text-[#8B6F47] hover:text-[#5C1A1A] transition-colors mb-5">
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back to Log In
-            </button>
-
+          <div className="px-7 py-6 bg-[#F5EFE0]">
             <form onSubmit={handleSignup} className="space-y-4">
               {/* Name */}
               <div>
-                <label className="block text-xs font-semibold text-[#5C4A2F] uppercase tracking-wide mb-1.5">Profile Name</label>
+                <label className="block text-xs font-semibold text-[#3D1409] uppercase tracking-wide mb-1.5">Profile Name</label>
                 <input
                   type="text"
                   value={signupName}
@@ -367,7 +376,7 @@ export default function LoginPage() {
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-semibold text-[#5C4A2F] uppercase tracking-wide mb-1.5">Email</label>
+                <label className="block text-xs font-semibold text-[#3D1409] uppercase tracking-wide mb-1.5">Email</label>
                 <input
                   type="email"
                   value={signupEmail}
@@ -390,7 +399,7 @@ export default function LoginPage() {
 
               {/* Password */}
               <div>
-                <label className="block text-xs font-semibold text-[#5C4A2F] uppercase tracking-wide mb-1.5">Password</label>
+                <label className="block text-xs font-semibold text-[#3D1409] uppercase tracking-wide mb-1.5">Password</label>
                 <div className="relative">
                   <input
                     type={showSignupPassword ? "text" : "password"}
@@ -431,7 +440,7 @@ export default function LoginPage() {
 
               {/* Confirm password */}
               <div>
-                <label className="block text-xs font-semibold text-[#5C4A2F] uppercase tracking-wide mb-1.5">Confirm Password</label>
+                <label className="block text-xs font-semibold text-[#3D1409] uppercase tracking-wide mb-1.5">Confirm Password</label>
                 <div className="relative">
                   <input
                     type={showSignupConfirm ? "text" : "password"}
@@ -465,7 +474,7 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <button type="submit" className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#5C1A1A] hover:bg-[#3D1409] active:bg-[#2A0D06] text-white text-sm font-semibold rounded-xl transition shadow-sm shadow-[#5C1A1A]/30">
+              <button type="submit" className="w-full flex items-center justify-center gap-2 py-2.5 bg-linear-to-r from-[#5C1A1A] to-[#7A2424] hover:from-[#4A1515] hover:to-[#5C1A1A] active:from-[#3D1409] active:to-[#4A1515] text-white text-sm font-bold rounded-xl border-2 border-[#3D1409] transition shadow-lg">
                 <UserPlus className="w-4 h-4" />
                 Create Account
               </button>
@@ -482,8 +491,8 @@ export default function LoginPage() {
 
         {/* ── Sign-up success ── */}
         {mode === "signup" && signupSuccess && (
-          <div className="px-7 py-10 flex flex-col items-center gap-4 text-center">
-            <div className="w-14 h-14 bg-emerald-50 border-2 border-emerald-200 rounded-full flex items-center justify-center">
+          <div className="px-7 py-10 flex flex-col items-center gap-4 text-center bg-[#F5EFE0]">
+            <div className="w-14 h-14 bg-emerald-100/70 border-2 border-emerald-300 rounded-full flex items-center justify-center">
               <CheckCircle2 className="w-8 h-8 text-emerald-500" />
             </div>
             <div>

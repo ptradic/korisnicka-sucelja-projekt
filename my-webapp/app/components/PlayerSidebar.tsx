@@ -586,12 +586,14 @@ export function PlayerSidebar({
       {/*  Mobile: horizontal bar on top  */}
       <div
         ref={sidebarDrop as any}
+        data-tutorial="sidebar"
         className="sm:hidden relative bg-[#D9C7AA] border-b-4 border-[#3D1409] px-3 py-2 shrink-0"
         style={{ boxShadow: '0 4px 8px rgba(61, 20, 9, 0.15)' }}
       >
         {/* Gear icon — absolute top-right corner (GM settings or player character name) */}
         {isGM && campaignId && onUpdateCampaignSettings && (
           <button
+            data-tutorial="vault-settings"
             onClick={() => setShowSettingsModal(true)}
             title="Vault settings"
             className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-white/60 text-[#5C1A1A] transition-all"
@@ -601,6 +603,7 @@ export function PlayerSidebar({
         )}
         {!isGM && currentPlayer && onUpdateMyCharacterName && (
           <button
+            data-tutorial="character-settings"
             onClick={() => setShowCharacterModal(true)}
             title="Change your character name"
             className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-white/60 text-[#5C1A1A] transition-all"

@@ -825,10 +825,10 @@ export function InventoryView({
       )}
 
       {/* Item list */}
-      <div data-tutorial="item-list" className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col">
         {/* Scroll area + gradient wrapper */}
         <div className="relative flex-1 min-h-0">
-        <div className="h-full overflow-y-auto overflow-x-hidden p-4 sm:p-5 custom-scrollbar" ref={itemListRef}>
+        <div data-tutorial="item-list" className="h-full min-h-[80px] overflow-y-auto overflow-x-hidden p-4 sm:p-5 custom-scrollbar" ref={itemListRef}>
           {filteredItems.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-[#5C4A2F] text-base mb-1">No items found</div>

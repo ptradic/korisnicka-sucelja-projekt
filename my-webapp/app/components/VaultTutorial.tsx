@@ -145,6 +145,16 @@ export function useVaultTutorial(isGM: boolean) {
   return { showTutorial, startTutorial, completeTutorial };
 }
 
+// Find the first visible element matching a selector
+function queryVisible(selector: string): Element | null {
+  const all = document.querySelectorAll(selector);
+  for (const el of all) {
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) return el;
+  }
+  return null;
+}
+
 export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete: () => void }) {
   const steps = isGM ? GM_STEPS : PLAYER_STEPS;
   const [currentStep, setCurrentStep] = useState(0);
@@ -152,31 +162,30 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
   const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
   const [arrowDirection, setArrowDirection] = useState<'top' | 'bottom' | 'left' | 'right'>('top');
   const [visible, setVisible] = useState(false);
+  const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
 
   const step = steps[currentStep];
 
   const positionPopup = useCallback(() => {
-    const el = document.querySelector(step.selector);
+    const el = queryVisible(step.selector);
     if (!el) {
-      // If element not found, skip to next step or finish
-      if (currentStep < steps.length - 1) {
-        setCurrentStep(currentStep + 1);
-      } else {
-        onComplete();
-      }
+      setVisible(false);
       return;
     }
 
     const rect = el.getBoundingClientRect();
+    setHighlightRect(rect);
     const gap = 14;
-    const popupWidth = Math.min(300, window.innerWidth - 32);
+    const mobile = window.innerWidth < 640;
+    const popupWidth = Math.min(mobile ? 280 : 300, window.innerWidth - 32);
     const popupEstimatedHeight = 160;
 
     let top = 0;
     let left = 0;
     let arrowTop = 0;
     let arrowLeft = 0;
-    let direction = step.position;
+    // On mobile, force left/right positions to bottom since there's no side space
+    let direction = (mobile && (step.position === 'left' || step.position === 'right')) ? 'bottom' as const : step.position;
 
     if (direction === 'bottom') {
       top = rect.bottom + gap;
@@ -184,6 +193,12 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
       left = Math.max(16, Math.min(left, window.innerWidth - popupWidth - 16));
       arrowLeft = Math.max(16, rect.left + rect.width / 2 - left - 6);
       arrowTop = -8;
+      // Flip to top if popup would go off-screen
+      if (top + popupEstimatedHeight > window.innerHeight - 16) {
+        direction = 'top';
+        top = rect.top - gap - popupEstimatedHeight;
+        arrowTop = popupEstimatedHeight - 1;
+      }
     } else if (direction === 'top') {
       top = rect.top - gap - popupEstimatedHeight;
       left = rect.left + rect.width / 2 - popupWidth / 2;
@@ -255,31 +270,25 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
     };
   }, [positionPopup]);
 
-  // Highlight the target element
-  useEffect(() => {
-    const el = document.querySelector(step.selector) as HTMLElement | null;
-    if (!el) return;
-
-    el.style.position = 'relative';
-    el.style.zIndex = '55';
-
-    return () => {
-      el.style.position = '';
-      el.style.zIndex = '';
-    };
-  }, [step.selector]);
 
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      onComplete();
+    // Find next step with a visible element
+    for (let i = currentStep + 1; i < steps.length; i++) {
+      if (queryVisible(steps[i].selector)) {
+        setCurrentStep(i);
+        return;
+      }
     }
+    onComplete();
   };
 
   const handlePrev = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+    // Find previous step with a visible element
+    for (let i = currentStep - 1; i >= 0; i--) {
+      if (queryVisible(steps[i].selector)) {
+        setCurrentStep(i);
+        return;
+      }
     }
   };
 
@@ -292,12 +301,32 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
     }
   })();
 
+  // Count visible steps and current position among them
+  const visibleStepIndices = steps.reduce<number[]>((acc, s, i) => {
+    if (queryVisible(s.selector)) acc.push(i);
+    return acc;
+  }, []);
+  const visiblePosition = visibleStepIndices.indexOf(currentStep) + 1;
+  const visibleTotal = visibleStepIndices.length;
+
   if (!visible) return null;
 
   return (
     <>
-      {/* Backdrop overlay */}
-      <div className="fixed inset-0 bg-black/40 z-50" onClick={onComplete} />
+      {/* Cutout overlay — uses a huge box-shadow to darken everything except the target */}
+      <div
+        className="fixed z-50 rounded-lg pointer-events-none"
+        style={highlightRect ? {
+          top: highlightRect.top - 4,
+          left: highlightRect.left - 4,
+          width: highlightRect.width + 8,
+          height: highlightRect.height + 8,
+          boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.4)',
+          border: '2px solid rgba(200, 169, 122, 0.5)',
+        } : { top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)' }}
+      />
+      {/* Clickable overlay behind the cutout to handle dismiss */}
+      <div className="fixed inset-0 z-49" onClick={onComplete} />
 
       {/* Popup tooltip */}
       <div style={popupStyle}>
@@ -312,7 +341,7 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#C8A97A]" />
               <span className="text-xs font-bold text-[#C8A97A] uppercase tracking-wider">
-                Step {currentStep + 1} of {steps.length}
+                Step {visiblePosition} of {visibleTotal}
               </span>
             </div>
             <button
@@ -351,7 +380,7 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
                 onClick={handleNext}
                 className="flex items-center gap-1 px-4 py-1.5 bg-[#8B6F47] hover:bg-[#A0845A] text-white text-xs font-bold rounded-lg transition-colors"
               >
-                {currentStep < steps.length - 1 ? (
+                {visiblePosition < visibleTotal ? (
                   <>
                     Next
                     <ChevronRight className="w-3.5 h-3.5" />

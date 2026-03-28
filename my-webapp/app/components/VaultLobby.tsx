@@ -18,7 +18,7 @@ interface CreateVaultPayload {
   password: string;
 }
 
-interface HomePageProps {
+interface VaultLobbyProps {
   onSelectVault: (vaultId: string) => void;
   onCreateVault: (vault: CreateVaultPayload) => void;
   onJoinVault: (campaignId: string, password: string, characterName: string) => Promise<boolean>;
@@ -29,7 +29,7 @@ interface HomePageProps {
   topContent?: React.ReactNode;
 }
 
-export function VaultLobby({ onSelectVault, onCreateVault, onJoinVault, vaults, onDeleteVault, onLeaveVault, userType, topContent }: HomePageProps) {
+export function VaultLobby({ onSelectVault, onCreateVault, onJoinVault, vaults, onDeleteVault, onLeaveVault, userType, topContent }: VaultLobbyProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const isGM = userType === 'gm';

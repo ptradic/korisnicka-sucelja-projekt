@@ -1113,18 +1113,42 @@ function CustomItemForm({
             <textarea
               ref={descriptionRef}
               value={formData.description}
-              onInput={(e) => {
-                const el = e.currentTarget;
-                setFormData((prev) => ({ ...prev, description: el.value }));
+              onChange={(e) => {
+                setFormData((prev) => ({ ...prev, description: e.target.value }));
                 updateDescriptionScrollbar();
               }}
-              onKeyUp={(e) => {
+              onPaste={(e) => {
+                e.preventDefault();
+                const text = e.clipboardData.getData('text/plain')
+                  .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '');
                 const el = e.currentTarget;
-                setFormData((prev) => ({ ...prev, description: el.value }));
-                updateDescriptionScrollbar();
+                const start = el.selectionStart ?? 0;
+                const end = el.selectionEnd ?? 0;
+                const current = formData.description;
+                const next = current.slice(0, start) + text + current.slice(end);
+                setFormData((prev) => ({ ...prev, description: next }));
+                requestAnimationFrame(() => {
+                  const pos = start + text.length;
+                  el.setSelectionRange(pos, pos);
+                  updateDescriptionScrollbar();
+                });
               }}
               onKeyDown={(e) => {
                 e.stopPropagation();
+                if ((e.key === 'Backspace' || e.key === 'Delete') && descriptionRef.current) {
+                  const el = descriptionRef.current;
+                  const start = el.selectionStart ?? 0;
+                  const end = el.selectionEnd ?? 0;
+                  if (start !== end) {
+                    e.preventDefault();
+                    const next = formData.description.slice(0, start) + formData.description.slice(end);
+                    setFormData((prev) => ({ ...prev, description: next }));
+                    requestAnimationFrame(() => {
+                      el.setSelectionRange(start, start);
+                      updateDescriptionScrollbar();
+                    });
+                  }
+                }
               }}
               className="w-full h-full min-h-12 pl-3 pr-10 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 custom-scrollbar resize-none"
               placeholder="Describe the item..."

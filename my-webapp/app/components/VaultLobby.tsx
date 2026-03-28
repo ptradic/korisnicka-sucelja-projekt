@@ -35,78 +35,91 @@ export function VaultLobby({ onSelectVault, onCreateVault, onJoinVault, vaults, 
   const isGM = userType === 'gm';
 
   return (
-    <div className="min-h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
-      {topContent}
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8 pt-8">
+    <main
+      className="flex min-h-screen flex-col items-center overflow-hidden"
+      style={{
+        background: 'linear-gradient(to bottom, #3D1409 0vh, #5C1A1A 20vh, #7A2424 40vh, #C8A97A 60vh, #E8D5B7 75vh, #DCC8A8 120vh, #E0CFAF 180vh)',
+      }}
+    >
+      {/* Hero section with diamond pattern */}
+      <section className="w-full relative">
+        {/* SVG diamond pattern overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
+            backgroundSize: '40px 40px',
+          }}
+        />
+
+        {/* Role tabs */}
+        {topContent}
+
         {/* Create / Join Vault Section */}
-        <div className="mb-8">
-          {isGM ? (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="btn-secondary w-full border-dashed p-8 hover:bg-[#F0E8D5] text-[#3D1409] group"
-              style={{ boxShadow: '0 4px 6px -1px rgba(61, 20, 9, 0.15)' }}
-            >
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-16 h-16 bg-[#8B6F47] group-hover:bg-[#5C1A1A] rounded-full flex items-center justify-center border-[3px] border-[#6B5535] group-hover:border-[#3D1409] transition-colors duration-300">
-                  <Plus className="w-8 h-8 text-white" />
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="mb-8">
+            {isGM ? (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="w-full border-2 border-dashed border-[#F5EDE0]/30 rounded-2xl p-8 hover:bg-white/10 hover:border-[#F5EDE0]/50 transition-all duration-300 group"
+              >
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 bg-white/15 group-hover:bg-white/25 rounded-full flex items-center justify-center border-2 border-white/20 backdrop-blur-sm transition-all duration-300">
+                    <Plus className="w-8 h-8 text-[#F5EDE0]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[#F5EDE0] font-bold mb-1">Create New Campaign Vault</h3>
+                    <p className="text-[#F5EDE0]/60 text-sm">Start managing inventory for a new adventure</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-[#3D1409] mb-1">Create New Campaign Vault</h3>
-                  <p className="text-[#5C4A2F] text-sm">Start managing inventory for a new adventure</p>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowJoinModal(true)}
+                className="w-full border-2 border-dashed border-[#F5EDE0]/30 rounded-2xl p-8 hover:bg-white/10 hover:border-[#F5EDE0]/50 transition-all duration-300 group"
+              >
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 bg-white/15 group-hover:bg-white/25 rounded-full flex items-center justify-center border-2 border-white/20 backdrop-blur-sm transition-all duration-300">
+                    <LogIn className="w-8 h-8 text-[#F5EDE0]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[#F5EDE0] font-bold mb-1">Join Campaign Vault</h3>
+                    <p className="text-[#F5EDE0]/60 text-sm">Enter a vault name and password to join your party</p>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowJoinModal(true)}
-              className="btn-secondary w-full border-dashed p-8 hover:bg-[#F0E8D5] text-[#3D1409] group"
-              style={{ boxShadow: '0 4px 6px -1px rgba(61, 20, 9, 0.15)' }}
-            >
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-16 h-16 bg-[#8B6F47] group-hover:bg-[#5C1A1A] rounded-full flex items-center justify-center border-[3px] border-[#6B5535] group-hover:border-[#3D1409] transition-colors duration-300">
-                  <LogIn className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-[#3D1409] mb-1">Join Campaign Vault</h3>
-                  <p className="text-[#5C4A2F] text-sm">Enter a vault name and password to join your party</p>
-                </div>
-              </div>
-            </button>
-          )}
-        </div>
-
-        {/* Existing Vaults */}
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <Package className="w-5 h-5 text-[#3D1409]" />
-            <h2 className="text-[#3D1409]">Your Campaign Vaults</h2>
-            <span className="text-[#5C4A2F] text-sm">({vaults.length})</span>
+              </button>
+            )}
           </div>
-
-          {vaults.length === 0 ? (
-            <div
-              className="p-12 text-center rounded-xl border-3 bg-white/40"
-              style={{ boxShadow: '0 2px 4px rgba(61, 20, 9, 0.15)' }}
-            >
-              <Package className="w-12 h-12 text-[#8B6F47] mx-auto mb-4" />
-              <h3 className="text-[#3D1409] mb-2">No vaults yet</h3>
-              <p className="text-[#5C4A2F] text-sm">{isGM ? 'Create your first campaign vault to get started' : 'Join your first campaign vault to get started'}</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {vaults.map(vault => (
-                <VaultCard
-                  key={vault.id}
-                  vault={vault}
-                  isGM={isGM}
-                  onOpen={() => onSelectVault(vault.id)}
-                  onAction={() => (isGM ? onDeleteVault(vault.id) : onLeaveVault(vault.id))}
-                />
-              ))}
-            </div>
-          )}
         </div>
+      </section>
+
+      {/* Vault list section — on the beige portion of the gradient */}
+      <div className="w-full max-w-7xl mx-auto px-6 pb-12">
+        <div className="flex items-center gap-2 mb-4">
+          <Package className="w-5 h-5 text-[#3D1409]" />
+          <h2 className="text-[#3D1409] font-bold">Your Campaign Vaults</h2>
+          <span className="text-[#5C4A2F] text-sm">({vaults.length})</span>
+        </div>
+
+        {vaults.length === 0 ? (
+          <div className="p-12 text-center rounded-2xl border-4 border-[#8B6F47]/30 bg-[#F5EFE0] shadow-xl">
+            <Package className="w-12 h-12 text-[#8B6F47] mx-auto mb-4" />
+            <h3 className="text-[#3D1409] font-bold mb-2">No vaults yet</h3>
+            <p className="text-[#5C4A2F] text-sm">{isGM ? 'Create your first campaign vault to get started' : 'Join your first campaign vault to get started'}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {vaults.map(vault => (
+              <VaultCard
+                key={vault.id}
+                vault={vault}
+                isGM={isGM}
+                onOpen={() => onSelectVault(vault.id)}
+                onAction={() => (isGM ? onDeleteVault(vault.id) : onLeaveVault(vault.id))}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Create Vault Modal */}
@@ -127,7 +140,7 @@ export function VaultLobby({ onSelectVault, onCreateVault, onJoinVault, vaults, 
           onJoin={onJoinVault}
         />
       )}
-    </div>
+    </main>
   );
 }
 
@@ -142,18 +155,17 @@ function VaultCard({ vault, isGM, onOpen, onAction }: { vault: Vault; isGM: bool
   return (
     <>
       <div
-        className="btn-secondary !block p-6 text-left cursor-pointer group hover:border-[#5C4A2F]"
-        style={{ boxShadow: '0 2px 4px rgba(61, 20, 9, 0.15)' }}
+        className="bg-[#F5EFE0] border-4 border-[#8B6F47]/30 rounded-2xl p-6 text-left cursor-pointer group hover:border-[#8B6F47] hover:shadow-xl transition-all duration-300"
         onClick={onOpen}
       >
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
-            <h3 className="text-[#3D1409] truncate mb-1">{vault.name}</h3>
+            <h3 className="text-[#3D1409] font-bold truncate mb-1">{vault.name}</h3>
             <p className="text-[#5C4A2F] text-sm line-clamp-2">{vault.description}</p>
           </div>
           <button
             onClick={handleDelete}
-            className="btn-ghost ml-2 !p-2 rounded-lg border-2 text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#FFEBEE] border-transparent"
+            className="ml-2 p-2 rounded-lg text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#8B3A3A]/10 transition-colors duration-200"
             title={isGM ? 'Delete vault' : 'Leave vault'}
           >
             {isGM ? <Trash2 className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
@@ -172,8 +184,9 @@ function VaultCard({ vault, isGM, onOpen, onAction }: { vault: Vault; isGM: bool
         </div>
 
         <div className="mt-4 pt-4 border-t-2 border-[#D9C7AA]">
-          <div className="text-[#5C1A1A] text-sm group-hover:text-[#3D1409] transition-colors">
-            Open Vault →
+          <div className="text-[#5C1A1A] text-sm font-semibold group-hover:text-[#3D1409] transition-colors flex items-center gap-1">
+            Open Vault
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
           </div>
         </div>
       </div>
@@ -504,11 +517,11 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
     e.preventDefault();
     setError('');
     if (!campaignId.trim() || !password.trim() || !characterName.trim()) return;
-    
+
     setIsLoading(true);
     const joined = await onJoin(campaignId.trim().toUpperCase(), password.trim(), characterName.trim());
     setIsLoading(false);
-    
+
     if (joined) {
       setSuccess(true);
       setTimeout(() => onClose(), 1500);

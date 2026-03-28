@@ -27,7 +27,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="relative mt-20" style={{ height: 'calc(var(--app-height, 100dvh) - 5rem)' }}>
+    <div className="relative mt-14" style={{ height: 'calc(var(--app-height, 100dvh) - 3.5rem)' }}>
       <div id="page-scroll" ref={pageScrollRef} className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         {children}
       </div>

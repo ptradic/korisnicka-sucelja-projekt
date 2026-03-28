@@ -13,29 +13,40 @@ export function Skeleton({ className = '', pulse = true }: SkeletonProps) {
   );
 }
 
+function SkeletonLight({ className = '', pulse = true }: SkeletonProps) {
+  return (
+    <div
+      className={`bg-[#F5EDE0]/15 rounded ${pulse ? 'animate-pulse' : ''} ${className}`}
+    />
+  );
+}
+
 export function VaultListSkeleton() {
   return (
-    <div className="min-h-full bg-linear-to-br from-[#E8D5B7] via-[#DCC8A8] to-[#E0CFAF]">
+    <main
+      className="flex min-h-screen flex-col items-center overflow-hidden"
+      style={{
+        background: 'linear-gradient(to bottom, #3D1409 0vh, #5C1A1A 20vh, #7A2424 40vh, #C8A97A 60vh, #E8D5B7 75vh, #DCC8A8 100vh)',
+      }}
+    >
       {/* Role Tabs Skeleton */}
-      <div className="px-4 sm:px-6 pt-6 sm:pt-8">
+      <div className="w-full px-4 sm:px-6 pt-6 sm:pt-8">
         <div className="max-w-7xl mx-auto">
-          <div className="flex w-full border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] overflow-hidden rounded-xl">
-            <Skeleton className="h-11 flex-1 rounded-b-xl" />
-            <Skeleton className="h-11 flex-1 rounded-b-xl" />
+          <div className="flex w-full border-b-2 border-[#F5EDE0]/15 bg-white/5 backdrop-blur-sm overflow-hidden rounded-xl">
+            <SkeletonLight className="h-11 flex-1" />
+            <SkeletonLight className="h-11 flex-1" />
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Create/Join Vault Section Skeleton */}
-        <div className="mb-6 sm:mb-8">
-          <div className="w-full bg-[#F5EFE0]/50 border-4 border-[#8B6F47]/30 border-dashed rounded-xl p-6 sm:p-8">
-            <div className="flex flex-col items-center gap-3 sm:gap-4">
-              <Skeleton className="w-12 h-12 sm:w-16 sm:h-16 rounded-full" />
-              <div className="text-center space-y-2">
-                <Skeleton className="h-4 sm:h-5 w-36 sm:w-48 mx-auto" />
-                <Skeleton className="h-3 sm:h-4 w-48 sm:w-64 mx-auto" />
-              </div>
+      {/* Create/Join Button Skeleton */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-md mx-auto mb-8">
+          <div className="border-2 border-dashed border-[#F5EDE0]/20 rounded-xl p-6 sm:p-8 bg-white/5 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3">
+              <SkeletonLight className="w-12 h-12 rounded-full" />
+              <SkeletonLight className="h-4 w-36 mx-auto" />
+              <SkeletonLight className="h-3 w-48 mx-auto" />
             </div>
           </div>
         </div>
@@ -47,10 +58,9 @@ export function VaultListSkeleton() {
             <Skeleton className="h-4 sm:h-5 w-16 sm:w-20" />
           </div>
 
-          {/* Mobile: stacked list — Desktop: grid */}
           <div className="grid gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-white/40 backdrop-blur rounded-xl border-2 border-[#DCC8A8]/50 p-4 sm:p-6 shadow-lg">
+              <div key={i} className="bg-[#F5EFE0] border-4 border-[#8B6F47]/30 rounded-2xl p-4 sm:p-6 shadow-lg">
                 <div className="space-y-3 sm:space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1.5 sm:space-y-2">
@@ -75,7 +85,7 @@ export function VaultListSkeleton() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

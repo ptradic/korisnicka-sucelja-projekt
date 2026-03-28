@@ -141,9 +141,9 @@ export default function VaultsLobbyPage() {
     createdAt: c.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(),
   }));
 
-  const tabBaseClass = 'flex-1 text-sm py-3 font-bold border-0 shadow-none transition-colors duration-200 rounded-b-lg first:rounded-bl-xl last:rounded-br-xl';
-  const tabActiveClass = 'bg-linear-to-r from-[#5C1A1A] to-[#7A2424] text-white';
-  const tabInactiveClass = 'bg-[#E8D5B7] text-[#5C4A2F] hover:bg-[#F5EFE0]/70 hover:text-[#3D1409]';
+  const tabBaseClass = 'flex-1 text-sm py-3 font-bold border-0 shadow-none transition-all duration-200';
+  const tabActiveClass = 'bg-[#F5EDE0]/20 text-[#F5EDE0] backdrop-blur-sm shadow-lg';
+  const tabInactiveClass = 'bg-white/5 text-[#F5EDE0]/60 hover:bg-white/10 hover:text-[#F5EDE0]/90';
 
   return (
     <>
@@ -158,7 +158,7 @@ export default function VaultsLobbyPage() {
         topContent={(
           <div className="px-6 pt-8">
             <div className="max-w-7xl mx-auto">
-              <div className="flex w-full border-b-3 border-[#8B6F47]/40 bg-[#E8D5B7] overflow-hidden rounded-xl">
+              <div className="flex w-full border-b-2 border-[#F5EDE0]/15 bg-white/5 backdrop-blur-sm overflow-hidden rounded-xl">
                 <button
                   onClick={() => void handleRoleSwitch('player')}
                   className={
@@ -173,7 +173,7 @@ export default function VaultsLobbyPage() {
                     tabBaseClass + ' ' + (userRole === 'gm' ? tabActiveClass : tabInactiveClass)
                   }
                 >
-                  GM
+                  Game Master
                 </button>
               </div>
             </div>

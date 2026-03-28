@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
 import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save, Trash2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -424,11 +424,9 @@ export function Navigation() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [showLogoutToast, setShowLogoutToast] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const isDarkHeroPage = currentPath === '/' || currentPath === '/guides' || currentPath === '/support';
-  const navTransparent = isDarkHeroPage && !scrolled;
+  const navTransparent = true;
 
   // Compute short initials from user name
   const initials = authData?.name
@@ -460,25 +458,6 @@ export function Navigation() {
     
     return () => unsubscribe();
   }, []);
-
-  // Synchronously set the correct scroll state before paint (avoids beige flash on home page)
-  useLayoutEffect(() => {
-    const darkPage = currentPath === '/' || currentPath === '/guides' || currentPath === '/support';
-    if (!darkPage) { setScrolled(false); return; }
-    const container = document.getElementById('page-scroll');
-    setScrolled(!!container && container.scrollTop > window.innerHeight * 0.8);
-  }, [currentPath]);
-
-  // Ongoing scroll listener on the custom scroll container
-  useEffect(() => {
-    const darkPage = currentPath === '/' || currentPath === '/guides' || currentPath === '/support';
-    if (!darkPage) return;
-    const container = document.getElementById('page-scroll');
-    if (!container) return;
-    const onScroll = () => setScrolled(container.scrollTop > window.innerHeight * 0.8);
-    container.addEventListener('scroll', onScroll, { passive: true });
-    return () => container.removeEventListener('scroll', onScroll);
-  }, [currentPath]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -603,10 +582,10 @@ export function Navigation() {
           transition: 'background 0.3s ease-in-out'
         }}
       >
-        <div className="flex items-center justify-between p-4">
-          <Link href="/" className="group flex items-center gap-4 transition-all duration-300">
-            <div 
-              className="w-12 h-12 rounded-xl flex items-center justify-center border-4 shadow-lg"
+        <div className="flex items-center justify-between px-4 py-2">
+          <Link href="/" className="group flex items-center gap-3 transition-all duration-300">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center border-3 shadow-lg"
               style={{
                 background: isOpen || navTransparent
                   ? 'rgba(255, 255, 255, 0.1)'
@@ -637,7 +616,7 @@ export function Navigation() {
               e.preventDefault();
               setIsOpen(prev => !prev);
             }}
-            className="w-12 h-12 flex flex-col items-center justify-center gap-1.5 rounded-lg fixed top-4 right-4 z-100"
+            className="w-10 h-10 flex flex-col items-center justify-center gap-1 rounded-lg fixed top-2 right-4 z-100"
             style={{
               background: isOpen ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
               backdropFilter: isOpen ? 'blur(4px)' : 'none',
@@ -648,9 +627,9 @@ export function Navigation() {
             }}
             aria-label="Toggle menu"
           >
-            <span className={cn("block w-7 h-1 rounded-full transition-all duration-300 ease-in-out", isOpen ? "rotate-45 translate-y-2.5 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
-            <span className={cn("block w-7 h-1 rounded-full transition-all duration-300 ease-in-out", isOpen ? "opacity-0 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
-            <span className={cn("block w-7 h-1 rounded-full transition-all duration-300 ease-in-out", isOpen ? "-rotate-45 -translate-y-2.5 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
+            <span className={cn("block w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out", isOpen ? "rotate-45 translate-y-1.5 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
+            <span className={cn("block w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out", isOpen ? "opacity-0 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
+            <span className={cn("block w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out", isOpen ? "-rotate-45 -translate-y-1.5 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
           </button>
         </div>
       </div>
@@ -670,7 +649,7 @@ export function Navigation() {
         </SheetTrigger>
         <SheetContent 
           side="top" 
-          className="w-full h-auto bg-linear-to-br from-[#F5EFE0] via-[#E8D5B7] to-[#DCC8A8] border-x-4 border-b-4 border-[#3D1409] rounded-b-2xl p-0 pb-6 pt-24 z-30"
+          className="w-full h-auto bg-linear-to-br from-[#F5EFE0] via-[#E8D5B7] to-[#DCC8A8] border-x-4 border-b-4 border-[#3D1409] rounded-b-2xl p-0 pb-6 pt-18 z-30"
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
@@ -746,21 +725,21 @@ export function Navigation() {
         style={navTransparent ? { background: 'linear-gradient(to right, #5C1A1A, #7A2424)' } : undefined}
       >
         <div className="max-w-7xl mx-auto px-3 md:px-4 xl:px-6">
-          <div className="flex items-center h-20 gap-2 xl:gap-6">
+          <div className="flex items-center h-14 gap-2 xl:gap-6">
             {/* Brand Logo */}
             <Link href="/" className="group flex items-center gap-2 xl:gap-3 shrink-0 transition-all duration-300 w-auto xl:w-64">
               <div
                 className={cn(
-                  "w-12 h-12 xl:w-14 xl:h-14 shrink-0 aspect-square rounded-2xl flex items-center justify-center border-4 shadow-lg hover:rotate-6 transition-all duration-300",
+                  "w-10 h-10 xl:w-11 xl:h-11 shrink-0 aspect-square rounded-xl flex items-center justify-center border-3 shadow-lg hover:rotate-6 transition-all duration-300",
                   navTransparent
                     ? "border-white/20"
                     : "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] border-[#3D1409]"
                 )}
                 style={navTransparent ? { background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)' } : undefined}
               >
-                <Scroll className="w-6 h-6 xl:w-7 xl:h-7 text-white" />
+                <Scroll className="w-5 h-5 xl:w-6 xl:h-6 text-white" />
               </div>
-              <h1 className={cn("text-2xl font-extrabold hidden xl:block transition-colors duration-300", navTransparent ? "text-[#F5EDE0]" : "text-[#3D1409]")} style={{ fontFamily: 'var(--font-archivo-black)' }}>Trailblazers' Vault</h1>
+              <h1 className={cn("text-xl font-extrabold hidden xl:block transition-colors duration-300", navTransparent ? "text-[#F5EDE0]" : "text-[#3D1409]")} style={{ fontFamily: 'var(--font-archivo-black)' }}>Trailblazers' Vault</h1>
             </Link>
             
             {/* Navigation Links */}
@@ -775,7 +754,7 @@ export function Navigation() {
                   {/* Profile icon button */}
                   <button
                     onClick={() => setProfileDropdownOpen(v => !v)}
-                    className="w-12 h-12 xl:w-14 xl:h-14 rounded-2xl flex items-center justify-center transition-all duration-300 border-4 transform hover:-translate-y-0.5 hover:rotate-6 active:scale-95 shadow-lg"
+                    className="w-10 h-10 xl:w-11 xl:h-11 rounded-xl flex items-center justify-center transition-all duration-300 border-3 transform hover:-translate-y-0.5 hover:rotate-6 active:scale-95 shadow-lg"
                     style={navTransparent
                       ? { background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }
                       : { background: 'linear-gradient(to bottom right, #5C1A1A, #7A2424)', borderColor: '#3D1409' }
@@ -842,7 +821,7 @@ export function Navigation() {
 
       {/* Logout success toast */}
       {showLogoutToast && (
-        <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-9999 flex items-center gap-3 px-5 py-3.5 bg-[#F0F7EC] border-4 border-[#5C7A3B] rounded-xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 whitespace-nowrap" style={{ fontFamily: 'var(--font-archivo-black)' }}>
+        <div className="fixed top-16 md:top-18 left-1/2 -translate-x-1/2 z-9999 flex items-center gap-3 px-5 py-3.5 bg-[#F0F7EC] border-4 border-[#5C7A3B] rounded-xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 whitespace-nowrap" style={{ fontFamily: 'var(--font-archivo-black)' }}>
           <CheckCircle2 className="w-5 h-5 text-[#5C7A3B] shrink-0" />
           <p className="text-sm font-bold text-[#2D4A1A]">You have been successfully logged out.</p>
         </div>

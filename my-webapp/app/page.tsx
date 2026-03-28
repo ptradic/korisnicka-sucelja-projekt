@@ -1,11 +1,8 @@
 "use client";
 
-import { Button } from "@/app/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { Package, BookOpen, ChevronRight, Sparkles, ChevronDown, Zap, Archive, GripVertical } from "lucide-react";
+import { Package, BookOpen, ChevronRight, ChevronDown, Zap, GripVertical } from "lucide-react";
 import { useScrollReveal } from "@/app/hooks/useScrollReveal";
 import { auth } from "@/src/firebase";
 

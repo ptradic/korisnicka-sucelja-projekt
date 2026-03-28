@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { LifeBuoy, Github, MessageCircle, HelpCircle, Send, RotateCcw, Mail, ExternalLink, Bug, Lightbulb, ChevronDown, Check } from 'lucide-react';
+import { Github, MessageCircle, HelpCircle, Send, RotateCcw, Mail, ExternalLink, Bug, Lightbulb, ChevronDown, Check } from 'lucide-react';
 import { useScrollReveal } from "@/app/hooks/useScrollReveal";
 
 const quickLinks = [

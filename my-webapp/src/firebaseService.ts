@@ -506,7 +506,6 @@ export async function joinCampaign(
   });
 
   // Create initial player inventory
-  const avatars = ['⚔️', '✨', '🛡️', '🏹', '🔥', '🌙', '🔨', '🌊'];
   const colors = ['bg-red-600', 'bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-amber-600', 'bg-teal-600', 'bg-rose-600', 'bg-indigo-600'];
   const playerIndex = campaign.playerIds.length;
 
@@ -515,7 +514,7 @@ export async function joinCampaign(
     playerName,
     campaignId,
     color: colors[playerIndex % colors.length],
-    avatar: avatars[playerIndex % avatars.length],
+    avatar: '',
     maxWeight: 150,
     inventory: [],
     currency: { pp: 0, gp: 0, sp: 0, cp: 0 },
@@ -582,18 +581,33 @@ export async function updatePlayerInventory(
   await updateDoc(docRef, updateData);
 }
 
-export async function updatePlayerNameInCampaign(
+export async function updatePlayerProfileInCampaign(
   campaignId: string,
   playerId: string,
-  playerName: string
+  updates: { name: string; avatar: string }
 ): Promise<void> {
-  const trimmedName = playerName.trim();
+  const trimmedName = updates.name.trim();
+  const trimmedAvatar = updates.avatar.trim();
+
   if (!trimmedName) {
     throw new Error('Character name is required.');
+  }
+  if (trimmedAvatar) {
+    let parsedAvatar: URL;
+    try {
+      parsedAvatar = new URL(trimmedAvatar);
+    } catch {
+      throw new Error('Avatar must be a valid URL.');
+    }
+
+    if (parsedAvatar.protocol !== 'http:' && parsedAvatar.protocol !== 'https:') {
+      throw new Error('Avatar URL must use http or https.');
+    }
   }
 
   await updateDoc(doc(db, 'campaigns', campaignId, 'playerInventories', playerId), {
     playerName: trimmedName,
+    avatar: trimmedAvatar,
     updatedAt: serverTimestamp(),
   });
 }

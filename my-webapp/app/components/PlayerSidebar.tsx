@@ -20,36 +20,99 @@ interface PlayerSidebarProps {
   totalSlots: number;
   onUpdateCampaignSettings?: (updates: { name: string; password: string }) => Promise<void>;
   currentUserId?: string;
-  onUpdateMyCharacterName?: (name: string) => Promise<void>;
+  onUpdateMyCharacterProfile?: (updates: { name: string; avatar: string }) => Promise<void>;
+}
+
+function isHttpAvatarUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function PlayerAvatar({
+  avatar,
+  isSelected,
+  sizeClass,
+  iconClass,
+  textClass,
+}: {
+  avatar: string;
+  isSelected: boolean;
+  sizeClass: string;
+  iconClass: string;
+  textClass: string;
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const trimmedAvatar = avatar.trim();
+  const canRenderImage = !imageFailed && isHttpAvatarUrl(trimmedAvatar);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [avatar]);
+
+  return (
+    <div
+      className={
+        sizeClass +
+        ' rounded-full flex items-center justify-center shrink-0 transition-all overflow-hidden ' +
+        (isSelected ? 'bg-white/20' : 'bg-[#D9C7AA] border border-[#8B6F47]/40')
+      }
+    >
+      {canRenderImage ? (
+        <img
+          src={trimmedAvatar}
+          alt="Player avatar"
+          className="w-full h-full object-cover"
+          onError={() => setImageFailed(true)}
+        />
+      ) : trimmedAvatar ? (
+        <span className={textClass + ' select-none'}>{trimmedAvatar.slice(0, 2)}</span>
+      ) : (
+        <User className={iconClass + ' ' + (isSelected ? 'text-white/80' : 'text-[#8B6F47]')} />
+      )}
+    </div>
+  );
 }
 
 function CharacterNameModal({
   initialName,
+  initialAvatar,
   onClose,
   onSave,
 }: {
   initialName: string;
+  initialAvatar: string;
   onClose: () => void;
-  onSave: (name: string) => Promise<void>;
+  onSave: (updates: { name: string; avatar: string }) => Promise<void>;
 }) {
   const [name, setName] = useState(initialName);
+  const [avatar, setAvatar] = useState(initialAvatar);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const handleSave = async () => {
-    const trimmed = name.trim();
-    if (!trimmed) {
+    const trimmedName = name.trim();
+    const trimmedAvatar = avatar.trim();
+
+    if (!trimmedName) {
       setError('Character name is required.');
+      return;
+    }
+    if (trimmedAvatar && !isHttpAvatarUrl(trimmedAvatar)) {
+      setError('Avatar must be a valid http(s) image link.');
       return;
     }
 
     setSaving(true);
     setError('');
     try {
-      await onSave(trimmed);
+      await onSave({ name: trimmedName, avatar: trimmedAvatar });
       onClose();
     } catch (e: any) {
-      setError(e?.message || 'Could not update character name.');
+      setError(e?.message || 'Could not update character settings.');
     } finally {
       setSaving(false);
     }
@@ -63,7 +126,7 @@ function CharacterNameModal({
       >
         <div className="p-5 pb-3 flex items-start justify-between border-b-2 border-[#DCC8A8]">
           <div>
-            <h2 className="text-lg font-extrabold text-[#3D1409]">Change Character Name</h2>
+            <h2 className="text-lg font-extrabold text-[#3D1409]">Character Settings</h2>
             <p className="text-[#5C4A2F] text-xs">This only affects this vault.</p>
           </div>
           <button onClick={onClose} className="btn-ghost !p-1.5 text-[#8B6F47] hover:text-[#3D1409] hover:bg-white/50">
@@ -81,6 +144,19 @@ function CharacterNameModal({
               placeholder="e.g., Elira Nightwind"
               maxLength={40}
             />
+          </div>
+
+          <div>
+            <label className="block text-[#3D1409] font-semibold text-sm mb-1">Avatar Image Link</label>
+            <input
+              value={avatar}
+              onChange={(e) => setAvatar(e.target.value)}
+              className="w-full px-3 py-2 bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] focus:outline-none focus:border-[#5C1A1A]"
+              placeholder="https://example.com/avatar.png"
+              type="url"
+              inputMode="url"
+            />
+            <p className="text-[11px] text-[#5C4A2F] mt-1">Use a direct image URL (http or https), or leave blank.</p>
           </div>
 
           {error && (
@@ -276,15 +352,17 @@ function PlayerPill({
               : 'bg-[#F5EFE0] border-[#8B6F47]/50 text-[#3D1409]')
       }
     >
-      <div
-        className={
-          (isAnyDragging ? 'w-8 h-8 ' : 'w-6 h-6 ') +
-          'rounded-full flex items-center justify-center shrink-0 transition-all ' +
-          (isSelected ? 'bg-white/20' : 'bg-[#D9C7AA]')
+      <PlayerAvatar
+        avatar={player.avatar}
+        isSelected={isSelected}
+        sizeClass={isAnyDragging ? 'w-8 h-8' : 'w-6 h-6'}
+        iconClass={isAnyDragging ? 'w-4 h-4' : 'w-3 h-3'}
+        textClass={
+          (isAnyDragging ? 'text-sm ' : 'text-xs ') +
+          'font-semibold leading-none ' +
+          (isSelected ? 'text-white/90' : 'text-[#5C1A1A]')
         }
-      >
-        <User className={(isAnyDragging ? 'w-4 h-4 ' : 'w-3 h-3 ') + (isSelected ? 'text-white/80' : 'text-[#8B6F47]')} />
-      </div>
+      />
       <span className={(isAnyDragging ? 'text-sm ' : 'text-xs ') + 'font-semibold'}>{player.name}</span>
       {isOver && canDrop && (
         <div className="absolute inset-0 bg-[#B8860B]/20 rounded-full pointer-events-none animate-pulse" />
@@ -407,14 +485,13 @@ function PlayerSlot({
       }
     >
       <div className="flex items-center gap-2">
-        <div
-          className={
-            'w-8 h-8 rounded-full flex items-center justify-center shrink-0 ' +
-            (isSelected ? 'bg-white/20' : 'bg-[#D9C7AA] border border-[#8B6F47]/40')
-          }
-        >
-          <User className={'w-4 h-4 ' + (isSelected ? 'text-white/80' : 'text-[#8B6F47]')} />
-        </div>
+        <PlayerAvatar
+          avatar={player.avatar}
+          isSelected={isSelected}
+          sizeClass="w-8 h-8"
+          iconClass="w-4 h-4"
+          textClass={'text-sm font-semibold leading-none ' + (isSelected ? 'text-white/90' : 'text-[#5C1A1A]')}
+        />
         <div className="flex-1 min-w-0 text-left">
           <div className="text-xs font-semibold truncate">{player.name}</div>
           <div className="flex items-center gap-1 mt-0.5">
@@ -544,7 +621,7 @@ export function PlayerSidebar({
   totalSlots,
   onUpdateCampaignSettings,
   currentUserId,
-  onUpdateMyCharacterName,
+  onUpdateMyCharacterProfile,
 }: PlayerSidebarProps) {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showCharacterModal, setShowCharacterModal] = useState(false);
@@ -601,11 +678,11 @@ export function PlayerSidebar({
             <Settings className="w-5 h-5" />
           </button>
         )}
-        {!isGM && currentPlayer && onUpdateMyCharacterName && (
+        {!isGM && currentPlayer && onUpdateMyCharacterProfile && (
           <button
             data-tutorial="character-settings"
             onClick={() => setShowCharacterModal(true)}
-            title="Change your character name"
+            title="Change your character settings"
             className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-white/60 text-[#5C1A1A] transition-all"
           >
             <Settings className="w-5 h-5" />
@@ -653,11 +730,11 @@ export function PlayerSidebar({
             <h2 className="text-[#3D1409] text-sm font-bold truncate leading-tight flex-1">
               {campaignName}
             </h2>
-            {!isGM && currentPlayer && onUpdateMyCharacterName && (
+            {!isGM && currentPlayer && onUpdateMyCharacterProfile && (
               <button
                 data-tutorial="character-settings"
                 onClick={() => setShowCharacterModal(true)}
-                title="Change your character name"
+                title="Change your character settings"
                 className="p-1.5 rounded-lg hover:bg-white/60 text-[#5C1A1A] transition-all shrink-0"
               >
                 <Settings className="w-5 h-5" />
@@ -751,11 +828,12 @@ export function PlayerSidebar({
         />
       )}
 
-      {showCharacterModal && !isGM && currentPlayer && onUpdateMyCharacterName && (
+      {showCharacterModal && !isGM && currentPlayer && onUpdateMyCharacterProfile && (
         <CharacterNameModal
           initialName={currentPlayer.name}
+          initialAvatar={currentPlayer.avatar}
           onClose={() => setShowCharacterModal(false)}
-          onSave={onUpdateMyCharacterName}
+          onSave={onUpdateMyCharacterProfile}
         />
       )}
     </>

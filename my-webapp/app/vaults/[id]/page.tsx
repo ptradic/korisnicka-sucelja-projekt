@@ -22,7 +22,7 @@ import {
   subscribeToPlayerInventories,
   moveItemBetweenInventories,
   updatePlayerInventory,
-  updatePlayerNameInCampaign,
+  updatePlayerProfileInCampaign,
   updateSharedLoot,
   createTransferRequest,
   cancelTransferRequest,
@@ -737,11 +737,11 @@ export default function VaultDetailPage() {
     }
   };
 
-  const handleUpdateMyCharacterName = async (newName: string): Promise<void> => {
+  const handleUpdateMyCharacterProfile = async (updates: { name: string; avatar: string }): Promise<void> => {
     if (!campaignId || !userId) {
       throw new Error('Campaign is not ready.');
     }
-    await trackWrite(() => updatePlayerNameInCampaign(campaignId, userId, newName));
+    await trackWrite(() => updatePlayerProfileInCampaign(campaignId, userId, updates));
   };
 
   /* ═══════════════════════════════════════════════════════════════════ *
@@ -774,7 +774,7 @@ export default function VaultDetailPage() {
             totalSlots={currentCampaign?.playerIds.length || players.length}
             onUpdateCampaignSettings={isGM ? handleUpdateCampaignSettings : undefined}
             currentUserId={userId}
-            onUpdateMyCharacterName={!isGM ? handleUpdateMyCharacterName : undefined}
+            onUpdateMyCharacterProfile={!isGM ? handleUpdateMyCharacterProfile : undefined}
           />
           <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
             <InventoryView

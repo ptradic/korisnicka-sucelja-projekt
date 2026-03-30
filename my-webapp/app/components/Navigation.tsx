@@ -26,10 +26,6 @@ type AuthData = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function TbvLogoIcon({ className }: { className?: string }) {
-  return <img src="/tbvlogo.svg" alt="TBV logo" className={cn("object-contain", className)} />;
-}
-
 const pages: Page[] = [
   { title: "Home", path: "/", icon: Home },
   { title: "Guides", path: "/guides", icon: BookOpen },
@@ -588,18 +584,7 @@ export function Navigation() {
       >
         <div className="flex items-center justify-between px-4 py-2">
           <Link href="/" className="group flex items-center gap-3 transition-all duration-300">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-              style={{
-                background: isOpen || navTransparent
-                  ? 'rgba(255, 255, 255, 0.1)'
-                  : 'linear-gradient(to bottom right, #5C1A1A, #7A2424)',
-                backdropFilter: isOpen || navTransparent ? 'blur(4px)' : 'none',
-                transition: 'all 0.4s ease-in-out'
-              }}
-            >
-              <img src="/tbvlogo.svg" alt="TBV logo" className="w-9 h-9 object-contain" />
-            </div>
+            <img src="/tbvlogo.svg" alt="TBV logo" className="w-12 h-12 object-contain shrink-0" />
             <h1 
               className="text-xl font-extrabold"
               style={{ 
@@ -731,17 +716,7 @@ export function Navigation() {
           <div className="flex items-center h-14 gap-2 xl:gap-6">
             {/* Brand Logo */}
             <Link href="/" className="group flex items-center gap-2 xl:gap-3 shrink-0 transition-all duration-300 w-auto xl:w-64">
-              <div
-                className={cn(
-                  "w-12 h-12 xl:w-14 xl:h-14 shrink-0 aspect-square rounded-xl flex items-center justify-center shadow-lg hover:rotate-6 transition-all duration-300",
-                  navTransparent
-                    ? ""
-                    : "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A]"
-                )}
-                style={navTransparent ? { background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)' } : undefined}
-              >
-                <img src="/tbvlogo.svg" alt="TBV logo" className="w-8 h-8 xl:w-10 xl:h-10 object-contain" />
-              </div>
+              <img src="/tbvlogo.svg" alt="TBV logo" className="w-12 h-12 xl:w-14 xl:h-14 object-contain shrink-0 transition-transform duration-300 group-hover:rotate-6" />
               <h1 className={cn("text-xl font-extrabold hidden xl:block transition-colors duration-300", navTransparent ? "text-[#F5EDE0]" : "text-[#3D1409]")} style={{ fontFamily: 'var(--font-archivo-black)' }}>Trailblazers' Vault</h1>
             </Link>
             

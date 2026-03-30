@@ -604,20 +604,13 @@ export function Navigation() {
               e.preventDefault();
               setIsOpen(prev => !prev);
             }}
-            className="w-10 h-10 flex flex-col items-center justify-center gap-1 rounded-lg fixed top-2 right-4 z-100"
-            style={{
-              background: isOpen ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-              backdropFilter: isOpen ? 'blur(4px)' : 'none',
-              boxShadow: isOpen 
-                ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3)' 
-                : '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
-              transition: 'all 0.4s ease-in-out'
-            }}
+            className="flex flex-col items-center justify-center gap-1.5 fixed top-6 right-4 z-100"
+            style={{ background: 'none', border: 'none', boxShadow: 'none' }}
             aria-label="Toggle menu"
           >
-            <span className={cn("block w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out", isOpen ? "rotate-45 translate-y-1.5 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
-            <span className={cn("block w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out", isOpen ? "opacity-0 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
-            <span className={cn("block w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out", isOpen ? "-rotate-45 -translate-y-1.5 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
+            <span className={cn("block w-8 h-0.5 rounded-full transition-all duration-300 ease-in-out", isOpen ? "rotate-45 translate-y-2 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
+            <span className={cn("block w-8 h-0.5 rounded-full transition-all duration-300 ease-in-out", isOpen ? "opacity-0 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
+            <span className={cn("block w-8 h-0.5 rounded-full transition-all duration-300 ease-in-out", isOpen ? "-rotate-45 -translate-y-2 bg-white" : navTransparent ? "bg-[#F5EDE0]" : "bg-[#3D1409]")} />
           </button>
         </div>
       </div>
@@ -716,7 +709,7 @@ export function Navigation() {
           <div className="flex items-center h-14 gap-2 xl:gap-6">
             {/* Brand Logo */}
             <Link href="/" className="group flex items-center gap-2 xl:gap-3 shrink-0 transition-all duration-300 w-auto xl:w-64">
-              <img src="/tbvlogo.svg" alt="TBV logo" className="w-12 h-12 xl:w-14 xl:h-14 object-contain shrink-0 transition-transform duration-300 group-hover:rotate-6" />
+              <img src="/tbvlogo.svg" alt="TBV logo" className="w-12 h-12 object-contain shrink-0 transition-transform duration-300 group-hover:rotate-6" />
               <h1 className={cn("text-xl font-extrabold hidden xl:block transition-colors duration-300", navTransparent ? "text-[#F5EDE0]" : "text-[#3D1409]")} style={{ fontFamily: 'var(--font-archivo-black)' }}>Trailblazers' Vault</h1>
             </Link>
             

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Package, Plus, Users, Calendar, Trash2, X, Scroll, Shield, ChevronRight, LogIn, Lock, Eye, EyeOff, AlertCircle, LogOut } from 'lucide-react';
+import { Package, Plus, Users, Calendar, Trash2, X, Shield, ChevronRight, LogIn, Lock, Eye, EyeOff, AlertCircle, LogOut } from 'lucide-react';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface Vault {
@@ -371,8 +371,8 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
         {/* Header */}
         <div className="p-3 sm:p-5 pb-2 sm:pb-3 flex items-start justify-between shrink-0">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
-              <Scroll className="w-6 h-6 text-white" />
+            <div className="w-14 h-14 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
+              <img src="/tbvlogo.svg" alt="TBV logo" className="w-9 h-9 object-contain" />
             </div>
             <div>
               <h2 className="text-xl font-extrabold text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Create New Vault</h2>
@@ -572,7 +572,7 @@ function JoinVaultModal({ onClose, onJoin }: { onClose: () => void; onJoin: (cam
             </label>
             <p className="text-[#5C4A2F] text-xs mb-2">Ask your GM for the 8-character invite code</p>
             <div className="relative">
-              <Scroll className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B6F47]" />
+              <Package className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B6F47]" />
               <input
                 type="text"
                 value={campaignId}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/app/components/ui/sheet";
-import { Menu, Scroll, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save, Trash2, AlertTriangle } from "lucide-react";
+import { Menu, Home, BookOpen, HelpCircle, LogIn, LogOut, User, X, Eye, EyeOff, AlertCircle, CheckCircle2, Save, Trash2, AlertTriangle, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { updateUserName, signOutUser, onAuthChange, getUserDoc, deleteUserProfile } from "@/src/firebaseService";
 import { auth } from "@/src/firebase";
@@ -26,12 +26,16 @@ type AuthData = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function TbvLogoIcon({ className }: { className?: string }) {
+  return <img src="/tbvlogo.svg" alt="TBV logo" className={cn("object-contain", className)} />;
+}
+
 const pages: Page[] = [
   { title: "Home", path: "/", icon: Home },
   { title: "Guides", path: "/guides", icon: BookOpen },
   { title: "Support", path: "/support", icon: HelpCircle },
   { title: "Login", path: "/login", icon: LogIn },
-  { title: "Vaults", path: "/vaults", icon: Scroll },
+  { title: "Vaults", path: "/vaults", icon: Package },
 ];
 
 function processPage(page: Page, index: number, currentPath?: string, isMobile: boolean = false, onClick?: () => void, transparent: boolean = false) {
@@ -585,17 +589,16 @@ export function Navigation() {
         <div className="flex items-center justify-between px-4 py-2">
           <Link href="/" className="group flex items-center gap-3 transition-all duration-300">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center border-3 shadow-lg"
+              className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
               style={{
                 background: isOpen || navTransparent
                   ? 'rgba(255, 255, 255, 0.1)'
                   : 'linear-gradient(to bottom right, #5C1A1A, #7A2424)',
-                borderColor: isOpen || navTransparent ? 'rgba(255, 255, 255, 0.2)' : '#3D1409',
                 backdropFilter: isOpen || navTransparent ? 'blur(4px)' : 'none',
                 transition: 'all 0.4s ease-in-out'
               }}
             >
-              <Scroll className="w-6 h-6 text-white" />
+              <img src="/tbvlogo.svg" alt="TBV logo" className="w-9 h-9 object-contain" />
             </div>
             <h1 
               className="text-xl font-extrabold"
@@ -730,14 +733,14 @@ export function Navigation() {
             <Link href="/" className="group flex items-center gap-2 xl:gap-3 shrink-0 transition-all duration-300 w-auto xl:w-64">
               <div
                 className={cn(
-                  "w-10 h-10 xl:w-11 xl:h-11 shrink-0 aspect-square rounded-xl flex items-center justify-center border-3 shadow-lg hover:rotate-6 transition-all duration-300",
+                  "w-12 h-12 xl:w-14 xl:h-14 shrink-0 aspect-square rounded-xl flex items-center justify-center shadow-lg hover:rotate-6 transition-all duration-300",
                   navTransparent
-                    ? "border-white/20"
-                    : "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A] border-[#3D1409]"
+                    ? ""
+                    : "bg-linear-to-br from-[#5C1A1A] to-[#7A2424] group-hover:from-[#4A1515] group-hover:to-[#5C1A1A]"
                 )}
                 style={navTransparent ? { background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)' } : undefined}
               >
-                <Scroll className="w-5 h-5 xl:w-6 xl:h-6 text-white" />
+                <img src="/tbvlogo.svg" alt="TBV logo" className="w-8 h-8 xl:w-10 xl:h-10 object-contain" />
               </div>
               <h1 className={cn("text-xl font-extrabold hidden xl:block transition-colors duration-300", navTransparent ? "text-[#F5EDE0]" : "text-[#3D1409]")} style={{ fontFamily: 'var(--font-archivo-black)' }}>Trailblazers' Vault</h1>
             </Link>

@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -n \"sourcebook\\\\|PLAYER CUSTOM\\\\|hiddenFromOthers\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx)"
+      "Bash(grep -n \"sourcebook\\\\|PLAYER CUSTOM\\\\|hiddenFromOthers\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx)",
+      "Bash(npx ts-node:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

@@ -78,7 +78,7 @@ export interface UserDoc {
   role: 'gm' | 'player'; // Current active role
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  dmCampaigns: string[]; // Campaign IDs where user is GM
+  gmCampaigns: string[]; // Campaign IDs where user is GM
   playerCampaigns: string[]; // Campaign IDs where user is a player
   userHomebrew: Item[];
 }
@@ -88,8 +88,8 @@ export interface CampaignDoc {
   id: string;
   name: string;
   description: string;
-  dmId: string;
-  dmName: string;
+  gmId: string;
+  gmName: string;
   playerIds: string[]; // User IDs of players
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -126,7 +126,7 @@ export async function signUpUser(email: string, password: string, name: string, 
     role,
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
-    dmCampaigns: [],
+    gmCampaigns: [],
     playerCampaigns: [],
     userHomebrew: [],
   };
@@ -160,7 +160,7 @@ export async function signInWithGoogle(): Promise<{ user: FirebaseUser; isNewUse
       role: 'player', // Default role for Google sign-in
       createdAt: serverTimestamp() as Timestamp,
       updatedAt: serverTimestamp() as Timestamp,
-      dmCampaigns: [],
+      gmCampaigns: [],
       playerCampaigns: [],
       userHomebrew: [],
     };
@@ -237,7 +237,7 @@ export async function updateUserHomebrewItem(uid: string, updatedItem: Item): Pr
   const nextHomebrew = [...(userDoc.userHomebrew ?? [])];
   nextHomebrew[existingIndex] = cleanItem(updatedItem);
 
-  const campaignsSnap = await getDocs(query(collection(db, 'campaigns'), where('dmId', '==', uid)));
+  const campaignsSnap = await getDocs(query(collection(db, 'campaigns'), where('gmId', '==', uid)));
   const batch = writeBatch(db);
 
   batch.update(doc(db, 'users', uid), {
@@ -271,7 +271,7 @@ export async function deleteUserHomebrewItem(uid: string, itemId: string): Promi
 
   const nextHomebrew = (userDoc.userHomebrew ?? []).filter((item) => item.id !== itemId);
 
-  const campaignsSnap = await getDocs(query(collection(db, 'campaigns'), where('dmId', '==', uid)));
+  const campaignsSnap = await getDocs(query(collection(db, 'campaigns'), where('gmId', '==', uid)));
   const batch = writeBatch(db);
 
   batch.update(doc(db, 'users', uid), {
@@ -310,8 +310,8 @@ export async function createCampaign(
     id: campaignId,
     name,
     description,
-    dmId: gmId,
-    dmName: gmName,
+    gmId: gmId,
+    gmName: gmName,
     playerIds: [],
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
@@ -325,7 +325,7 @@ export async function createCampaign(
   // Add to GM's campaign list
   const userRef = doc(db, 'users', gmId);
   await updateDoc(userRef, {
-    dmCampaigns: arrayUnion(campaignId),
+    gmCampaigns: arrayUnion(campaignId),
     updatedAt: serverTimestamp(),
   });
 
@@ -350,7 +350,7 @@ export async function updateCampaignSettings(
   if (!campaign) {
     throw new Error('Campaign not found');
   }
-  if (campaign.dmId !== gmId) {
+  if (campaign.gmId !== gmId) {
     throw new Error('Only the campaign GM can update vault settings.');
   }
 
@@ -370,7 +370,7 @@ export async function updateCampaignCustomItemPool(
   if (!campaign) {
     throw new Error('Campaign not found');
   }
-  if (campaign.dmId !== gmId) {
+  if (campaign.gmId !== gmId) {
     throw new Error('Only the campaign GM can update custom items.');
   }
 
@@ -396,7 +396,7 @@ export async function deleteCampaign(campaignId: string, gmId: string): Promise<
 
   // Remove campaign from GM's own user doc (allowed by rules)
   batch.update(doc(db, 'users', gmId), {
-    dmCampaigns: arrayRemove(campaignId),
+    gmCampaigns: arrayRemove(campaignId),
     updatedAt: serverTimestamp(),
   });
 
@@ -414,7 +414,7 @@ export async function leaveCampaign(campaignId: string, playerId: string): Promi
     throw new Error('Campaign not found');
   }
 
-  if (campaign.dmId === playerId) {
+  if (campaign.gmId === playerId) {
     throw new Error('GM cannot leave their own campaign. Delete the vault instead.');
   }
 
@@ -529,7 +529,7 @@ export async function getUserCampaigns(uid: string, role: 'gm' | 'player'): Prom
   const userDoc = await getUserDoc(uid);
   if (!userDoc) return [];
 
-  const campaignIds = role === 'gm' ? userDoc.dmCampaigns : userDoc.playerCampaigns;
+  const campaignIds = role === 'gm' ? userDoc.gmCampaigns : userDoc.playerCampaigns;
   if (campaignIds.length === 0) return [];
 
   const campaigns: CampaignDoc[] = [];
@@ -1066,7 +1066,7 @@ export async function deleteUserProfile(uid: string): Promise<void> {
   if (!userDocData) throw new Error('User profile not found');
 
   // 1. Delete all GM-owned campaigns (vaults the user created)
-  for (const campaignId of userDocData.dmCampaigns) {
+  for (const campaignId of userDocData.gmCampaigns) {
     try {
       await deleteCampaign(campaignId, uid);
     } catch (e) {

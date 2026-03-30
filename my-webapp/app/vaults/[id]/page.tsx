@@ -160,7 +160,7 @@ export default function VaultDetailPage() {
     getCampaign(campaignId)
       .then((campaign) => {
         if (cancelled) return;
-        if (!campaign || (campaign.dmId !== userId && !campaign.playerIds.includes(userId))) {
+        if (!campaign || (campaign.gmId !== userId && !campaign.playerIds.includes(userId))) {
           router.replace('/vaults');
           return;
         }
@@ -180,7 +180,7 @@ export default function VaultDetailPage() {
     if (isCampaignLoading || !campaignId) return;
 
     const unsubCampaign = subscribeToCampaign(campaignId, (campaign) => {
-      if (!campaign || (campaign.dmId !== userIdRef.current && !campaign.playerIds.includes(userIdRef.current))) {
+      if (!campaign || (campaign.gmId !== userIdRef.current && !campaign.playerIds.includes(userIdRef.current))) {
         router.replace('/vaults');
         return;
       }

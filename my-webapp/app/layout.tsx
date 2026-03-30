@@ -34,9 +34,9 @@ export const metadata: Metadata = {
   title: "Trailblazers' Vault",
   description: "Manage your 5e or 5.5e party's inventory",
   icons: {
-    icon: "/tbvlogo.svg",
-    shortcut: "/tbvlogo.svg",
-    apple: "/tbvlogo.svg",
+    icon: "/tbvBlack.svg",
+    shortcut: "/tbvBlack.svg",
+    apple: "/tbvBlack.svg",
   },
 };
 

@@ -372,7 +372,7 @@ function CreateVaultModal({ onClose, onCreate }: { onClose: () => void; onCreate
         <div className="p-3 sm:p-5 pb-2 sm:pb-3 flex items-start justify-between shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-linear-to-br from-[#8B6F47] to-[#A0845A] rounded-xl flex items-center justify-center shadow-md">
-              <img src="/tbvlogo.svg" alt="TBV logo" className="w-9 h-9 object-contain" />
+              <img src="/tbvWhite.svg" alt="TBV logo" className="w-9 h-9 object-contain" />
             </div>
             <div>
               <h2 className="text-xl font-extrabold text-[#3D1409]" style={{ fontFamily: 'var(--font-archivo-black)' }}>Create New Vault</h2>

@@ -584,7 +584,7 @@ export function Navigation() {
       >
         <div className="flex items-center justify-between px-4 py-2">
           <Link href="/" className="group flex items-center gap-3 transition-all duration-300">
-            <img src="/tbvlogo.svg" alt="TBV logo" className="w-12 h-12 object-contain shrink-0" />
+            <img src="/tbvWhite.svg" alt="TBV logo" className="w-12 h-12 object-contain shrink-0" />
             <h1 
               className="text-xl font-extrabold"
               style={{ 
@@ -709,7 +709,7 @@ export function Navigation() {
           <div className="flex items-center h-14 gap-2 xl:gap-6">
             {/* Brand Logo */}
             <Link href="/" className="group flex items-center gap-2 xl:gap-3 shrink-0 transition-all duration-300 w-auto xl:w-64">
-              <img src="/tbvlogo.svg" alt="TBV logo" className="w-12 h-12 object-contain shrink-0 transition-transform duration-300 group-hover:rotate-6" />
+              <img src="/tbvWhite.svg" alt="TBV logo" className="w-12 h-12 object-contain shrink-0 transition-transform duration-300 group-hover:rotate-6" />
               <h1 className={cn("text-xl font-extrabold hidden xl:block transition-colors duration-300", navTransparent ? "text-[#F5EDE0]" : "text-[#3D1409]")} style={{ fontFamily: 'var(--font-archivo-black)' }}>Trailblazers' Vault</h1>
             </Link>
             

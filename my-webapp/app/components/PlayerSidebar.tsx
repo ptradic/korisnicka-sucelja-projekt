@@ -92,6 +92,7 @@ function CharacterNameModal({
   const [avatar, setAvatar] = useState(initialAvatar);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const mouseDownOnBackdrop = useRef(false);
 
   const handleSave = async () => {
     const trimmedName = name.trim();
@@ -119,7 +120,11 @@ function CharacterNameModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-60">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-60"
+      onMouseDown={(e) => { mouseDownOnBackdrop.current = e.target === e.currentTarget; }}
+      onClick={(e) => { if (mouseDownOnBackdrop.current && e.target === e.currentTarget) onClose(); }}
+    >
       <div
         className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-md w-full shadow-2xl"
         style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}
@@ -195,6 +200,7 @@ function VaultSettingsModal({
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const mouseDownOnBackdrop = useRef(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(campaignId);
@@ -226,7 +232,11 @@ function VaultSettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-60">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-60"
+      onMouseDown={(e) => { mouseDownOnBackdrop.current = e.target === e.currentTarget; }}
+      onClick={(e) => { if (mouseDownOnBackdrop.current && e.target === e.currentTarget) onClose(); }}
+    >
       <div
         className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-md w-full shadow-2xl"
         style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}

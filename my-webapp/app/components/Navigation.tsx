@@ -724,13 +724,15 @@ export function Navigation() {
                   {/* Profile icon button */}
                   <button
                     onClick={() => setProfileDropdownOpen(v => !v)}
-                    className="w-10 h-10 xl:w-11 xl:h-11 rounded-xl flex items-center justify-center transition-all duration-300 border-3 transform hover:-translate-y-0.5 hover:rotate-6 active:scale-95 shadow-lg"
-                    style={navTransparent
-                      ? { background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }
-                      : { background: 'linear-gradient(to bottom right, #5C1A1A, #7A2424)', borderColor: '#3D1409' }
-                    }
+                    className={cn(
+                      "inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 font-semibold transition-all duration-300 hover:-translate-y-0.5 active:scale-95 group",
+                      navTransparent
+                        ? "border-2 border-[#F5EDE0]/50 bg-[#F5EDE0]/10 text-[#F5EDE0] backdrop-blur-sm shadow-md hover:bg-[#F5EDE0]/20 hover:border-[#F5EDE0]/75 hover:shadow-lg"
+                        : "border-2 border-[#3D1409]/50 bg-[#5C1A1A]/10 text-[#3D1409] shadow-md hover:bg-[#5C1A1A]/20 hover:border-[#3D1409]/75 hover:shadow-lg"
+                    )}
                   >
-                    <span className="text-sm xl:text-base font-bold text-white leading-none">{initials}</span>
+                    <User className="w-5 h-5 xl:block hidden group-hover:scale-110 transition-transform duration-300" />
+                    <span className="text-sm xl:text-base font-bold leading-none">{initials}</span>
                   </button>
 
                   {/* Dropdown menu */}
@@ -770,9 +772,18 @@ export function Navigation() {
                   )}
                 </div>
               ) : (
-                <ul>
-                  {processPage({ title: 'Login', path: '/login', icon: LogIn }, navPages.length, currentPath, false)}
-                </ul>
+                <Link
+                  href="/login"
+                  className={cn(
+                    "inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 font-semibold transition-all duration-300 hover:-translate-y-0.5 active:scale-95 group",
+                    navTransparent
+                      ? "border-2 border-[#F5EDE0]/50 bg-[#F5EDE0]/10 text-[#F5EDE0] backdrop-blur-sm shadow-md hover:bg-[#F5EDE0]/20 hover:border-[#F5EDE0]/75 hover:shadow-lg"
+                      : "border-2 border-[#3D1409]/50 bg-[#5C1A1A]/10 text-[#3D1409] shadow-md hover:bg-[#5C1A1A]/20 hover:border-[#3D1409]/75 hover:shadow-lg"
+                  )}
+                >
+                  <LogIn className="w-5 h-5 xl:block hidden group-hover:scale-110 transition-transform duration-300" />
+                  <span>Login</span>
+                </Link>
               )}
             </div>
           </div>

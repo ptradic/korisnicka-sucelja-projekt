@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 
 interface TutorialStep {
@@ -163,6 +163,7 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
   const [arrowDirection, setArrowDirection] = useState<'top' | 'bottom' | 'left' | 'right'>('top');
   const [visible, setVisible] = useState(false);
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   const step = steps[currentStep];
 
@@ -178,7 +179,7 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
     const gap = 14;
     const mobile = window.innerWidth < 640;
     const popupWidth = Math.min(mobile ? 280 : 300, window.innerWidth - 32);
-    const popupEstimatedHeight = 160;
+    const popupHeight = popupRef.current?.offsetHeight || 160;
 
     let top = 0;
     let left = 0;
@@ -194,19 +195,19 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
       arrowLeft = Math.max(16, rect.left + rect.width / 2 - left - 6);
       arrowTop = -8;
       // Flip to top if popup would go off-screen
-      if (top + popupEstimatedHeight > window.innerHeight - 16) {
+      if (top + popupHeight > window.innerHeight - 16) {
         direction = 'top';
-        top = rect.top - gap - popupEstimatedHeight;
-        arrowTop = popupEstimatedHeight - 1;
+        top = rect.top - gap - popupHeight;
+        arrowTop = popupHeight - 1;
       }
     } else if (direction === 'top') {
-      top = rect.top - gap - popupEstimatedHeight;
+      top = rect.top - gap - popupHeight;
       left = rect.left + rect.width / 2 - popupWidth / 2;
       left = Math.max(16, Math.min(left, window.innerWidth - popupWidth - 16));
       arrowLeft = Math.max(16, rect.left + rect.width / 2 - left - 6);
-      arrowTop = popupEstimatedHeight - 1;
+      arrowTop = popupHeight - 1;
     } else if (direction === 'right') {
-      top = rect.top + rect.height / 2 - popupEstimatedHeight / 2;
+      top = rect.top + rect.height / 2 - popupHeight / 2;
       left = rect.right + gap;
       // If not enough space on right, flip to bottom
       if (left + popupWidth > window.innerWidth - 16) {
@@ -218,17 +219,17 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
         arrowTop = -8;
       } else {
         arrowLeft = -8;
-        arrowTop = popupEstimatedHeight / 2 - 6;
+        arrowTop = popupHeight / 2 - 6;
       }
     } else if (direction === 'left') {
-      top = rect.top + rect.height / 2 - popupEstimatedHeight / 2;
+      top = rect.top + rect.height / 2 - popupHeight / 2;
       left = rect.left - gap - popupWidth;
       arrowLeft = popupWidth - 1;
-      arrowTop = popupEstimatedHeight / 2 - 6;
+      arrowTop = popupHeight / 2 - 6;
     }
 
     // Keep within viewport vertically
-    top = Math.max(16, Math.min(top, window.innerHeight - popupEstimatedHeight - 16));
+    top = Math.max(16, Math.min(top, window.innerHeight - popupHeight - 16));
 
     setPopupStyle({
       position: 'fixed',
@@ -260,7 +261,11 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
 
   useEffect(() => {
     setVisible(false);
-    const timer = setTimeout(positionPopup, 50);
+    // First pass with estimated height, second pass with measured height
+    const timer = setTimeout(() => {
+      positionPopup();
+      requestAnimationFrame(positionPopup);
+    }, 50);
     window.addEventListener('resize', positionPopup);
     window.addEventListener('scroll', positionPopup, true);
     return () => {
@@ -294,8 +299,8 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
 
   const arrowBorderClass = (() => {
     switch (arrowDirection) {
-      case 'top': return 'border-l-2 border-t-2';
-      case 'bottom': return 'border-r-2 border-b-2';
+      case 'top': return 'border-r-2 border-b-2';
+      case 'bottom': return 'border-l-2 border-t-2';
       case 'left': return 'border-t-2 border-r-2';
       case 'right': return 'border-b-2 border-l-2';
     }
@@ -329,7 +334,7 @@ export function VaultTutorial({ isGM, onComplete }: { isGM: boolean; onComplete:
       <div className="fixed inset-0 z-49" onClick={onComplete} />
 
       {/* Popup tooltip */}
-      <div style={popupStyle}>
+      <div ref={popupRef} style={popupStyle}>
         {/* Arrow */}
         <div style={{ ...arrowStyle, zIndex: 3 }}>
           <div className={`w-4 h-4 bg-[#3D1409] rotate-45 border-[#8B6F47] ${arrowBorderClass}`} />

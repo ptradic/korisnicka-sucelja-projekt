@@ -229,7 +229,7 @@ export default function SupportPage() {
       <div className="w-full max-w-5xl px-4 sm:px-10 mt-8">
 
         {/* Feedback Form Section */}
-        <section ref={feedbackRef} className="scroll-reveal bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 sm:p-10 shadow-2xl mb-12">
+        <section ref={feedbackRef} className="scroll-reveal bg-white/40 backdrop-blur-sm rounded-2xl p-6 sm:p-10 shadow-lg mb-12">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-linear-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg">
               <Mail className="w-6 h-6 text-white" />

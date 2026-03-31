@@ -246,7 +246,7 @@ export default function GuidesPage() {
             <section
               key={step.number}
               ref={stepRefs[i]}
-              className="scroll-reveal bg-[#F5EFE0] border-4 border-[#8B6F47] rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden"
+              className="scroll-reveal bg-white/40 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-lg relative overflow-hidden"
             >
               {/* Step number accent */}
               <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-[#5C1A1A]/8 rounded-[58%_42%_60%_40%/45%_55%_45%_55%] rotate-12" />
@@ -294,7 +294,7 @@ export default function GuidesPage() {
         {/* ─── Bonus: 404 easter-egg link ─── */}
         <section
           ref={bonusRef}
-          className="scroll-reveal bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 sm:p-10 shadow-2xl"
+          className="scroll-reveal bg-white/40 backdrop-blur-sm rounded-2xl p-6 sm:p-10 shadow-lg"
         >
           <div className="flex items-center gap-3 mb-5">
             <div className="w-12 h-12 bg-linear-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg">

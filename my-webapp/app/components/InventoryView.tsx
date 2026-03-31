@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks, Repeat2 } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks, Repeat2, UserX } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
@@ -7,6 +7,7 @@ import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 import type { Item, Category, Currency } from '../types';
 import { normalizeCategory } from '../types';
 import { calcTotalWeight } from '@/lib/utils';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface InventoryViewProps {
   inventory: Item[];
@@ -24,6 +25,7 @@ interface InventoryViewProps {
   isShared?: boolean;
   syncStatus?: 'saving' | 'saved';
   onTutorialStart?: () => void;
+  onKickPlayer?: () => void;
 }
 
 // Simple inline coin display — click to edit (read-only if no onChange)
@@ -200,6 +202,7 @@ export function InventoryView({
   isShared,
   syncStatus = 'saved',
   onTutorialStart,
+  onKickPlayer,
 }: InventoryViewProps) {
   type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
   type SortDirection = 'asc' | 'desc';
@@ -231,6 +234,7 @@ export function InventoryView({
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const filterMeasureRef = useRef<HTMLDivElement>(null);
   const previousQuantityByIdRef = useRef<Map<string, number>>(new Map());
+  const [showKickConfirm, setShowKickConfirm] = useState(false);
 
   // Enable auto-scroll when dragging items near the top
   useAutoScroll(itemListRef, { scrollThreshold: 100, scrollSpeed: 10 });
@@ -468,9 +472,20 @@ export function InventoryView({
         {/* Owner name + item count */}
         <div className="relative flex items-start gap-2 mb-2">
           <div className="min-w-0 pr-16">
-            <h2 className="text-[#3D1409] text-base sm:text-lg font-bold truncate">
-              {owner?.name || 'Unknown'}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-[#3D1409] text-base sm:text-lg font-bold truncate">
+                {owner?.name || 'Unknown'}
+              </h2>
+              {onKickPlayer && (
+                <button
+                  onClick={() => setShowKickConfirm(true)}
+                  className="shrink-0 p-1 rounded-md text-[#8B6F47]/50 hover:text-[#8B3A3A] hover:bg-[#8B3A3A]/10 transition-all duration-200"
+                  title={`Kick ${owner?.name ?? 'player'}`}
+                >
+                  <UserX className="w-4 h-4" />
+                </button>
+              )}
+            </div>
             <span className="text-[#8B6F47] text-xs">
               {visibleItems.length} {visibleItems.length === 1 ? 'item' : 'items'}
             </span>
@@ -904,6 +919,15 @@ export function InventoryView({
         </div>
       </div>
 
+      {showKickConfirm && onKickPlayer && (
+        <ConfirmDeleteModal
+          title="Kick Player"
+          message={`Are you sure you want to kick "${owner?.name ?? 'this player'}" from the vault? Their inventory will be removed, but all other vault data stays intact.`}
+          confirmLabel="Kick"
+          onConfirm={() => { setShowKickConfirm(false); onKickPlayer(); }}
+          onCancel={() => setShowKickConfirm(false)}
+        />
+      )}
     </div>
   );
 }

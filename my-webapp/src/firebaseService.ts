@@ -470,6 +470,49 @@ export async function leaveCampaign(campaignId: string, playerId: string): Promi
   }
 }
 
+export async function kickPlayer(campaignId: string, gmId: string, playerId: string): Promise<void> {
+  const campaign = await getCampaign(campaignId);
+  if (!campaign) throw new Error('Campaign not found');
+  if (campaign.gmId !== gmId) throw new Error('Only the GM can kick players.');
+  if (campaign.gmId === playerId) throw new Error('GM cannot kick themselves.');
+  if (!campaign.playerIds.includes(playerId)) throw new Error('Player is not in this campaign.');
+
+  // Remove player from campaign's playerIds (GM has write access to campaign doc)
+  await updateDoc(doc(db, 'campaigns', campaignId), {
+    playerIds: arrayRemove(playerId),
+    updatedAt: serverTimestamp(),
+  });
+
+  // Best-effort: update kicked player's user doc (GM may not have permission)
+  try {
+    await updateDoc(doc(db, 'users', playerId), {
+      playerCampaigns: arrayRemove(campaignId),
+      updatedAt: serverTimestamp(),
+    });
+  } catch { /* ignore — player's next login will reconcile */ }
+
+  // Best-effort: delete player's inventory doc
+  try {
+    await deleteDoc(doc(db, 'campaigns', campaignId, 'playerInventories', playerId));
+  } catch { /* ignore */ }
+
+  try {
+    const transferRefs = new Map<string, ReturnType<typeof doc>>();
+    const fromQuery = query(
+      collection(db, 'campaigns', campaignId, 'transferRequests'),
+      where('fromPlayerId', '==', playerId)
+    );
+    const toQuery = query(
+      collection(db, 'campaigns', campaignId, 'transferRequests'),
+      where('toPlayerId', '==', playerId)
+    );
+    const [fromSnap, toSnap] = await Promise.all([getDocs(fromQuery), getDocs(toQuery)]);
+    fromSnap.forEach((d) => transferRefs.set(d.id, d.ref));
+    toSnap.forEach((d) => transferRefs.set(d.id, d.ref));
+    await Promise.all(Array.from(transferRefs.values()).map((ref) => deleteDoc(ref)));
+  } catch { /* ignore */ }
+}
+
 export async function joinCampaign(
   campaignId: string,
   playerId: string,
@@ -532,11 +575,30 @@ export async function getUserCampaigns(uid: string, role: 'gm' | 'player'): Prom
   if (campaignIds.length === 0) return [];
 
   const campaigns: CampaignDoc[] = [];
+  const staleIds: string[] = [];
   for (const campaignId of campaignIds) {
     const campaign = await getCampaign(campaignId);
     if (campaign) {
+      // For players, only show campaigns they're still a member of
+      if (role === 'player' && !campaign.playerIds.includes(uid)) {
+        staleIds.push(campaignId);
+        continue;
+      }
       campaigns.push(campaign);
+    } else {
+      staleIds.push(campaignId);
     }
+  }
+
+  // Clean up stale campaign references from user doc
+  if (staleIds.length > 0) {
+    try {
+      const field = role === 'gm' ? 'gmCampaigns' : 'playerCampaigns';
+      await updateDoc(doc(db, 'users', uid), {
+        [field]: arrayRemove(...staleIds),
+        updatedAt: serverTimestamp(),
+      });
+    } catch { /* ignore */ }
   }
 
   return campaigns;

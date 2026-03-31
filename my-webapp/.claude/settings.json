@@ -3,7 +3,13 @@
     "allow": [
       "Bash(grep -n \"sourcebook\\\\|PLAYER CUSTOM\\\\|hiddenFromOthers\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx)",
       "Bash(npx ts-node:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(find /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp -type f -name *firebaseService* -o -name *firebase* -o -name *types*)",
+      "Bash(grep -n \"leaveCampaign\\\\|removePlayer\\\\|kickPlayer\\\\|handleLeave\\\\|handleRemove\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx)",
+      "Bash(grep -n \"PlayerSidebar\\\\|onSelectPlayer\\\\|players\\\\s*=\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx)",
+      "Bash(grep -n \"const players\\\\|const isGM\\\\|const isShared\\\\|const selectedPlayer\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx)",
+      "Bash(grep -n \"deletePlayerInventoryDoc\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx -B 5 -A 10)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

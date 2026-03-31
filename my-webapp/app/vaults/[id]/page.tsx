@@ -40,6 +40,7 @@ import {
   updateUserHomebrewItem,
   deleteUserHomebrewItem,
   updateSharedCurrency,
+  kickPlayer,
 } from '@/src/firebaseService';
 import type { CampaignDoc, PlayerInventoryDoc, TransferRequest } from '@/src/firebaseService';
 
@@ -737,6 +738,19 @@ export default function VaultDetailPage() {
     }
   };
 
+  const handleKickPlayer = async (playerId: string): Promise<void> => {
+    if (!campaignId || !userId) return;
+    try {
+      await trackWrite(() => kickPlayer(campaignId, userId, playerId));
+      if (selectedPlayerId === playerId) {
+        setSelectedPlayerId('shared');
+      }
+    } catch (error) {
+      console.error('Failed to kick player:', error);
+      showActionError('Could not kick player', error, () => handleKickPlayer(playerId));
+    }
+  };
+
   const handleUpdateMyCharacterProfile = async (updates: { name: string; avatar: string }): Promise<void> => {
     if (!campaignId || !userId) {
       throw new Error('Campaign is not ready.');
@@ -804,6 +818,7 @@ export default function VaultDetailPage() {
               isShared={isShared}
               syncStatus={syncStatus}
               onTutorialStart={startTutorial}
+              onKickPlayer={isGM && !isShared && selectedPlayerId !== userId ? () => handleKickPlayer(selectedPlayerId) : undefined}
             />
           </div>
         </div>

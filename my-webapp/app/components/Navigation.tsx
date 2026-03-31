@@ -574,7 +574,7 @@ export function Navigation() {
     <div>
       {/* Mobile Header */}
       <div
-        className={cn("md:hidden fixed top-0 left-0 right-0 z-40 backdrop-blur-md border-b-4 transition-all duration-300", navTransparent && !isOpen ? "border-transparent shadow-none" : "border-[#3D1409] shadow-xl")}
+        className="md:hidden fixed top-0 left-0 right-0 z-40 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl transition-all duration-300"
         style={{
           background: isOpen
             ? 'linear-gradient(to right, #5C1A1A, #7A2424)'
@@ -700,8 +700,7 @@ export function Navigation() {
       {/* Desktop Navigation */}
       <nav
         className={cn(
-          "hidden md:block fixed top-0 left-0 right-0 backdrop-blur-md border-b-4 z-50 transition-all duration-300",
-          navTransparent ? "border-transparent shadow-none" : "bg-[#F5EFE0]/95 border-[#3D1409] shadow-xl"
+          "hidden md:block fixed top-0 left-0 right-0 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl z-50 transition-all duration-300"
         )}
         style={navTransparent ? { background: 'linear-gradient(to right, #5C1A1A, #7A2424)' } : undefined}
       >

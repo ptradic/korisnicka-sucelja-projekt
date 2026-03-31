@@ -106,8 +106,8 @@ const PLAYER_STEPS: TutorialStep[] = [
   },
   {
     selector: '[data-tutorial="character-settings"]',
-    title: 'Character Name',
-    description: 'Click here to change your character name in this vault.',
+    title: 'Character Settings',
+    description: 'Click here to change your character name and set a custom avatar image for this vault.',
     position: 'bottom',
   },
 ];

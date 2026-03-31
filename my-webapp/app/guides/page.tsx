@@ -172,7 +172,7 @@ const steps = [
       "Fine-tune your campaign and identity from settings modals in the app.",
     details: [
       "GM: open Vault Settings to rename vault, update password, and copy invite code.",
-      "Player: change your character name for this vault from the sidebar.",
+      "Player: change your character name and set an avatar image link for this vault from the sidebar.",
       "Any user: open Account Settings from navigation to update profile details.",
       "Switch between Player and Game Master using the tabs on the Vaults page.",
     ],

@@ -36,7 +36,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
         <div
           ref={trackRef}
           onClick={handleTrackClick}
-          className="absolute top-2 right-0.5 bottom-2 w-3.5 flex items-stretch cursor-pointer z-20"
+          className="hidden md:flex absolute top-2 right-0.5 bottom-2 w-3.5 items-stretch cursor-pointer z-20"
         >
           <div
             onMouseDown={handleThumbMouseDown}

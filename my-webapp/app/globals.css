@@ -321,6 +321,18 @@ button,
   will-change: transform;
 }
 
+/* Hide scrollbars on mobile */
+@media (max-width: 768px) {
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  *::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
 /* Global themed scrollbars */
 * {
   scrollbar-width: thin;

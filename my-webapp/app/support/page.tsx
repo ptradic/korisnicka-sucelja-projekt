@@ -321,7 +321,7 @@ export default function SupportPage() {
                     <div
                       ref={scrollTrackRef}
                       onClick={handleTrackClick}
-                      className="absolute top-2 right-1 bottom-3 w-3.5 flex items-stretch cursor-pointer"
+                      className="hidden md:flex absolute top-2 right-1 bottom-3 w-3.5 items-stretch cursor-pointer"
                     >
                       {/* Thick draggable thumb */}
                       <div

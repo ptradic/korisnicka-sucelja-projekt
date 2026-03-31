@@ -796,7 +796,7 @@ export function PlayerSidebar({
             <div
               ref={desktopListTrackRef}
               onClick={handleDesktopListTrackClick}
-              className="absolute top-2 right-0.5 bottom-2 w-3.5 flex items-stretch cursor-pointer z-10"
+              className="hidden md:flex absolute top-2 right-0.5 bottom-2 w-3.5 items-stretch cursor-pointer z-10"
             >
               <div
                 onMouseDown={handleDesktopListThumbMouseDown}

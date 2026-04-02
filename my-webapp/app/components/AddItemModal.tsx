@@ -1324,6 +1324,8 @@ export function AddItemModal({
   onDeleteHomebrewItem,
 }: AddItemModalProps) {
   const [mode, setMode] = useState<'pick' | 'manage' | 'custom'>('pick');
+  const [lastAddedName, setLastAddedName] = useState<string | null>(null);
+  const lastAddedTimeout = useRef<NodeJS.Timeout | null>(null);
   const backdropMouseDown = useRef(false);
   const tabBaseClass = 'flex-1 text-sm py-3 font-bold border-0 rounded-none shadow-none transition-colors duration-200';
   const tabActiveClass = 'bg-linear-to-r from-[#5C1A1A] to-[#7A2424] text-white';
@@ -1332,7 +1334,9 @@ export function AddItemModal({
   const handleSelectTemplate = (template: Item) => {
     const { id, ...rest } = template;
     onAdd({ ...rest, createdAt: new Date().toISOString() });
-    onClose();
+    setLastAddedName(template.name);
+    if (lastAddedTimeout.current) clearTimeout(lastAddedTimeout.current);
+    lastAddedTimeout.current = setTimeout(() => setLastAddedName(null), 2000);
   };
 
   return (
@@ -1394,6 +1398,13 @@ export function AddItemModal({
             >
               Create Custom
             </button>
+          </div>
+        )}
+
+        {lastAddedName && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-700/15 border-b border-emerald-700/20 text-emerald-800 text-sm font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+            <span><strong>{lastAddedName}</strong> added</span>
           </div>
         )}
 

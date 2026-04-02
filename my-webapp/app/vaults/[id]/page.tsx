@@ -567,7 +567,6 @@ export default function VaultDetailPage() {
         await trackWrite(() => updatePlayerInventory(campaignId, selectedPlayerId as string, updatedInventory, selectedPlayer.currency));
       }
 
-      setShowAddItemModal(false);
     } catch (error) {
       console.error('Failed to add item:', error);
       showActionError('Could not add item', error, () => handleAddItem(item));

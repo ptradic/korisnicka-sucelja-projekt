@@ -714,7 +714,7 @@ export function PlayerSidebar({
               onClick={() => onSelectPlayer(player.id)}
               onDrop={handleDrop(player.id)}
               isBeingDraggedOver={dragOverPlayerId === player.id}
-              isAnyDragging={isAnyDragging}
+              isAnyDragging={isSidebarOver}
             />
           ))}
           <SharedPill
@@ -723,7 +723,7 @@ export function PlayerSidebar({
             onDrop={handleDrop('shared')}
             itemCount={sharedLootCount}
             isBeingDraggedOver={dragOverPlayerId === 'shared'}
-            isAnyDragging={isAnyDragging}
+            isAnyDragging={isSidebarOver}
           />
         </div>
       </div>

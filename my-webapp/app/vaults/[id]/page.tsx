@@ -677,6 +677,21 @@ export default function VaultDetailPage() {
     }
   };
 
+  const handleReorderInventory = async (newInventory: Item[]) => {
+    if (!campaignId) return;
+    try {
+      if (isShared) {
+        await trackWrite(() => updateSharedLoot(campaignId, newInventory));
+      } else {
+        const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
+        if (!player) return;
+        await trackWrite(() => updatePlayerInventory(campaignId, selectedPlayerId, newInventory, player.currency, player.maxWeight));
+      }
+    } catch (error) {
+      console.error('Failed to reorder inventory:', error);
+    }
+  };
+
   const handleDeleteSelectedItem = async (baseItem: Item) => {
     if (!campaignId || !currentCampaign) return;
 
@@ -830,6 +845,7 @@ export default function VaultDetailPage() {
               syncStatus={syncStatus}
               onTutorialStart={startTutorial}
               onKickPlayer={isGM && !isShared && selectedPlayerId !== userId ? () => handleKickPlayer(selectedPlayerId) : undefined}
+              onReorderInventory={handleReorderInventory}
             />
           </div>
         </div>

@@ -1,137 +1,69 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDragLayer } from 'react-dnd';
 
 interface UseAutoScrollOptions {
-  scrollThreshold?: number; // pixels from top to trigger scroll (default: 100)
-  scrollSpeed?: number; // pixels to scroll per frame (default: 10)
-  enabled?: boolean; // whether auto-scroll is active (default: true)
-  scrollTarget?: 'container' | 'window'; // where to scroll (default: auto-detect based on screen size)
+  scrollThreshold?: number; // px from edge to start scrolling (default: 100)
+  scrollSpeed?: number;     // px per frame (default: 10)
+  enabled?: boolean;
 }
 
 /**
- * Hook that automatically scrolls the page when dragging items near the top
- * Uses react-dnd's useDragLayer to track drag position on desktop
- * Also listens to touch events for mobile support
- * On mobile, scrolls the entire window; on desktop, scrolls the container
+ * Scrolls a container when a react-dnd drag nears its top or bottom edge.
+ * Works on both desktop (mouse) and mobile (touch) because react-dnd's
+ * monitor.getClientOffset() reports position for both input types.
  */
 export function useAutoScroll(
   containerRef: React.RefObject<HTMLElement | null>,
-  options: UseAutoScrollOptions = {}
+  options: UseAutoScrollOptions = {},
 ) {
-  const { scrollThreshold = 100, scrollSpeed = 10, enabled = true, scrollTarget = 'auto' } = options;
-  const [isMobile, setIsMobile] = useState(false);
+  const { scrollThreshold = 100, scrollSpeed = 10, enabled = true } = options;
 
   const { isDragging, clientOffset } = useDragLayer((monitor) => ({
     isDragging: monitor.isDragging(),
     clientOffset: monitor.getClientOffset(),
   }));
 
-  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const touchPositionRef = useRef<{ y: number } | null>(null);
-  const isTouchDraggingRef = useRef(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Detect mobile screen size
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    if (!enabled || !isDragging || !clientOffset || !containerRef.current) return;
 
-  // Touch event handlers for mobile support
-  useEffect(() => {
     const container = containerRef.current;
-    if (!container || !enabled) return;
+    const rect = container.getBoundingClientRect();
+    const { y } = clientOffset;
 
-    const handleTouchStart = () => {
-      isTouchDraggingRef.current = true;
-    };
+    const fromTop = y - rect.top;
+    const fromBottom = rect.bottom - y;
 
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isTouchDraggingRef.current && e.touches.length > 0) {
-        touchPositionRef.current = { y: e.touches[0].clientY };
-      }
-    };
-
-    const handleTouchEnd = () => {
-      isTouchDraggingRef.current = false;
-      touchPositionRef.current = null;
-    };
-
-    container.addEventListener('touchstart', handleTouchStart);
-    container.addEventListener('touchmove', handleTouchMove, { passive: true });
-    document.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [enabled]);
-
-  // Main scroll logic
-  useEffect(() => {
-    // Clear any existing scroll interval
-    if (scrollIntervalRef.current) {
-      clearInterval(scrollIntervalRef.current);
-      scrollIntervalRef.current = null;
-    }
-
-    if (!enabled || !containerRef.current) {
-      return;
-    }
-
-    // Use clientOffset from react-dnd (desktop) or touchPosition (mobile)
-    const dragPosition = clientOffset || touchPositionRef.current;
-
-    if (!isDragging || !dragPosition) {
-      return;
-    }
-
-    const shouldScrollWindow = scrollTarget === 'window' || (scrollTarget === 'auto' && isMobile);
-    const { y: dragY } = dragPosition;
-
-    if (shouldScrollWindow) {
-      // Scroll the entire window on mobile
-      if (dragY < scrollThreshold) {
-        scrollIntervalRef.current = setInterval(() => {
-          window.scrollBy(0, -scrollSpeed);
-        }, 16); // ~60fps
-      }
-    } else {
-      // Scroll the container on desktop
-      const container = containerRef.current;
-      const rect = container.getBoundingClientRect();
-
-      // Check if cursor is near the top of the container
-      const distanceFromTop = dragY - rect.top;
-
-      if (distanceFromTop >= 0 && distanceFromTop < scrollThreshold) {
-        scrollIntervalRef.current = setInterval(() => {
-          if (container) {
-            container.scrollTop = Math.max(0, container.scrollTop - scrollSpeed);
-          }
-        }, 16); // ~60fps
-      }
+    if (fromTop >= 0 && fromTop < scrollThreshold) {
+      intervalRef.current = setInterval(() => {
+        container.scrollTop = Math.max(0, container.scrollTop - scrollSpeed);
+      }, 16);
+    } else if (fromBottom >= 0 && fromBottom < scrollThreshold) {
+      intervalRef.current = setInterval(() => {
+        container.scrollTop = Math.min(
+          container.scrollHeight - container.clientHeight,
+          container.scrollTop + scrollSpeed,
+        );
+      }, 16);
     }
 
     return () => {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
-        scrollIntervalRef.current = null;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [isDragging, clientOffset, scrollThreshold, scrollSpeed, enabled, containerRef, isMobile, scrollTarget]);
+  }, [isDragging, clientOffset, scrollThreshold, scrollSpeed, enabled, containerRef]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
 }

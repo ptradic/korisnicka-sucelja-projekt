@@ -9,7 +9,8 @@
       "Bash(grep -n \"PlayerSidebar\\\\|onSelectPlayer\\\\|players\\\\s*=\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx)",
       "Bash(grep -n \"const players\\\\|const isGM\\\\|const isShared\\\\|const selectedPlayer\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx)",
       "Bash(grep -n \"deletePlayerInventoryDoc\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx -B 5 -A 10)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Read(//c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projet/my-webapp/app/components/**)"
     ]
   }
 }

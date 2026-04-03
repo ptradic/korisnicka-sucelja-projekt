@@ -1,5 +1,6 @@
 import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks, Repeat2, UserX } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useDrop } from 'react-dnd';
 import { ItemCard } from './ItemCard';
 import { CategoryFilter } from './CategoryFilter';
 import { useAutoScroll } from '../hooks/useAutoScroll';
@@ -26,6 +27,7 @@ interface InventoryViewProps {
   syncStatus?: 'saving' | 'saved';
   onTutorialStart?: () => void;
   onKickPlayer?: () => void;
+  onReorderInventory?: (newInventory: Item[]) => void;
 }
 
 // Simple inline coin display — click to edit (read-only if no onChange)
@@ -186,6 +188,59 @@ function AddCoinsButton({
   );
 }
 
+function ItemDropZone({
+  item,
+  ownerId,
+  canReorder,
+  onDrop,
+  children,
+}: {
+  item: Item;
+  ownerId: string | 'shared';
+  canReorder: boolean;
+  onDrop: (draggedId: string, targetId: string, position: 'above' | 'below') => void;
+  children: React.ReactNode;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [dropPosition, setDropPosition] = useState<'above' | 'below' | null>(null);
+
+  const [{ isOver }, drop] = useDrop<{ id: string; ownerId: string }, void, { isOver: boolean }>({
+    accept: 'INVENTORY_ITEM',
+    hover: (dragged, monitor) => {
+      if (!canReorder || dragged.ownerId !== ownerId || dragged.id === item.id || !wrapRef.current) {
+        setDropPosition(null);
+        return;
+      }
+      const rect = wrapRef.current.getBoundingClientRect();
+      const clientY = monitor.getClientOffset()?.y ?? 0;
+      setDropPosition(clientY < rect.top + rect.height / 2 ? 'above' : 'below');
+    },
+    drop: (dragged) => {
+      if (!canReorder || dragged.ownerId !== ownerId || dragged.id === item.id || !dropPosition) return;
+      onDrop(dragged.id, item.id, dropPosition);
+    },
+    collect: (monitor) => ({ isOver: monitor.isOver() }),
+  });
+
+  useEffect(() => {
+    if (!isOver) setDropPosition(null);
+  }, [isOver]);
+
+  drop(wrapRef);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      {isOver && dropPosition === 'above' && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#5C1A1A] rounded-full z-10 -translate-y-1 pointer-events-none" />
+      )}
+      {children}
+      {isOver && dropPosition === 'below' && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5C1A1A] rounded-full z-10 translate-y-1 pointer-events-none" />
+      )}
+    </div>
+  );
+}
+
 export function InventoryView({
   inventory,
   owner,
@@ -203,6 +258,7 @@ export function InventoryView({
   syncStatus = 'saved',
   onTutorialStart,
   onKickPlayer,
+  onReorderInventory,
 }: InventoryViewProps) {
   type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
   type SortDirection = 'asc' | 'desc';
@@ -235,6 +291,29 @@ export function InventoryView({
   const filterMeasureRef = useRef<HTMLDivElement>(null);
   const previousQuantityByIdRef = useRef<Map<string, number>>(new Map());
   const [showKickConfirm, setShowKickConfirm] = useState(false);
+
+  const canReorder = sortField === 'none' && selectedCategory === 'all' && searchQuery === '' && !!onReorderInventory;
+
+  const handleReorder = (draggedId: string, targetId: string, position: 'above' | 'below') => {
+    const visibleIds = filteredItems.map((i) => i.id);
+    const dragIdx = visibleIds.indexOf(draggedId);
+    const targetIdx = visibleIds.indexOf(targetId);
+    if (dragIdx < 0 || targetIdx < 0 || dragIdx === targetIdx) return;
+
+    const newVisibleIds = [...visibleIds];
+    newVisibleIds.splice(dragIdx, 1);
+    const adjustedTarget = targetIdx > dragIdx ? targetIdx - 1 : targetIdx;
+    const insertAt = position === 'above' ? adjustedTarget : adjustedTarget + 1;
+    newVisibleIds.splice(insertAt, 0, draggedId);
+
+    const byId = new Map(inventory.map((i) => [i.id, i]));
+    const hiddenItems = inventory.filter((i) => normalizeCategory(i.category) === 'hidden');
+    const newInventory = [
+      ...newVisibleIds.map((id) => byId.get(id)).filter(Boolean) as Item[],
+      ...hiddenItems,
+    ];
+    onReorderInventory?.(newInventory);
+  };
 
   // Enable auto-scroll when dragging items near the top
   useAutoScroll(itemListRef, { scrollThreshold: 100, scrollSpeed: 10 });
@@ -715,19 +794,19 @@ export function InventoryView({
 
             {isSortMenuOpen && (
               <div
-                className="absolute right-0 top-full mt-2 z-30 min-w-[170px] bg-[#F5EFE0] border-3 border-[#8B6F47] rounded-xl p-1.5"
+                className="absolute right-0 top-full mt-2 z-30 min-w-[220px] bg-[#F5EFE0] border-3 border-[#8B6F47] rounded-xl p-1.5"
                 style={{ boxShadow: '0 8px 20px rgba(61, 20, 9, 0.25)' }}
               >
                 <button
                   onClick={() => handleSortSelect('none', 'asc')}
                   className={
-                    'w-full text-left px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
+                    'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ' +
                     (sortField === 'none'
                       ? 'bg-[#5C1A1A] text-white'
                       : 'text-[#3D1409] hover:bg-[#E8D5B7]')
                   }
                 >
-                  No sorting
+                  <span>Custom</span>
                 </button>
                 <button
                   onClick={() => toggleSortField('name')}
@@ -869,17 +948,24 @@ export function InventoryView({
               )}
             </div>
             {filteredItems.map((item) => (
-              <ItemCard
+              <ItemDropZone
                 key={item.id}
                 item={item}
                 ownerId={ownerId}
-                onClick={() => onItemClick(item)}
-                bulkSelectEnabled={bulkSelectEnabled}
-                isSelected={(selectedCountById.get(item.id) || 0) > 0}
-                selectedCount={selectedCountById.get(item.id) || 0}
-                selectedItemIds={selectedItemIds}
-                onToggleSelect={toggleItemSelection}
-              />
+                canReorder={canReorder}
+                onDrop={handleReorder}
+              >
+                <ItemCard
+                  item={item}
+                  ownerId={ownerId}
+                  onClick={() => onItemClick(item)}
+                  bulkSelectEnabled={bulkSelectEnabled}
+                  isSelected={(selectedCountById.get(item.id) || 0) > 0}
+                  selectedCount={selectedCountById.get(item.id) || 0}
+                  selectedItemIds={selectedItemIds}
+                  onToggleSelect={toggleItemSelection}
+                />
+              </ItemDropZone>
             ))}
           </div>
           )}

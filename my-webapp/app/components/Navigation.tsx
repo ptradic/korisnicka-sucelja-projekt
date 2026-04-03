@@ -704,7 +704,7 @@ export function Navigation() {
         )}
         style={navTransparent ? { background: 'linear-gradient(to right, #5C1A1A, #7A2424)' } : undefined}
       >
-        <div className="max-w-7xl mx-auto px-3 md:px-4 xl:px-6">
+        <div className="w-full px-3 md:px-4 xl:px-6">
           <div className="flex items-center h-14 gap-2 xl:gap-6">
             {/* Brand Logo */}
             <Link href="/" className="group flex items-center gap-2 xl:gap-3 shrink-0 transition-all duration-300 w-auto xl:w-64">

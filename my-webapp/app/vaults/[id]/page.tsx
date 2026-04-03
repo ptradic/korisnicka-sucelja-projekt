@@ -634,11 +634,12 @@ export default function VaultDetailPage() {
 
     const isPlayerCustomItem = (baseItem.sourcebook || '').trim().toUpperCase() === 'PLAYER CUSTOM';
     const isHiddenToggleOnly = Object.keys(updates).length === 1 && 'hiddenFromOthers' in updates;
-    if (!isGM && !isPlayerCustomItem && !isHiddenToggleOnly) {
+    const isAttunementToggleOnly = Object.keys(updates).length === 1 && 'attuned' in updates;
+    if (!isGM && !isPlayerCustomItem && !isHiddenToggleOnly && !isAttunementToggleOnly) {
       return;
     }
 
-    const sanitizedUpdates = (!isGM && !isHiddenToggleOnly)
+    const sanitizedUpdates = (!isGM && !isHiddenToggleOnly && !isAttunementToggleOnly)
       ? {
           ...updates,
           sourcebook: 'PLAYER CUSTOM',
@@ -848,6 +849,7 @@ export default function VaultDetailPage() {
             onDelete={() => handleDeleteSelectedItem(selectedItem)}
             canEdit={isGM || canPlayerEditSelectedItem}
             canToggleHidden={!isShared && (isGM || selectedPlayerId === userId)}
+            canToggleAttunement={!isShared && selectedPlayerId === userId}
           />
         )}
 

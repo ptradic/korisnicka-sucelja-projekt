@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useDeferredValue } from 'react';
 import Fuse from 'fuse.js';
 import { X, Search, Plus, Package, Loader2, Check, Sword, Shield, Droplet, Sparkles, Backpack, Gem, Filter, ArrowUpDown, Repeat2 } from 'lucide-react';
 import type { Item, Category, Rarity } from '../types';
 import { normalizeCategory } from '../types';
 import { ItemDetailsModal } from './ItemDetailsModal';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
+import masterItemData from '@/2024master.json';
 
 interface AddItemModalProps {
   onClose: () => void;
@@ -27,6 +28,21 @@ interface DnDItemListItem {
   rarity?: string;
   editionKey?: string;
   category?: string;
+  searchText: string;
+}
+
+interface MasterItem {
+  key: string;
+  name: string;
+  desc?: string;
+  category?: { name: string; key: string };
+  rarity?: { key: string } | null;
+  is_magic_item?: boolean;
+  weight?: string;
+  cost?: string;
+  requires_attunement?: boolean;
+  attunement_detail?: string | null;
+  document?: { key?: string };
 }
 
 const categories: Category[] = ['weapons', 'armor', 'consumables', 'magic-gear', 'adventuring-gear', 'wealth-valuables'];
@@ -80,7 +96,7 @@ const dndRarityLabelByKey: Record<string, string> = {
   none: 'Mundane',
 };
 
-// Rarity rank for sorting (Open5e key format for DnD items)
+// Rarity rank for sorting (2024 SRD key format for DnD items)
 const dndRarityRank: Record<string, number> = {
   none: 0, varies: 0, common: 1, uncommon: 2, rare: 3, 'very-rare': 4, legendary: 5, artifact: 6,
 };
@@ -88,6 +104,118 @@ const dndRarityRank: Record<string, number> = {
 const appRarityRank: Record<string, number> = {
   common: 1, uncommon: 2, rare: 3, 'very rare': 4, legendary: 5, artifact: 6,
 };
+
+const DND_MIN_QUERY_LENGTH = 2;
+const DND_MAX_RESULTS = 120;
+
+const masterItems = masterItemData as MasterItem[];
+
+const DND_CATEGORY_MAP: Record<string, Category> = {
+  weapon: 'weapons',
+  ammunition: 'weapons',
+  armor: 'armor',
+  shield: 'armor',
+  potion: 'consumables',
+  poison: 'consumables',
+  scroll: 'consumables',
+  wand: 'magic-gear',
+  rod: 'magic-gear',
+  staff: 'magic-gear',
+  ring: 'magic-gear',
+  'wondrous-item': 'magic-gear',
+  'spellcasting-focus': 'magic-gear',
+  gem: 'wealth-valuables',
+  art: 'wealth-valuables',
+  jewelry: 'wealth-valuables',
+  'trade-good': 'wealth-valuables',
+  'adventuring-gear': 'adventuring-gear',
+  tools: 'adventuring-gear',
+  'equipment-pack': 'adventuring-gear',
+  mount: 'hidden',
+  'land-vehicle': 'hidden',
+  'waterborne-vehicle': 'hidden',
+  service: 'hidden',
+};
+
+function mapDndCategory(item: MasterItem): Category {
+  const key = item.category?.key || '';
+  return DND_CATEGORY_MAP[key] || 'hidden';
+}
+
+function mapDndRarity(rarityKey: string | undefined | null): Rarity {
+  if (!rarityKey || rarityKey === 'common' || rarityKey === 'varies' || rarityKey === 'none') return 'common';
+  if (rarityKey === 'uncommon') return 'uncommon';
+  if (rarityKey === 'rare') return 'rare';
+  if (rarityKey === 'very-rare') return 'very rare';
+  if (rarityKey === 'legendary') return 'legendary';
+  if (rarityKey === 'artifact') return 'artifact';
+  return 'common';
+}
+
+function parseWeight(weightRaw: string | undefined): number {
+  const parsed = Number.parseFloat(weightRaw || '');
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function parseCost(costRaw: string | undefined, isMagicItem: boolean): { value?: number; valueUnit?: 'gp' | 'sp' | 'cp'; valueUnknown?: boolean } {
+  const cost = (costRaw || '').trim().toLowerCase();
+  if (!cost) {
+    return { valueUnknown: isMagicItem || undefined };
+  }
+
+  const numericOnly = cost.match(/^\d+(?:\.\d+)?$/);
+  if (numericOnly) {
+    const parsed = Number(numericOnly[0]);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      if (parsed < 0.1) return { value: Number((parsed * 100).toFixed(2)), valueUnit: 'cp' };
+      if (parsed < 1) return { value: Number((parsed * 10).toFixed(2)), valueUnit: 'sp' };
+      return { value: Number(parsed.toFixed(2)), valueUnit: 'gp' };
+    }
+    return { valueUnknown: isMagicItem || undefined };
+  }
+
+  const match = cost.match(/(\d+(?:\.\d+)?)\s*(pp|gp|sp|cp)\b/);
+  if (!match) return { valueUnknown: isMagicItem || undefined };
+
+  const parsedValue = Number(match[1]);
+  const parsedUnit = match[2] as 'pp' | 'gp' | 'sp' | 'cp';
+  if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+    return { valueUnknown: isMagicItem || undefined };
+  }
+
+  const gpValue = parsedUnit === 'pp' ? parsedValue * 10 : parsedValue;
+  const unit = parsedUnit === 'pp' ? 'gp' : parsedUnit;
+  if (unit === 'gp' && gpValue < 0.1) return { value: Number((gpValue * 100).toFixed(2)), valueUnit: 'cp' };
+  if (unit === 'gp' && gpValue < 1) return { value: Number((gpValue * 10).toFixed(2)), valueUnit: 'sp' };
+  return { value: Number(gpValue.toFixed(2)), valueUnit: unit };
+}
+
+function transformMasterItem(item: MasterItem): Omit<Item, 'id'> {
+  const category = mapDndCategory(item);
+  const parsedCost = parseCost(item.cost, Boolean(item.is_magic_item));
+  const categoryLabel = item.category?.name?.trim();
+  const attunementDetail = item.attunement_detail?.trim();
+  const metadataLine = [categoryLabel, attunementDetail].filter(Boolean).join(', ');
+  const metadataLineBold = metadataLine ? `**${metadataLine}**` : '';
+  const baseDescription = item.desc?.trim();
+  const description = metadataLineBold
+    ? [metadataLineBold, baseDescription].filter(Boolean).join('\n\n')
+    : (baseDescription || undefined);
+
+  return {
+    name: item.name,
+    sourcebook: item.document?.key || 'unknown',
+    description,
+    category,
+    rarity: mapDndRarity(item.rarity?.key),
+    quantity: 1,
+    weight: parseWeight(item.weight),
+    value: parsedCost.value,
+    valueUnit: parsedCost.valueUnit,
+    valueUnknown: parsedCost.valueUnknown,
+    attunement: Boolean(item.requires_attunement),
+  };
+}
 
 type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
 type SortDirection = 'asc' | 'desc';
@@ -104,8 +232,26 @@ function TemplateItemPicker({
   targetName: string;
 }) {
   const [search, setSearch] = useState('');
-  const [dndItems, setDndItems] = useState<DnDItemListItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const dndItems = useMemo<DnDItemListItem[]>(() => {
+    return masterItems
+      .filter((item) => mapDndCategory(item) !== 'hidden')
+      .map((item) => ({
+        index: item.key,
+        name: item.name,
+        type: item.is_magic_item ? 'magic' : 'equipment',
+        rarity: item.rarity?.key || 'none',
+        editionKey: item.document?.key || 'unknown',
+        category: mapDndCategory(item),
+        searchText: item.name.toLowerCase(),
+      }));
+  }, []);
+  const dndItemMap = useMemo(() => {
+    const map = new Map<string, MasterItem>();
+    for (const item of masterItems) {
+      map.set(item.key, item);
+    }
+    return map;
+  }, []);
   const [loadingDetails, setLoadingDetails] = useState<string | null>(null);
   const [tab, setTab] = useState<'dnd' | 'custom'>('dnd');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
@@ -113,7 +259,7 @@ function TemplateItemPicker({
   const [sortField, setSortField] = useState<SortField>('none');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const deferredSearch = useDeferredValue(search);
   const listRef = useRef<HTMLDivElement | null>(null);
   const filterMenuRef = useRef<HTMLDivElement | null>(null);
   const sortMenuRef = useRef<HTMLDivElement | null>(null);
@@ -126,45 +272,6 @@ function TemplateItemPicker({
     handleTrackClick,
     handleThumbMouseDown,
   } = useCustomScrollbar(listRef);
-
-  // Fetch 5e or 5.5e items from API
-  useEffect(() => {
-    if (tab !== 'dnd') return;
-
-    // Debounce search
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    searchTimeoutRef.current = setTimeout(async () => {
-      if (search.length < 2) {
-        setDndItems([]);
-        return;
-      }
-
-      // Use first 2 chars for the API query to get a broad result set,
-      // then Fuse.js filters/ranks client-side for typo tolerance.
-      const broadQuery = search.slice(0, 2);
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/dnd-items?search=${encodeURIComponent(broadQuery)}`);
-        if (response.ok) {
-          const items = await response.json();
-          setDndItems(items);
-        }
-      } catch (error) {
-        console.error('Failed to fetch 5e or 5.5e items:', error);
-      } finally {
-        setLoading(false);
-      }
-    }, 400);
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [search, tab]);
 
   // Close filter dropdown on outside click
   useEffect(() => {
@@ -205,18 +312,17 @@ function TemplateItemPicker({
     }
   };
 
-  // Handle selecting a 5e or 5.5e item (fetch full details)
+  // Handle selecting a 5e or 5.5e item from local dataset
   const handleSelectDndItem = async (dndItem: DnDItemListItem) => {
     setLoadingDetails(dndItem.index);
     try {
-      const response = await fetch(`/api/dnd-items?index=${encodeURIComponent(dndItem.index)}`);
-      if (response.ok) {
-        const itemDetails = await response.json();
-        onSelect({
-          id: `dnd-${dndItem.index}`,
-          ...itemDetails,
-        });
-      }
+      const raw = dndItemMap.get(dndItem.index);
+      if (!raw) throw new Error('Item not found');
+      const itemDetails = transformMasterItem(raw);
+      onSelect({
+        id: `dnd-${dndItem.index}`,
+        ...itemDetails,
+      });
     } catch (error) {
       console.error('Failed to fetch item details:', error);
       alert('Failed to load item details. Please try again.');
@@ -234,12 +340,6 @@ function TemplateItemPicker({
   const filteredCustomItems = search === ''
     ? customItems
     : customItemsFuse.search(search).map((r) => r.item);
-
-  const dndItemsFuse = useMemo(() => new Fuse(dndItems, {
-    keys: ['name'],
-    threshold: 0.4,
-    ignoreLocation: true,
-  }), [dndItems]);
 
   const applyDndSort = (items: DnDItemListItem[]) => {
     if (sortField === 'none') return items;
@@ -278,15 +378,34 @@ function TemplateItemPicker({
     });
   };
 
-  const baseRankedDndItems = search.length >= 2
-    ? dndItemsFuse.search(search).map((r) => r.item)
-    : [...dndItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  const dndSearchQuery = deferredSearch.trim().toLowerCase();
 
-  const rankedDndItems = applyDndSort(baseRankedDndItems);
+  const dndCategoryItems = selectedCategory === 'all'
+    ? dndItems
+    : dndItems.filter((i) => i.category === selectedCategory);
 
-  const sortedDndItems = selectedCategory === 'all'
-    ? rankedDndItems
-    : rankedDndItems.filter((i) => i.category === selectedCategory);
+  const sortedDndItems = useMemo(() => {
+    if (dndSearchQuery.length < DND_MIN_QUERY_LENGTH) return [];
+
+    const prefixMatches: DnDItemListItem[] = [];
+    const substringMatches: DnDItemListItem[] = [];
+
+    for (const item of dndCategoryItems) {
+      const idx = item.searchText.indexOf(dndSearchQuery);
+      if (idx === 0) {
+        prefixMatches.push(item);
+      } else if (idx > 0) {
+        substringMatches.push(item);
+      }
+    }
+
+    const ranked = [
+      ...prefixMatches,
+      ...substringMatches,
+    ];
+
+    return applyDndSort(ranked).slice(0, DND_MAX_RESULTS);
+  }, [dndCategoryItems, dndSearchQuery, sortField, sortDirection]);
 
   const baseRankedCustomItems = search === ''
     ? [...filteredCustomItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
@@ -322,17 +441,14 @@ function TemplateItemPicker({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
           <input
             type="text"
-            placeholder={tab === 'dnd' ? "Search 5e or 5.5e items (e.g., 'sword', 'potion')..." : 'Search custom items...'}
+            placeholder={tab === 'dnd' ? "Search 5e or 5.5e items (min 2 chars)..." : 'Search custom items...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F]"
           />
-          {loading && tab === 'dnd' && (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F] animate-spin" />
-          )}
         </div>
 
-        {/* Toggle between 5e or 5.5e API and custom items */}
+        {/* Toggle between 5e or 5.5e SRD and custom items */}
         <div className="flex gap-2">
           <button
             onClick={() => setTab('dnd')}
@@ -479,25 +595,28 @@ function TemplateItemPicker({
       {/* Item list */}
       <div className="relative flex-1 min-h-0">
         <div ref={listRef} className="h-full overflow-y-auto p-3 sm:pr-6 min-h-0 custom-scrollbar">
-          {loading && tab === 'dnd' && search.length >= 2 ? (
+          {tab === 'dnd' && dndItems.length === 0 ? (
           <div className="text-center py-8">
-            <Loader2 className="w-10 h-10 text-[#8B6F47] mx-auto mb-2 animate-spin" />
-            <div className="text-[#5C4A2F] text-sm">Searching 5e or 5.5e items...</div>
+            <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
+            <div className="text-[#5C4A2F] text-sm">No 5e or 5.5e items available</div>
           </div>
-        ) : tab === 'dnd' && search.length < 2 ? (
+        ) : tab === 'dnd' && dndSearchQuery.length < DND_MIN_QUERY_LENGTH ? (
           <div className="text-center py-8">
             <Search className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
             <div className="text-[#5C4A2F] text-sm">Type at least 2 characters to search</div>
-            <div className="text-[#8B6F47]/70 text-xs mt-1">Search for weapons, armor, potions, and magic items</div>
           </div>
-        ) : tab === 'dnd' && dndItems.length === 0 && search.length >= 2 ? (
+        ) : tab === 'dnd' && sortedDndItems.length === 0 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
-            <div className="text-[#5C4A2F] text-sm">No 5e or 5.5e items found</div>
-            <div className="text-[#8B6F47]/70 text-xs mt-1">Try a different search term</div>
+            <div className="text-[#5C4A2F] text-sm">No items found</div>
           </div>
         ) : tab === 'dnd' ? (
           <div className="space-y-1.5">
+            {sortedDndItems.length === DND_MAX_RESULTS && (
+              <div className="px-1 text-[11px] text-[#8B6F47]">
+                Showing first {DND_MAX_RESULTS} matches. Refine search for more specific results.
+              </div>
+            )}
             {sortedDndItems.map((item) => (
               (() => {
                 const rarityKey = item.rarity || 'none';

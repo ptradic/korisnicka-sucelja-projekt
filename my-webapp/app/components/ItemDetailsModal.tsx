@@ -14,6 +14,7 @@ interface ItemDetailsModalProps {
   showDeleteAction?: boolean;
   canEdit?: boolean;
   canToggleHidden?: boolean;
+  canToggleAttunement?: boolean;
 }
 
 const categories: Category[] = ['weapons', 'armor', 'consumables', 'magic-gear', 'adventuring-gear', 'wealth-valuables'];
@@ -78,7 +79,7 @@ function getValueColor(valueUnit: ValueUnit): string {
   return 'text-[#B8860B]';
 }
 
-export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, canEdit = true, canToggleHidden = false }: ItemDetailsModalProps) {
+export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, canEdit = true, canToggleHidden = false, canToggleAttunement = false }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const backdropMouseDown = useRef(false);
@@ -549,7 +550,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
               </div>
 
               {/* Attunement badge with toggle */}
-              {item.attunement && canEdit && onUpdate && (
+              {item.attunement && onUpdate && (canEdit || canToggleAttunement) && (
                 <div className="flex items-center justify-between bg-[#F3E5F5]/70 border-2 border-[#7E57A2]/40 rounded-xl px-3.5 py-2.5">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#7E57A2]" />

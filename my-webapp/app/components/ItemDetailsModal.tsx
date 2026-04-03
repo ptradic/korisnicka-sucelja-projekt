@@ -12,6 +12,8 @@ interface ItemDetailsModalProps {
   onUpdate?: (updates: Partial<Item>) => void;
   onDelete?: () => void;
   showDeleteAction?: boolean;
+  deleteLabel?: string;
+  confirmOnDelete?: boolean;
   canEdit?: boolean;
   canToggleHidden?: boolean;
   canToggleAttunement?: boolean;
@@ -79,7 +81,7 @@ function getValueColor(valueUnit: ValueUnit): string {
   return 'text-[#B8860B]';
 }
 
-export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, canEdit = true, canToggleHidden = false, canToggleAttunement = false }: ItemDetailsModalProps) {
+export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, deleteLabel = 'Remove Item', confirmOnDelete = false, canEdit = true, canToggleHidden = false, canToggleAttunement = false }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const backdropMouseDown = useRef(false);
@@ -235,7 +237,11 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
   };
 
   const handleDelete = () => {
-    setShowDeleteConfirm(true);
+    if (confirmOnDelete) {
+      setShowDeleteConfirm(true);
+    } else {
+      onDelete?.();
+    }
   };
 
   const confirmDelete = () => {
@@ -617,15 +623,23 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
 
               <div className="border-t-2 border-[#DCC8A8]" />
 
-              {showDeleteAction && onDelete && (
+              <div className="flex gap-2">
+                {showDeleteAction && onDelete && (
+                  <button
+                    onClick={handleDelete}
+                    className="btn-secondary flex-1 px-4 py-2.5 bg-[#FFEBEE]/80 hover:bg-[#FFCDD2] border-[#8B3A3A]/60 hover:border-[#8B3A3A] text-[#6B2020]"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {deleteLabel}
+                  </button>
+                )}
                 <button
-                  onClick={handleDelete}
-                  className="btn-secondary w-full px-4 py-2.5 bg-[#FFEBEE]/80 hover:bg-[#FFCDD2] border-[#8B3A3A]/60 hover:border-[#8B3A3A] text-[#6B2020]"
+                  onClick={onClose}
+                  className={`btn-secondary px-4 py-2.5 ${showDeleteAction && onDelete ? 'flex-1' : 'w-full'}`}
                 >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Item
+                  Close
                 </button>
-              )}
+              </div>
             </>
           )}
 

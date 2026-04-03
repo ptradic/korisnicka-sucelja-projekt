@@ -961,6 +961,8 @@ function CustomItemPoolManager({
             setSelectedItem(null);
           }}
           showDeleteAction
+          deleteLabel="Delete Item"
+          confirmOnDelete
         />
       )}
     </>

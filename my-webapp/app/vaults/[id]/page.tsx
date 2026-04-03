@@ -12,7 +12,7 @@ import { PlayerSidebar } from '@/app/components/PlayerSidebar';
 import { InventoryView } from '@/app/components/InventoryView';
 import { AddItemModal } from '@/app/components/AddItemModal';
 import { ItemDetailsModal } from '@/app/components/ItemDetailsModal';
-import { TransferRequestModal, TransferSentToast, TransferExpiredToast } from '@/app/components/TransferRequestModal';
+import { TransferRequestModal, TransferSentToast, TransferExpiredToast, RemoveItemUndoToast } from '@/app/components/TransferRequestModal';
 import { VaultDetailSkeleton } from '@/app/components/skeletons/SkeletonLoader';
 import { VaultTutorial, useVaultTutorial } from '@/app/components/VaultTutorial';
 import type { Item, Player, Currency } from '@/app/types';
@@ -141,6 +141,7 @@ export default function VaultDetailPage() {
   const [pendingTransferRequests, setPendingTransferRequests] = useState<TransferRequest[]>([]);
   const [transferSentInfo, setTransferSentInfo] = useState<{ requestIds: string[]; playerName: string; itemLabel: string; expiresAt: Date } | null>(null);
   const [expiredTransferInfo, setExpiredTransferInfo] = useState<{ playerName: string; itemName: string; isReceiver: boolean } | null>(null);
+  const [undoRemoveInfo, setUndoRemoveInfo] = useState<{ itemName: string; restore: () => Promise<void> } | null>(null);
 
   /* ── Refs for stable access inside effects ── */
   const userRoleRef = useRef(userRole);
@@ -686,6 +687,7 @@ export default function VaultDetailPage() {
           setSelectedItem(null);
           return;
         }
+        const previousShared = [...currentCampaign.sharedLoot];
         const updatedShared = [...currentCampaign.sharedLoot];
         if (updatedShared[sharedIndex].quantity > 1) {
           updatedShared[sharedIndex] = { ...updatedShared[sharedIndex], quantity: updatedShared[sharedIndex].quantity - 1 };
@@ -693,6 +695,10 @@ export default function VaultDetailPage() {
           updatedShared.splice(sharedIndex, 1);
         }
         await trackWrite(() => updateSharedLoot(campaignId, updatedShared));
+        setUndoRemoveInfo({
+          itemName: baseItem.name,
+          restore: () => trackWrite(() => updateSharedLoot(campaignId, previousShared)),
+        });
       } else {
         const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
         if (!player) {
@@ -704,6 +710,7 @@ export default function VaultDetailPage() {
           setSelectedItem(null);
           return;
         }
+        const previousInventory = [...player.inventory];
         const updatedInventory = [...player.inventory];
         if (updatedInventory[itemIndex].quantity > 1) {
           updatedInventory[itemIndex] = { ...updatedInventory[itemIndex], quantity: updatedInventory[itemIndex].quantity - 1 };
@@ -711,6 +718,10 @@ export default function VaultDetailPage() {
           updatedInventory.splice(itemIndex, 1);
         }
         await trackWrite(() => updatePlayerInventory(campaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight));
+        setUndoRemoveInfo({
+          itemName: baseItem.name,
+          restore: () => trackWrite(() => updatePlayerInventory(campaignId, selectedPlayerId, previousInventory, player.currency, player.maxWeight)),
+        });
       }
 
       setSelectedItem(null);
@@ -882,6 +893,16 @@ export default function VaultDetailPage() {
             onDismiss={() => setExpiredTransferInfo(null)}
           />
         )}
+
+        {/* Remove Item Undo Toast */}
+        {undoRemoveInfo && (
+          <RemoveItemUndoToast
+            itemName={undoRemoveInfo.itemName}
+            onUndo={undoRemoveInfo.restore}
+            onDismiss={() => setUndoRemoveInfo(null)}
+          />
+        )}
+
         {showTutorial && (
           <VaultTutorial isGM={isGM} onComplete={completeTutorial} />
         )}

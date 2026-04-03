@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Package, ArrowRight, Check, X, AlertCircle, Clock } from 'lucide-react';
+import { Package, ArrowRight, Check, X, AlertCircle, Clock, Trash2 } from 'lucide-react';
 import type { TransferRequest } from '@/src/firebaseService';
 import { useCountdown } from '@/app/hooks/useCountdown';
 import { Timestamp } from 'firebase/firestore';
@@ -261,6 +261,69 @@ interface TransferExpiredToastProps {
   itemName: string;
   isReceiver?: boolean; // true if this user was meant to receive the item
   onDismiss: () => void;
+}
+
+// Toast notification for undoing a removed item
+interface RemoveItemUndoToastProps {
+  itemName: string;
+  onUndo: () => Promise<void>;
+  onDismiss: () => void;
+}
+
+export function RemoveItemUndoToast({ itemName, onUndo, onDismiss }: RemoveItemUndoToastProps) {
+  const [isUndoing, setIsUndoing] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(5);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (secondsLeft === 0) onDismiss();
+  }, [secondsLeft, onDismiss]);
+
+  const handleUndo = async () => {
+    if (isUndoing) return;
+    setIsUndoing(true);
+    try {
+      await onUndo();
+      onDismiss();
+    } finally {
+      setIsUndoing(false);
+    }
+  };
+
+  return (
+    <div className="fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300 w-full max-w-sm sm:max-w-md px-4 sm:px-0">
+      <div className="px-3 sm:px-5 py-2 sm:py-3 rounded-xl shadow-xl border-2 flex items-center gap-2 sm:gap-3 transition-colors bg-[#5C4A2F] border-[#3D2E1A] text-white">
+        <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-semibold leading-tight">Item Removed</p>
+          <p className="text-xs text-white/80 leading-tight truncate">{itemName}</p>
+        </div>
+        <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/20 rounded text-xs font-mono shrink-0">
+          <Clock className="w-3 h-3" />
+          <span>{secondsLeft}s</span>
+        </div>
+        <button
+          onClick={handleUndo}
+          disabled={isUndoing}
+          className="btn-ghost shrink-0 px-2 py-1 text-xs sm:text-sm border-transparent text-white hover:text-white hover:bg-white/20 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {isUndoing ? '...' : 'Undo'}
+        </button>
+        <button
+          onClick={onDismiss}
+          className="btn-ghost shrink-0 !p-1 border-transparent text-white hover:text-white hover:bg-white/20 touch-manipulation"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function TransferExpiredToast({ playerName, itemName, isReceiver, onDismiss }: TransferExpiredToastProps) {

@@ -316,7 +316,7 @@ export default function VaultDetailPage() {
     maxWeight: inv.maxWeight,
     inventory: inv.inventory,
     currency: inv.currency,
-  }));
+  })).sort((a, b) => a.name.localeCompare(b.name));
 
   useEffect(() => {
     if (selectedPlayerId === 'shared' || players.length === 0) return;

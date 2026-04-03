@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks, Repeat2, UserX } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks, Repeat2, UserX, Pencil } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import { ItemCard } from './ItemCard';
@@ -565,9 +565,6 @@ export function InventoryView({
                 </button>
               )}
             </div>
-            <span className="text-[#8B6F47] text-xs">
-              {visibleItems.length} {visibleItems.length === 1 ? 'item' : 'items'}
-            </span>
           </div>
           <div
             className={
@@ -660,10 +657,11 @@ export function InventoryView({
                       setStrScoreValue('');
                       setIsEditingMaxWeight(true);
                     }}
-                    className="text-[10px] text-[#3D1409] tabular-nums underline underline-offset-2 decoration-dotted hover:text-[#5C1A1A] transition-colors"
+                    className="inline-flex items-center gap-0.5 group/mw text-[10px] text-[#3D1409] tabular-nums underline underline-offset-2 decoration-dotted hover:text-[#5C1A1A] hover:font-bold transition-all"
                     title="Click to set carry capacity"
                   >
                     {maxWeight ?? 0}
+                    <Pencil className="w-2.5 h-2.5 opacity-50 group-hover/mw:opacity-100 group-hover/mw:stroke-[2.5] transition-all" />
                   </button>
                 ) : (
                   <span className="text-[10px] text-[#3D1409] tabular-nums">{maxWeight}</span>
@@ -772,7 +770,7 @@ export function InventoryView({
           <button
             onClick={() => setIsFilterOpen((o) => !o)}
             title={isFilterOpen ? 'Close filters' : 'Open filters'}
-            className={`${filtersOverflow ? 'inline-flex' : 'hidden'} shrink-0 w-9 h-9 !p-0 rounded-lg ${
+            className={`${filtersOverflow ? 'inline-flex' : 'hidden'} shrink-0 w-10 h-10 !p-0 rounded-lg ${
               isFilterOpen || selectedCategory !== 'all'
                 ? 'btn-primary text-white border-[#3D1409]'
                 : 'btn-secondary text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
@@ -785,8 +783,8 @@ export function InventoryView({
               onClick={() => setIsSortMenuOpen((v) => !v)}
               title="Sort options"
               className={sortField !== 'none' || isSortMenuOpen
-                ? 'btn-primary w-9 h-9 !p-0 rounded-lg text-white border-[#3D1409]'
-                : 'btn-secondary w-9 h-9 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
+                ? 'btn-primary w-10 h-10 !p-0 rounded-lg text-white border-[#3D1409]'
+                : 'btn-secondary w-10 h-10 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
               }
             >
               <ArrowUpDown className="w-4 h-4" />
@@ -862,14 +860,14 @@ export function InventoryView({
           <button
             onClick={toggleBulkSelect}
             title={bulkSelectEnabled ? 'Exit bulk select' : 'Bulk select'}
-            className={`shrink-0 w-9 h-9 !p-0 rounded-lg ${bulkSelectEnabled ? 'btn-primary border-[#3D1409]' : 'btn-secondary text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'}`}
+            className={`shrink-0 w-10 h-10 !p-0 rounded-lg ${bulkSelectEnabled ? 'btn-primary border-[#3D1409]' : 'btn-secondary text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'}`}
           >
             <ListChecks className="w-4 h-4" />
           </button>
           <button
             onClick={onTutorialStart}
             title="Inventory help"
-            className="btn-secondary shrink-0 w-9 h-9 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]"
+            className="btn-secondary shrink-0 w-10 h-10 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]"
           >
             <CircleHelp className="w-4 h-4" />
           </button>

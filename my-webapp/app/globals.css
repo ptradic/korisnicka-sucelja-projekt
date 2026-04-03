@@ -137,15 +137,15 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-3 border-[#3D1409] bg-linear-to-r from-[#5C1A1A] to-[#7A2424] text-white font-bold shadow-xl transition-all duration-300 hover:from-[#4A1515] hover:to-[#5C1A1A] hover:shadow-2xl hover:-translate-y-1 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[#3D1409] bg-linear-to-r from-[#5C1A1A] to-[#7A2424] text-white font-bold shadow-xl transition-all duration-300 hover:from-[#4A1515] hover:to-[#5C1A1A] hover:shadow-2xl hover:-translate-y-1 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-3 border-[#8B6F47] bg-white/70 text-[#3D1409] font-semibold shadow-md transition-all duration-300 hover:bg-white hover:border-[#5C1A1A] hover:shadow-lg hover:-translate-y-0.5 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[#8B6F47] bg-white/70 text-[#3D1409] font-semibold shadow-md transition-all duration-300 hover:bg-white hover:border-[#5C1A1A] hover:shadow-lg hover:-translate-y-0.5 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border-3 border-transparent bg-transparent text-[#5C1A1A] font-semibold transition-all duration-300 hover:text-[#3D1409] hover:bg-[#5C1A1A]/5;
+    @apply inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border-2 border-transparent bg-transparent text-[#5C1A1A] font-semibold transition-all duration-300 hover:text-[#3D1409] hover:bg-[#5C1A1A]/5;
   }
 }
 

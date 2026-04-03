@@ -140,7 +140,7 @@ export function ItemCard({
       <div className={'w-2.5 h-2.5 rounded-full shrink-0 ' + colors.dot} />
       <div className="flex-1 min-w-0">
         <span className="text-sm text-[#3D1409] font-medium truncate block">{item.name}</span>
-        <span className="text-[11px] text-[#8B6F47]">{item.weight} lbs</span>
+        <span className="text-[11px] text-[#8B6F47]">{(item.weight ?? 0) * (item.quantity ?? 1)} lbs</span>
       </div>
       {item.hiddenFromOthers && (
         <EyeOff className="w-4 h-4 shrink-0 text-[#5C1A1A]/60" aria-label="Hidden from others" />

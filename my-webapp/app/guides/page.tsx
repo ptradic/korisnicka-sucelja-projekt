@@ -95,13 +95,13 @@ const steps = [
   },
   {
     number: 6,
-    title: "Add Items from 5e/5.5e or Vault Pool",
+    title: "Add Items from 5.5e or Vault Pool",
     icon: Package,
     description:
-      'Open Add Item, then search official 5e/5.5e equipment or pick from your vault\'s custom item pool.',
+      'Open Add Item, then search official 5.5e equipment or pick from your vault\'s custom item pool.',
     details: [
       'Select a player (or Shared Loot) and click "+ Add Item".',
-      "In Add Items, choose between 5e/5.5e items and custom items.",
+      "In Add Items, choose between 5.5e items and custom items.",
       "Search by name (minimum 2 characters for API search).",
       "Pick an item to add it instantly to the selected inventory.",
     ],

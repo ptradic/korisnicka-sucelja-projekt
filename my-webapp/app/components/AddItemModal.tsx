@@ -312,7 +312,7 @@ function TemplateItemPicker({
     }
   };
 
-  // Handle selecting a 5e or 5.5e item from local dataset
+  // Handle selecting a 5.5e item from local dataset
   const handleSelectDndItem = async (dndItem: DnDItemListItem) => {
     setLoadingDetails(dndItem.index);
     try {
@@ -441,14 +441,14 @@ function TemplateItemPicker({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
           <input
             type="text"
-            placeholder={tab === 'dnd' ? "Search 5e or 5.5e items (min 2 chars)..." : 'Search custom items...'}
+            placeholder={tab === 'dnd' ? "Search 5.5e items (min 2 chars)..." : 'Search custom items...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F]"
           />
         </div>
 
-        {/* Toggle between 5e or 5.5e SRD and custom items */}
+        {/* Toggle between 5.5e SRD and custom items */}
         <div className="flex gap-2">
           <button
             onClick={() => setTab('dnd')}
@@ -459,7 +459,7 @@ function TemplateItemPicker({
                 : 'btn-secondary !px-3 !py-1.5 text-[#5C4A2F] border-[#8B6F47]/40 hover:bg-[#F0E8D5]')
             }
           >
-            5e or 5.5e Items
+            5.5e Items
           </button>
           <button
             onClick={() => setTab('custom')}
@@ -598,7 +598,7 @@ function TemplateItemPicker({
           {tab === 'dnd' && dndItems.length === 0 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
-            <div className="text-[#5C4A2F] text-sm">No 5e or 5.5e items available</div>
+            <div className="text-[#5C4A2F] text-sm">No 5.5e items available</div>
           </div>
         ) : tab === 'dnd' && dndSearchQuery.length < DND_MIN_QUERY_LENGTH ? (
           <div className="text-center py-8">

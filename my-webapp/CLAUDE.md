@@ -1,6 +1,6 @@
 # Project: The Black Vault (TBV)
 
-D&D 5e (2024 SRD) campaign inventory manager. GMs manage player inventories and currencies; players view their own vault. Runs on Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, Firebase Auth + Firestore.
+D&D 5.5e (2024 SRD) campaign inventory manager. GMs manage player inventories and currencies; players view their own vault. Runs on Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, Firebase Auth + Firestore.
 
 ## Stack
 - Framework: Next.js 15 App Router — pages in `app/`

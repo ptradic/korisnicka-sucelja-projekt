@@ -50,7 +50,7 @@ const GM_STEPS: TutorialStep[] = [
   {
     selector: '[data-tutorial="add-item"]',
     title: 'Add Items',
-    description: 'Add items from the official 5e/5.5e catalog or create custom homebrew items for your campaign.',
+    description: 'Add items from the official 5.5e catalog or create custom homebrew items for your campaign.',
     position: 'top',
   },
   {
@@ -101,7 +101,7 @@ const PLAYER_STEPS: TutorialStep[] = [
   {
     selector: '[data-tutorial="add-item"]',
     title: 'Add Items',
-    description: 'Add items from the 5e/5.5e catalog or pick from the vault\'s custom item pool.',
+    description: 'Add items from the 5.5e catalog or pick from the vault\'s custom item pool.',
     position: 'top',
   },
   {

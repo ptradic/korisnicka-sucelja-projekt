@@ -137,7 +137,7 @@ export default function HomePage() {
           <section className="mb-8">
             <div className="space-y-4 text-[#5C4A2F] leading-relaxed">
               <p className="text-base">
-                Trailblazers' Vault is built to solve the clutter and confusion that often come with managing items and loot in tabletop RPGs like 5e or 5.5e, especially when inventories are shared across multiple players or campaigns.
+                Trailblazers' Vault is built to solve the clutter and confusion that often come with managing items and loot in tabletop RPGs like 5.5e, especially when inventories are shared across multiple players or campaigns.
               </p>
               <p className="text-base">
                 It's designed for TTRPG players and game masters who want an easier, more organized way to track and share their party's gear.

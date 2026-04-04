@@ -1212,7 +1212,7 @@ function CustomItemForm({
 
       <div className="mx-3 sm:mx-4 border-t-2 border-[#DCC8A8] shrink-0" />
 
-      <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col p-3 sm:p-4 gap-2">
+      <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto flex flex-col p-3 sm:p-4 gap-2 custom-scrollbar">
         {/* Item Name */}
         <div className="shrink-0">
           <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
@@ -1233,9 +1233,9 @@ function CustomItemForm({
         </div>
 
         {/* Description - flexible height */}
-        <div className="flex-1 min-h-0 flex flex-col">
+        <div className="shrink-0 flex flex-col">
           <label className="block text-[#3D1409] font-semibold text-sm mb-0.5 shrink-0">Description</label>
-          <div className="relative flex-1 min-h-0">
+          <div className="relative" style={{ height: '120px' }}>
             <textarea
               ref={descriptionRef}
               defaultValue={formData.description}
@@ -1252,7 +1252,7 @@ function CustomItemForm({
               onKeyDown={(e) => {
                 e.stopPropagation();
               }}
-              className="w-full h-full min-h-12 pl-3 pr-10 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 custom-scrollbar resize-none"
+              className="w-full h-full pl-3 pr-10 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 custom-scrollbar resize-none"
               placeholder="Describe the item..."
             />
 

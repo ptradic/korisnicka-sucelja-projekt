@@ -459,6 +459,13 @@ export function Navigation() {
     return () => unsubscribe();
   }, []);
 
+  // Close hamburger menu when resizing to desktop
+  useEffect(() => {
+    const handler = () => { if (window.innerWidth >= 768) setIsOpen(false); };
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {

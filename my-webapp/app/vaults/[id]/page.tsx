@@ -123,7 +123,7 @@ export default function VaultDetailPage() {
     userId, userName, userRole,
     userHomebrew, setUserHomebrew,
     isLoading, isAuthenticated,
-    trackWrite, showActionError, pendingWriteCount,
+    trackWrite, showActionError, setActionError, pendingWriteCount,
   } = useVaultAuth();
 
   /* ── Campaign-level state ── */
@@ -352,7 +352,10 @@ export default function VaultDetailPage() {
     if (itemIds.length === 0) return;
 
     // Players cannot move items they don't own (prevents stealing from other players)
-    if (!isGM && fromId !== 'shared' && fromId !== userId) return;
+    if (!isGM && fromId !== 'shared' && fromId !== userId) {
+      setActionError({ title: "You can't move another player's items.", description: '' });
+      return;
+    }
 
     const isPlayerToPlayer = !isGM && fromId !== 'shared' && toId !== 'shared' && fromId === userId && toId !== userId;
 

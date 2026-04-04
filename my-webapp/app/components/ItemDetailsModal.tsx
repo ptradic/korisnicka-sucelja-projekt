@@ -200,7 +200,6 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
     description: item.description,
     category: item.category,
     rarity: item.rarity,
-    quantity: item.quantity,
     weight: item.weight.toString(),
     value: initialGpValue ? initialGpValue.toString() : '',
     attunement: item.attunement || false,
@@ -225,7 +224,6 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
       description: formData.description,
       category: formData.category,
       rarity: formData.rarity,
-      quantity: formData.quantity,
       weight: Number.isFinite(parsedWeight) && parsedWeight >= 0 ? parsedWeight : 0,
       value: normalizedValue ? normalizedValue.value : undefined,
       valueUnit: normalizedValue ? normalizedValue.valueUnit : undefined,
@@ -374,8 +372,9 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 shrink-0">
-                <div className="order-1">
+              {/* Row 1: Category + Rarity */}
+              <div className="grid grid-cols-2 gap-2 shrink-0">
+                <div>
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
                     Category <span className="text-[#8B3A3A]">*</span>
                   </label>
@@ -390,7 +389,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   </select>
                 </div>
 
-                <div className="order-2">
+                <div>
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
                     Rarity <span className="text-[#8B3A3A]">*</span>
                   </label>
@@ -404,38 +403,11 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                     ))}
                   </select>
                 </div>
+              </div>
 
-                <div className="order-3">
-                  <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Attunement</label>
-                  <select
-                    value={formData.attunement ? 'requires' : 'does-not-require'}
-                    onChange={(e) => {
-                      const requiresAttunement = e.target.value === 'requires';
-                      setFormData({
-                        ...formData,
-                        attunement: requiresAttunement,
-                        attuned: requiresAttunement ? formData.attuned : false,
-                      });
-                    }}
-                    className="w-full px-3 py-2 min-h-[42px] bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
-                  >
-                    <option value="requires">Requires</option>
-                    <option value="does-not-require">Doesn't require</option>
-                  </select>
-                </div>
-
-                <div className="order-4">
-                  <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Quantity</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
-                  />
-                </div>
-
-                <div className="order-5">
+              {/* Row 2: Weight + Value + Attunement */}
+              <div className="grid grid-cols-3 gap-2 shrink-0">
+                <div>
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Weight (lbs)</label>
                   <input
                     type="number"
@@ -448,7 +420,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   />
                 </div>
 
-                <div className="order-6">
+                <div>
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Value (gp)</label>
                   <input
                     type="number"
@@ -459,6 +431,25 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                     className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
                     placeholder="Not estimated"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Attunement</label>
+                  <select
+                    value={formData.attunement ? 'requires' : 'does-not-require'}
+                    onChange={(e) => {
+                      const requiresAttunement = e.target.value === 'requires';
+                      setFormData({
+                        ...formData,
+                        attunement: requiresAttunement,
+                        attuned: requiresAttunement ? formData.attuned : false,
+                      });
+                    }}
+                    className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                  >
+                    <option value="requires">Requires</option>
+                    <option value="does-not-require">Doesn't require</option>
+                  </select>
                 </div>
               </div>
 
@@ -519,13 +510,13 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
               )}
 
               {/* Stats row */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
                   <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
                     <Weight className="w-3.5 h-3.5" />
                     <span>Weight</span>
                   </div>
-                  <p className="text-[#3D1409] font-bold">
+                  <p className="text-[#3D1409] font-bold text-sm">
                     {(item.weight * item.quantity).toFixed(1)} lbs
                     {item.quantity > 1 && (
                       <span className="text-[#5C4A2F] text-xs font-normal ml-1">
@@ -541,16 +532,38 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                     <span>Value</span>
                   </div>
                   {item.valueUnknown || !displayValue ? (
-                    <p className="text-[#8B6F47] font-bold">Not estimated</p>
+                    <p className="text-[#8B6F47] font-bold text-sm">Not estimated</p>
                   ) : (
-                    <p className={getValueColor(displayValue.valueUnit) + ' font-bold'}>
+                    <p className={getValueColor(displayValue.valueUnit) + ' font-bold text-sm'}>
                       {(displayValue.value * item.quantity).toLocaleString()} {displayValue.valueUnit}
                       {item.quantity > 1 && (
                         <span className="text-[#5C4A2F] text-xs font-normal ml-1">
-                          ({displayValue.value} {displayValue.valueUnit} × {item.quantity})
+                          ({displayValue.value} × {item.quantity})
                         </span>
                       )}
                     </p>
+                  )}
+                </div>
+
+                <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
+                  <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
+                    <Package className="w-3.5 h-3.5" />
+                    <span>Quantity</span>
+                  </div>
+                  {onUpdate ? (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => onUpdate({ quantity: Math.max(1, item.quantity - 1) })}
+                        className="w-6 h-6 rounded-lg bg-[#DCC8A8] hover:bg-[#C4B090] text-[#3D1409] font-bold text-sm flex items-center justify-center transition-colors"
+                      >−</button>
+                      <span className="text-[#3D1409] font-bold text-sm min-w-[1.5rem] text-center">{item.quantity}</span>
+                      <button
+                        onClick={() => onUpdate({ quantity: item.quantity + 1 })}
+                        className="w-6 h-6 rounded-lg bg-[#DCC8A8] hover:bg-[#C4B090] text-[#3D1409] font-bold text-sm flex items-center justify-center transition-colors"
+                      >+</button>
+                    </div>
+                  ) : (
+                    <p className="text-[#3D1409] font-bold text-sm">{item.quantity}</p>
                   )}
                 </div>
               </div>

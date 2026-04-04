@@ -642,11 +642,12 @@ export default function VaultDetailPage() {
     const isPlayerCustomItem = (baseItem.sourcebook || '').trim().toUpperCase() === 'PLAYER CUSTOM';
     const isHiddenToggleOnly = Object.keys(updates).length === 1 && 'hiddenFromOthers' in updates;
     const isAttunementToggleOnly = Object.keys(updates).length === 1 && 'attuned' in updates;
-    if (!isGM && !isPlayerCustomItem && !isHiddenToggleOnly && !isAttunementToggleOnly) {
+    const isQuantityChangeOnly = Object.keys(updates).length === 1 && 'quantity' in updates;
+    if (!isGM && !isPlayerCustomItem && !isHiddenToggleOnly && !isAttunementToggleOnly && !isQuantityChangeOnly) {
       return;
     }
 
-    const sanitizedUpdates = (!isGM && !isHiddenToggleOnly && !isAttunementToggleOnly)
+    const sanitizedUpdates = (!isGM && !isHiddenToggleOnly && !isAttunementToggleOnly && !isQuantityChangeOnly)
       ? {
           ...updates,
           sourcebook: 'PLAYER CUSTOM',

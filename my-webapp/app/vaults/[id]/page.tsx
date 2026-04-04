@@ -351,6 +351,9 @@ export default function VaultDetailPage() {
     if (!campaignId) return;
     if (itemIds.length === 0) return;
 
+    // Players cannot move items they don't own (prevents stealing from other players)
+    if (!isGM && fromId !== 'shared' && fromId !== userId) return;
+
     const isPlayerToPlayer = !isGM && fromId !== 'shared' && toId !== 'shared' && fromId === userId && toId !== userId;
 
     if (isPlayerToPlayer) {

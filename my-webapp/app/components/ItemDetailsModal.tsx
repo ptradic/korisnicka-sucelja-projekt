@@ -510,7 +510,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
               )}
 
               {/* Stats row */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
                   <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
                     <Weight className="w-3.5 h-3.5" />
@@ -545,7 +545,30 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   )}
                 </div>
 
-                <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
+                {/* Mobile: horizontal bar with big buttons */}
+                <div className="sm:hidden bg-white/50 border-2 border-[#DCC8A8] rounded-xl px-2 py-1.5 col-span-2 flex items-center justify-between gap-2">
+                  {onUpdate && (
+                    <button
+                      onClick={() => onUpdate({ quantity: Math.max(1, item.quantity - 1) })}
+                      className="w-8 h-8 rounded-lg bg-[#DCC8A8] hover:bg-[#C4B090] text-[#3D1409] font-bold text-base flex items-center justify-center transition-colors shrink-0"
+                    >−</button>
+                  )}
+                  <div className="flex items-center gap-1.5 text-[#5C4A2F] text-sm font-semibold uppercase tracking-wider">
+                    <Package className="w-3.5 h-3.5" />
+                    <span>Quantity: <span className="text-[#3D1409] font-bold text-lg leading-none">{item.quantity}</span></span>
+                  </div>
+                  {onUpdate ? (
+                    <button
+                      onClick={() => onUpdate({ quantity: item.quantity + 1 })}
+                      className="w-8 h-8 rounded-lg bg-[#DCC8A8] hover:bg-[#C4B090] text-[#3D1409] font-bold text-base flex items-center justify-center transition-colors shrink-0"
+                    >+</button>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+
+                {/* Desktop: original card layout */}
+                <div className="hidden sm:block bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
                   <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
                     <Package className="w-3.5 h-3.5" />
                     <span>Quantity</span>

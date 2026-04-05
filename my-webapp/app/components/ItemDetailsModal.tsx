@@ -81,7 +81,7 @@ function getValueColor(valueUnit: ValueUnit): string {
   return 'text-[#B8860B]';
 }
 
-export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, deleteLabel = 'Remove Item', confirmOnDelete = false, canEdit = true, canToggleHidden = false, canToggleAttunement = false }: ItemDetailsModalProps) {
+export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, deleteLabel = 'Remove', confirmOnDelete = false, canEdit = true, canToggleHidden = false, canToggleAttunement = false }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());

@@ -84,6 +84,7 @@ function getValueColor(valueUnit: ValueUnit): string {
 export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, deleteLabel = 'Remove Item', confirmOnDelete = false, canEdit = true, canToggleHidden = false, canToggleAttunement = false }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
   const backdropMouseDown = useRef(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const editDescriptionRef = useRef<HTMLTextAreaElement | null>(null);
@@ -549,17 +550,34 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                 <div className="sm:hidden bg-white/50 border-2 border-[#DCC8A8] rounded-xl px-2 py-1.5 col-span-2 flex items-center justify-between gap-2">
                   {onUpdate && (
                     <button
-                      onClick={() => onUpdate({ quantity: Math.max(1, item.quantity - 1) })}
+                      onClick={() => { const q = Math.max(1, item.quantity - 1); onUpdate({ quantity: q }); setQuantityInput(q.toString()); }}
                       className="w-8 h-8 rounded-lg bg-[#DCC8A8] hover:bg-[#C4B090] text-[#3D1409] font-bold text-base flex items-center justify-center transition-colors shrink-0"
                     >−</button>
                   )}
                   <div className="flex items-center gap-1.5 text-[#5C4A2F] text-sm font-semibold uppercase tracking-wider">
                     <Package className="w-3.5 h-3.5" />
-                    <span>Quantity: <span className="text-[#3D1409] font-bold text-lg leading-none">{item.quantity}</span></span>
+                    <span>Quantity:</span>
+                    {onUpdate ? (
+                      <input
+                        type="number"
+                        min="1"
+                        value={quantityInput}
+                        onChange={(e) => setQuantityInput(e.target.value)}
+                        onBlur={() => {
+                          const val = parseInt(quantityInput);
+                          if (!isNaN(val) && val >= 1) { onUpdate({ quantity: val }); setQuantityInput(val.toString()); }
+                          else setQuantityInput(item.quantity.toString());
+                        }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        className="w-12 text-center text-lg font-bold text-[#3D1409] bg-white/70 border-2 border-transparent rounded-lg focus:outline-none focus:border-[#5C1A1A] leading-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    ) : (
+                      <span className="text-[#3D1409] font-bold text-lg leading-none">{item.quantity}</span>
+                    )}
                   </div>
                   {onUpdate ? (
                     <button
-                      onClick={() => onUpdate({ quantity: item.quantity + 1 })}
+                      onClick={() => { const q = item.quantity + 1; onUpdate({ quantity: q }); setQuantityInput(q.toString()); }}
                       className="w-8 h-8 rounded-lg bg-[#DCC8A8] hover:bg-[#C4B090] text-[#3D1409] font-bold text-base flex items-center justify-center transition-colors shrink-0"
                     >+</button>
                   ) : (
@@ -576,12 +594,24 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   {onUpdate ? (
                     <div className="flex items-center gap-1.5">
                       <button
-                        onClick={() => onUpdate({ quantity: Math.max(1, item.quantity - 1) })}
+                        onClick={() => { const q = Math.max(1, item.quantity - 1); onUpdate({ quantity: q }); setQuantityInput(q.toString()); }}
                         className="w-6 h-6 rounded-lg bg-[#DCC8A8] hover:bg-[#C4B090] text-[#3D1409] font-bold text-sm flex items-center justify-center transition-colors"
                       >−</button>
-                      <span className="text-[#3D1409] font-bold text-sm min-w-[1.5rem] text-center">{item.quantity}</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={quantityInput}
+                        onChange={(e) => setQuantityInput(e.target.value)}
+                        onBlur={() => {
+                          const val = parseInt(quantityInput);
+                          if (!isNaN(val) && val >= 1) { onUpdate({ quantity: val }); setQuantityInput(val.toString()); }
+                          else setQuantityInput(item.quantity.toString());
+                        }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        className="w-10 text-center text-sm font-bold text-[#3D1409] bg-white/70 border-2 border-transparent rounded-lg focus:outline-none focus:border-[#5C1A1A] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
                       <button
-                        onClick={() => onUpdate({ quantity: item.quantity + 1 })}
+                        onClick={() => { const q = item.quantity + 1; onUpdate({ quantity: q }); setQuantityInput(q.toString()); }}
                         className="w-6 h-6 rounded-lg bg-[#DCC8A8] hover:bg-[#C4B090] text-[#3D1409] font-bold text-sm flex items-center justify-center transition-colors"
                       >+</button>
                     </div>

@@ -36,6 +36,7 @@ import {
   deletePlayerInventoryDoc,
   updateCampaignSettings,
   createUserHomebrewItem,
+  bulkImportHomebrewItems,
   updateCampaignCustomItemPool,
   updateUserHomebrewItem,
   deleteUserHomebrewItem,
@@ -593,6 +594,18 @@ export default function VaultDetailPage() {
     }
   };
 
+  const handleImportHomebrew = async (items: Omit<Item, 'id'>[]) => {
+    if (!userId) return;
+
+    try {
+      const imported = await trackWrite(() => bulkImportHomebrewItems(userId, items));
+      setUserHomebrew((prev) => [...prev, ...imported]);
+    } catch (error) {
+      console.error('Failed to import homebrew items:', error);
+      showActionError('Could not import homebrew items', error, () => handleImportHomebrew(items));
+    }
+  };
+
   const handleSaveCustomItemPool = async (items: Item[]) => {
     if (!campaignId || !currentCampaign || !userId) return;
 
@@ -867,6 +880,7 @@ export default function VaultDetailPage() {
             customItemPool={vaultCustomItems}
             onSaveCustomItemPool={handleSaveCustomItemPool}
             onCreateHomebrew={handleCreateHomebrew}
+            onImportHomebrew={handleImportHomebrew}
             onUpdateHomebrewItem={handleUpdateHomebrewItem}
             onDeleteHomebrewItem={handleDeleteHomebrewItem}
             onAdd={handleAddItem}

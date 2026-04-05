@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useDeferredValue } from 'react';
 import Fuse from 'fuse.js';
-import { X, Search, Plus, Package, Loader2, Check, Sword, Shield, Droplet, Sparkles, Backpack, Gem, Filter, ArrowUpDown, Repeat2 } from 'lucide-react';
+import { X, Search, Plus, Package, Loader2, Check, Sword, Shield, Droplet, Sparkles, Backpack, Gem, Filter, ArrowUpDown, Repeat2, Download, Upload } from 'lucide-react';
 import type { Item, Category, Rarity } from '../types';
 import { normalizeCategory } from '../types';
 import { ItemDetailsModal } from './ItemDetailsModal';
@@ -19,6 +19,7 @@ interface AddItemModalProps {
   onCreateHomebrew?: (item: Omit<Item, 'id'>) => Promise<void> | void;
   onUpdateHomebrewItem?: (item: Item) => Promise<void> | void;
   onDeleteHomebrewItem?: (itemId: string) => Promise<void> | void;
+  onImportHomebrew?: (items: Omit<Item, 'id'>[]) => Promise<void> | void;
 }
 
 interface DnDItemListItem {
@@ -711,6 +712,7 @@ function CustomItemPoolManager({
   onAddToPlayer,
   onUpdateHomebrewItem,
   onDeleteHomebrewItem,
+  onImportHomebrew,
   onClose,
   targetName,
 }: {
@@ -720,6 +722,7 @@ function CustomItemPoolManager({
   onAddToPlayer?: (item: Omit<Item, 'id'>) => Promise<void> | void;
   onUpdateHomebrewItem?: (item: Item) => Promise<void> | void;
   onDeleteHomebrewItem?: (itemId: string) => Promise<void> | void;
+  onImportHomebrew?: (items: Omit<Item, 'id'>[]) => Promise<void> | void;
   onClose: () => void;
   targetName: string;
 }) {
@@ -728,6 +731,10 @@ function CustomItemPoolManager({
   const [addingToPlayerItemId, setAddingToPlayerItemId] = useState<string | null>(null);
   const [selectedPoolIds, setSelectedPoolIds] = useState<string[]>(() => customItemPool.map((item) => item.id));
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [importPreview, setImportPreview] = useState<{ newItems: Omit<Item, 'id'>[]; skipped: number } | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
   const {
@@ -806,6 +813,59 @@ function CustomItemPoolManager({
     }
   };
 
+  const handleExport = () => {
+    const data = JSON.stringify(userHomebrew, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tbv-homebrew-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportError(null);
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target?.result as string);
+        if (!Array.isArray(parsed)) throw new Error('File must contain a JSON array of items.');
+
+        const validItems = parsed.filter(
+          (item): item is Omit<Item, 'id'> =>
+            typeof item === 'object' && item !== null && typeof item.name === 'string' && item.name.trim() !== '',
+        );
+
+        if (validItems.length === 0) throw new Error('No valid items found in the file.');
+
+        const existingNames = new Set(userHomebrew.map((i) => i.name.toLowerCase().trim()));
+        const newItems = validItems.filter((item) => !existingNames.has(item.name.toLowerCase().trim()));
+        const skipped = validItems.length - newItems.length;
+
+        setImportPreview({ newItems, skipped });
+      } catch (err) {
+        setImportError(err instanceof Error ? err.message : 'Failed to read file.');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
+  const handleConfirmImport = async () => {
+    if (!importPreview || !onImportHomebrew) return;
+    setIsImporting(true);
+    try {
+      await onImportHomebrew(importPreview.newItems);
+      setImportPreview(null);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <>
       <div className="sticky top-0 bg-[#F5EFE0] p-4 sm:p-5 pb-3 flex items-start justify-between z-10">
@@ -823,22 +883,80 @@ function CustomItemPoolManager({
         </button>
       </div>
 
-      <div className="p-4 border-b border-[#8B6F47]/30">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
-          <input
-            type="text"
-            placeholder="Search homebrew items..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F]"
-          />
+      <div className="p-4 pb-3 border-b border-[#8B6F47]/30 space-y-2.5">
+        {!importPreview && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A2F]" />
+            <input
+              type="text"
+              placeholder="Search homebrew items..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-sm bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] placeholder-[#8B6F47]/50 focus:outline-none focus:border-[#5C4A2F]"
+            />
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={userHomebrew.length === 0}
+            className="flex-1 flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg border-2 border-[#8B6F47]/60 bg-white/70 text-[#3D1409] text-xs font-semibold transition-colors hover:bg-[#F5EFE0] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export JSON
+          </button>
+          <button
+            type="button"
+            onClick={() => { setImportError(null); fileInputRef.current?.click(); }}
+            className="flex-1 flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg border-2 border-[#8B6F47]/60 bg-white/70 text-[#3D1409] text-xs font-semibold transition-colors hover:bg-[#F5EFE0]"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            Import JSON
+          </button>
+          <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleFileSelect} />
         </div>
+        {importError && (
+          <p className="text-xs text-red-700 font-medium px-0.5">{importError}</p>
+        )}
       </div>
 
       <div className="relative flex-1 min-h-0">
         <div ref={listRef} className="h-full overflow-y-auto p-3 sm:pr-6 min-h-0 space-y-1.5 custom-scrollbar">
-          {sortedHomebrewItems.length === 0 ? (
+          {importPreview ? (
+            <>
+              <div className="mb-3 px-1">
+                <p className="text-sm font-bold text-[#3D1409]">
+                  {importPreview.newItems.length} item{importPreview.newItems.length !== 1 ? 's' : ''} ready to import
+                </p>
+                {importPreview.skipped > 0 && (
+                  <p className="text-xs text-[#8B6F47] mt-0.5">
+                    {importPreview.skipped} already in your collection — will be skipped
+                  </p>
+                )}
+                {importPreview.newItems.length === 0 && (
+                  <p className="text-xs text-[#8B6F47] mt-0.5">All items already exist in your collection.</p>
+                )}
+              </div>
+              {importPreview.newItems.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border-2 border-[#D4C4A8] bg-white/40"
+                >
+                  <div className={'w-2.5 h-2.5 rounded-full shrink-0 ' + (rarityDots[item.rarity ?? 'common'] || 'bg-[#A89A7C]')} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-[#3D1409] font-medium truncate">{item.name}</div>
+                    <div className="text-[11px] text-[#8B6F47] capitalize">{item.category}</div>
+                  </div>
+                </div>
+              ))}
+              {importPreview.newItems.length === 0 && (
+                <div className="text-center py-6">
+                  <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
+                </div>
+              )}
+            </>
+          ) : sortedHomebrewItems.length === 0 ? (
           <div className="text-center py-8">
             <Package className="w-10 h-10 text-[#8B6F47]/40 mx-auto mb-2" />
             <div className="text-[#5C4A2F] text-sm">No homebrew items found</div>
@@ -906,7 +1024,7 @@ function CustomItemPoolManager({
           )}
         </div>
 
-        {showScrollbar && (
+        {showScrollbar && !importPreview && (
           <div
             ref={trackRef}
             onClick={handleTrackClick}
@@ -925,20 +1043,47 @@ function CustomItemPoolManager({
       </div>
 
       <div className="p-3 border-t-2 border-[#DCC8A8]">
-        <button
-          onClick={() => void handleSavePool()}
-          disabled={!hasPoolChanges || isSavingPool}
-          className="btn-primary active:scale-100 w-full disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {isSavingPool ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            'Save Custom Item Pool'
-          )}
-        </button>
+        {importPreview ? (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setImportPreview(null)}
+              className="btn-secondary active:scale-100 flex-1"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleConfirmImport()}
+              disabled={importPreview.newItems.length === 0 || isImporting || !onImportHomebrew}
+              className="btn-primary active:scale-100 flex-1 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isImporting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                `Import ${importPreview.newItems.length} Item${importPreview.newItems.length !== 1 ? 's' : ''}`
+              )}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => void handleSavePool()}
+            disabled={!hasPoolChanges || isSavingPool}
+            className="btn-primary active:scale-100 w-full disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isSavingPool ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Custom Item Pool'
+            )}
+          </button>
+        )}
       </div>
 
       {selectedItem && (
@@ -1424,6 +1569,7 @@ export function AddItemModal({
   onCreateHomebrew,
   onUpdateHomebrewItem,
   onDeleteHomebrewItem,
+  onImportHomebrew,
 }: AddItemModalProps) {
   const [mode, setMode] = useState<'pick' | 'manage' | 'custom'>('pick');
   const [lastAddedName, setLastAddedName] = useState<string | null>(null);
@@ -1525,6 +1671,7 @@ export function AddItemModal({
             onAddToPlayer={onAdd}
             onUpdateHomebrewItem={onUpdateHomebrewItem}
             onDeleteHomebrewItem={onDeleteHomebrewItem}
+            onImportHomebrew={onImportHomebrew}
             onClose={onClose}
             targetName={targetName}
           />

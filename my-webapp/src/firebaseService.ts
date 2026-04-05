@@ -263,6 +263,31 @@ export async function updateUserHomebrewItem(uid: string, updatedItem: Item): Pr
   await batch.commit();
 }
 
+export async function bulkImportHomebrewItems(uid: string, items: Omit<Item, 'id'>[]): Promise<Item[]> {
+  const userDoc = await getUserDoc(uid);
+  if (!userDoc) throw new Error('User profile not found');
+
+  const existingNames = new Set((userDoc.userHomebrew ?? []).map((i) => i.name.toLowerCase().trim()));
+
+  const newItems: Item[] = items
+    .filter((item) => !existingNames.has(item.name.toLowerCase().trim()))
+    .map((item, idx) => cleanItem({
+      ...item,
+      sourcebook: item.sourcebook || 'homebrew',
+      id: `hb-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 10)}`,
+      createdAt: item.createdAt || new Date().toISOString(),
+    }));
+
+  if (newItems.length === 0) return [];
+
+  await updateDoc(doc(db, 'users', uid), {
+    userHomebrew: [...(userDoc.userHomebrew ?? []), ...newItems],
+    updatedAt: serverTimestamp(),
+  });
+
+  return newItems;
+}
+
 export async function deleteUserHomebrewItem(uid: string, itemId: string): Promise<void> {
   const userDoc = await getUserDoc(uid);
   if (!userDoc) {

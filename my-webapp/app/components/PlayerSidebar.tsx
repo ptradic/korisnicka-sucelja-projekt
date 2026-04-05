@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrop, useDragLayer } from 'react-dnd';
-import { Package, Users, User, Copy, Check, Settings, X, Eye, EyeOff, Save } from 'lucide-react';
+import { Package, Users, User, Copy, Check, Settings, X, Eye, EyeOff, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Player } from '../types';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 import { calcTotalWeight } from '@/lib/utils';
@@ -642,10 +642,33 @@ export function PlayerSidebar({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showCharacterModal, setShowCharacterModal] = useState(false);
   const desktopListRef = useRef<HTMLDivElement>(null);
+  const mobilePillsRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const { isDragging: isAnyDragging } = useDragLayer((monitor) => ({
     isDragging: monitor.isDragging(),
   }));
   const currentPlayer = currentUserId ? players.find((player) => player.id === currentUserId) : undefined;
+
+  const checkMobileScroll = useCallback(() => {
+    const el = mobilePillsRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = mobilePillsRef.current;
+    if (!el) return;
+    checkMobileScroll();
+    el.addEventListener('scroll', checkMobileScroll, { passive: true });
+    const ro = new ResizeObserver(checkMobileScroll);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', checkMobileScroll); ro.disconnect(); };
+  }, [checkMobileScroll]);
+
+  // Re-check when player list changes
+  useEffect(() => { checkMobileScroll(); }, [players, checkMobileScroll]);
 
   const handleDrop = useCallback(
     (toId: string | 'shared') => (itemIds: string[], fromId: string) => {
@@ -710,28 +733,60 @@ export function PlayerSidebar({
           <h2 className="text-[#3D1409] text-sm font-bold truncate flex-1 pr-8">{campaignName}</h2>
         </div>
 
-        {/* Wrapping player pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          {players.map((player) => (
-            <PlayerPill
-              key={player.id}
-              player={player}
-              isSelected={selectedPlayerId === player.id}
-              onClick={() => onSelectPlayer(player.id)}
-              onDrop={handleDrop(player.id)}
-              isBeingDraggedOver={dragOverPlayerId === player.id}
+        {/* Single-line scrollable player pills; expands to wrap when dragging */}
+        <div className="relative">
+          {canScrollLeft && !isSidebarOver && (
+            <>
+              <div className="absolute left-0 top-0 bottom-0 w-10 bg-linear-to-r from-[#D9C7AA] to-transparent pointer-events-none z-10" />
+              <button
+                onPointerDown={(e) => { e.preventDefault(); mobilePillsRef.current?.scrollBy({ left: -120, behavior: 'smooth' }); }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 text-[#3D1409]"
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            </>
+          )}
+          <div
+            ref={mobilePillsRef}
+            className={
+              'flex items-center gap-2 scrollbar-hide ' +
+              (isSidebarOver ? 'flex-wrap' : 'overflow-x-auto ' + (canScrollLeft ? 'pl-6 ' : '') + (canScrollRight ? 'pr-6' : ''))
+            }
+          >
+            {players.map((player) => (
+              <PlayerPill
+                key={player.id}
+                player={player}
+                isSelected={selectedPlayerId === player.id}
+                onClick={() => onSelectPlayer(player.id)}
+                onDrop={handleDrop(player.id)}
+                isBeingDraggedOver={dragOverPlayerId === player.id}
+                isAnyDragging={isSidebarOver}
+              />
+            ))}
+            <SharedPill
+              isSelected={selectedPlayerId === 'shared'}
+              onClick={() => onSelectPlayer('shared')}
+              onDrop={handleDrop('shared')}
+              itemCount={sharedLootCount}
+              isBeingDraggedOver={dragOverPlayerId === 'shared'}
               isAnyDragging={isSidebarOver}
+              name={sharedLootName || 'Shared'}
             />
-          ))}
-          <SharedPill
-            isSelected={selectedPlayerId === 'shared'}
-            onClick={() => onSelectPlayer('shared')}
-            onDrop={handleDrop('shared')}
-            itemCount={sharedLootCount}
-            isBeingDraggedOver={dragOverPlayerId === 'shared'}
-            isAnyDragging={isSidebarOver}
-            name={sharedLootName || 'Shared'}
-          />
+          </div>
+          {canScrollRight && !isSidebarOver && (
+            <>
+              <div className="absolute right-0 top-0 bottom-0 w-10 bg-linear-to-l from-[#D9C7AA] to-transparent pointer-events-none z-10" />
+              <button
+                onPointerDown={(e) => { e.preventDefault(); mobilePillsRef.current?.scrollBy({ left: 120, behavior: 'smooth' }); }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 text-[#3D1409]"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 

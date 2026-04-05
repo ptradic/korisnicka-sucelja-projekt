@@ -336,7 +336,7 @@ button,
 /* Global themed scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #8B6F47 transparent;
+  scrollbar-color: rgba(139, 111, 71, 0.4) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -358,14 +358,14 @@ button,
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #8B6F47;
+  background: rgba(139, 111, 71, 0.4);
   border: 3px solid transparent;
   background-clip: padding-box;
   border-radius: 999px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #5C1A1A;
+  background: rgba(139, 111, 71, 0.7);
   background-clip: padding-box;
 }
 

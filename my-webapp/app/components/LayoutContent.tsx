@@ -40,7 +40,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
         >
           <div
             onMouseDown={handleThumbMouseDown}
-            className="absolute left-1/2 -translate-x-1/2 w-2.5 rounded-full bg-[#8B6F47] hover:bg-[#5C1A1A] transition-colors duration-200 cursor-grab active:cursor-grabbing"
+            className="absolute left-1/2 -translate-x-1/2 w-2.5 rounded-full bg-black/20 hover:bg-black/35 transition-colors duration-200 cursor-grab active:cursor-grabbing"
             style={{
               top: `${thumbTop}px`,
               height: `${thumbHeight}px`,

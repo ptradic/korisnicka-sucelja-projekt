@@ -13,6 +13,7 @@ interface PlayerSidebarProps {
   dragOverPlayerId: string | 'shared' | null;
   onDragOverChange: (playerId: string | 'shared' | null) => void;
   sharedLootCount: number;
+  sharedLootName?: string;
   campaignName: string;
   campaignId?: string;
   campaignPassword?: string;
@@ -388,6 +389,7 @@ function SharedPill({
   itemCount,
   isBeingDraggedOver,
   isAnyDragging,
+  name = 'Shared',
 }: {
   isSelected: boolean;
   onClick: () => void;
@@ -395,6 +397,7 @@ function SharedPill({
   itemCount: number;
   isBeingDraggedOver: boolean;
   isAnyDragging: boolean;
+  name?: string;
 }) {
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
@@ -436,7 +439,7 @@ function SharedPill({
       >
         <Package className={(isAnyDragging ? 'w-4 h-4 ' : 'w-3 h-3 ') + (isSelected ? 'text-white/80' : 'text-[#8B6F47]')} />
       </div>
-      <span className={(isAnyDragging ? 'text-sm ' : 'text-xs ') + 'font-semibold'}>Shared</span>
+      <span className={(isAnyDragging ? 'text-sm ' : 'text-xs ') + 'font-semibold'}>{name}</span>
       <span className={(isAnyDragging ? 'text-xs ' : 'text-[10px] ') + (isSelected ? 'text-white/60' : 'text-[#8B6F47]')}>
         ({itemCount})
       </span>
@@ -555,12 +558,14 @@ function SharedLootSlot({
   onDrop,
   itemCount,
   isBeingDraggedOver,
+  name = 'Shared Loot',
 }: {
   isSelected: boolean;
   onClick: () => void;
   onDrop: (itemIds: string[], fromId: string) => void;
   itemCount: number;
   isBeingDraggedOver: boolean;
+  name?: string;
 }) {
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
@@ -602,7 +607,7 @@ function SharedLootSlot({
           <Package className={'w-4 h-4 ' + (isSelected ? 'text-white/80' : 'text-[#8B6F47]')} />
         </div>
         <div className="flex-1 min-w-0 text-left">
-          <div className="text-xs font-semibold">Shared Loot</div>
+          <div className="text-xs font-semibold">{name}</div>
           <div className={'text-[9px] ' + (isSelected ? 'text-white/60' : 'text-[#8B6F47]')}>
             {itemCount} {itemCount === 1 ? 'item' : 'items'} &middot; No weight limit
           </div>
@@ -624,6 +629,7 @@ export function PlayerSidebar({
   dragOverPlayerId,
   onDragOverChange,
   sharedLootCount,
+  sharedLootName,
   campaignName,
   campaignId,
   campaignPassword,
@@ -724,6 +730,7 @@ export function PlayerSidebar({
             itemCount={sharedLootCount}
             isBeingDraggedOver={dragOverPlayerId === 'shared'}
             isAnyDragging={isSidebarOver}
+            name={sharedLootName || 'Shared'}
           />
         </div>
       </div>
@@ -798,6 +805,7 @@ export function PlayerSidebar({
                 onDrop={handleDrop('shared')}
                 itemCount={sharedLootCount}
                 isBeingDraggedOver={dragOverPlayerId === 'shared'}
+                name={sharedLootName || 'Shared Loot'}
               />
             </div>
           </div>

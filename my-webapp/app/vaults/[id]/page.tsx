@@ -35,6 +35,7 @@ import {
   checkAndExpirePendingTransfers,
   deletePlayerInventoryDoc,
   updateCampaignSettings,
+  updateSharedLootName,
   createUserHomebrewItem,
   bulkImportHomebrewItems,
   updateCampaignCustomItemPool,
@@ -594,6 +595,17 @@ export default function VaultDetailPage() {
     }
   };
 
+  const handleRenameSharedLoot = async (name: string) => {
+    if (!campaignId || !userId) return;
+    try {
+      await trackWrite(() => updateSharedLootName(campaignId, userId, name));
+      setCurrentCampaign((prev) => prev ? { ...prev, sharedLootName: name } : prev);
+    } catch (error) {
+      console.error('Failed to rename shared loot:', error);
+      showActionError('Could not rename shared loot', error, () => handleRenameSharedLoot(name));
+    }
+  };
+
   const handleImportHomebrew = async (items: Omit<Item, 'id'>[]) => {
     if (!userId) return;
 
@@ -827,6 +839,7 @@ export default function VaultDetailPage() {
             dragOverPlayerId={dragOverPlayerId}
             onDragOverChange={setDragOverPlayerId}
             sharedLootCount={currentCampaign?.sharedLoot.length || 0}
+            sharedLootName={currentCampaign?.sharedLootName}
             campaignName={currentCampaign?.name ?? 'Campaign'}
             campaignId={campaignId}
             campaignPassword={currentCampaign?.password || ''}
@@ -848,7 +861,7 @@ export default function VaultDetailPage() {
               }
               owner={
                 isShared
-                  ? { name: 'Shared Loot', id: 'shared' }
+                  ? { name: currentCampaign?.sharedLootName || 'Shared Loot', id: 'shared' }
                   : selectedPlayer ? { name: selectedPlayer.name, id: selectedPlayer.id } : null
               }
               ownerId={selectedPlayerId}
@@ -865,6 +878,7 @@ export default function VaultDetailPage() {
               syncStatus={syncStatus}
               onTutorialStart={startTutorial}
               onKickPlayer={isGM && !isShared && selectedPlayerId !== userId ? () => handleKickPlayer(selectedPlayerId) : undefined}
+              onRenameShared={isGM && isShared ? handleRenameSharedLoot : undefined}
               onReorderInventory={handleReorderInventory}
             />
           </div>
@@ -873,7 +887,7 @@ export default function VaultDetailPage() {
         {showAddItemModal && (
           <AddItemModal
             onClose={() => setShowAddItemModal(false)}
-            targetName={isShared ? 'Shared Loot' : (selectedPlayer?.name ?? 'Unknown')}
+            targetName={isShared ? (currentCampaign?.sharedLootName || 'Shared Loot') : (selectedPlayer?.name ?? 'Unknown')}
             isGM={isGM}
             customItems={vaultCustomItems}
             userHomebrew={userHomebrew}

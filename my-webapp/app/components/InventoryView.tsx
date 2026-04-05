@@ -27,6 +27,7 @@ interface InventoryViewProps {
   syncStatus?: 'saving' | 'saved';
   onTutorialStart?: () => void;
   onKickPlayer?: () => void;
+  onRenameShared?: (name: string) => void;
   onReorderInventory?: (newInventory: Item[]) => void;
 }
 
@@ -258,6 +259,7 @@ export function InventoryView({
   syncStatus = 'saved',
   onTutorialStart,
   onKickPlayer,
+  onRenameShared,
   onReorderInventory,
 }: InventoryViewProps) {
   type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
@@ -291,6 +293,9 @@ export function InventoryView({
   const filterMeasureRef = useRef<HTMLDivElement>(null);
   const previousQuantityByIdRef = useRef<Map<string, number>>(new Map());
   const [showKickConfirm, setShowKickConfirm] = useState(false);
+  const [isRenamingShared, setIsRenamingShared] = useState(false);
+  const [renameSharedValue, setRenameSharedValue] = useState('');
+  const renameSharedInputRef = useRef<HTMLInputElement>(null);
 
   const canReorder = sortField === 'none' && selectedCategory === 'all' && searchQuery === '' && !!onReorderInventory;
 
@@ -552,9 +557,41 @@ export function InventoryView({
         <div className="relative flex items-start gap-2 mb-2">
           <div className="min-w-0 pr-16">
             <div className="flex items-center gap-2">
-              <h2 className="text-[#3D1409] text-base sm:text-lg font-bold truncate">
-                {owner?.name || 'Unknown'}
-              </h2>
+              {isRenamingShared ? (
+                <input
+                  ref={renameSharedInputRef}
+                  type="text"
+                  value={renameSharedValue}
+                  onChange={(e) => setRenameSharedValue(e.target.value)}
+                  onBlur={() => {
+                    const trimmed = renameSharedValue.trim();
+                    if (trimmed && trimmed !== owner?.name) onRenameShared?.(trimmed);
+                    setIsRenamingShared(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); }
+                    if (e.key === 'Escape') { setIsRenamingShared(false); }
+                  }}
+                  className="text-[#3D1409] text-base sm:text-lg font-bold bg-transparent border-b-2 border-[#5C1A1A] outline-none w-40"
+                  autoFocus
+                />
+              ) : (
+                <h2 className="text-[#3D1409] text-base sm:text-lg font-bold truncate">
+                  {owner?.name || 'Unknown'}
+                </h2>
+              )}
+              {onRenameShared && !isRenamingShared && (
+                <button
+                  onClick={() => {
+                    setRenameSharedValue(owner?.name || 'Shared Loot');
+                    setIsRenamingShared(true);
+                  }}
+                  className="shrink-0 p-1 rounded-md text-[#8B6F47]/50 hover:text-[#5C1A1A] hover:bg-[#5C1A1A]/10 transition-all duration-200"
+                  title="Rename shared loot"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
               {onKickPlayer && (
                 <button
                   onClick={() => setShowKickConfirm(true)}

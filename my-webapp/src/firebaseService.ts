@@ -96,6 +96,7 @@ export interface CampaignDoc {
   sharedLoot: Item[];
   sharedCurrency?: Currency;
   customItemPool?: Item[];
+  sharedLootName?: string;
   password?: string; // Optional password for joining
 }
 
@@ -382,6 +383,16 @@ export async function updateCampaignSettings(
   await updateDoc(doc(db, 'campaigns', campaignId), {
     name: updates.name.trim(),
     password: updates.password,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateSharedLootName(campaignId: string, gmId: string, name: string): Promise<void> {
+  const campaign = await getCampaign(campaignId);
+  if (!campaign) throw new Error('Campaign not found');
+  if (campaign.gmId !== gmId) throw new Error('Only the GM can rename shared loot.');
+  await updateDoc(doc(db, 'campaigns', campaignId), {
+    sharedLootName: name.trim() || 'Shared Loot',
     updatedAt: serverTimestamp(),
   });
 }

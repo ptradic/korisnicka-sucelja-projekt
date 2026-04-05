@@ -104,6 +104,17 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
   const [editDescriptionThumbTop, setEditDescriptionThumbTop] = useState(0);
   const [editDescriptionThumbHeight, setEditDescriptionThumbHeight] = useState(0);
 
+  // Intercept browser back button to close the modal instead of navigating away
+  // Intercept browser back button to close the modal instead of navigating away
+  useEffect(() => {
+    history.pushState({ tbvModal: true }, '');
+    const handlePopState = () => { onClose(); };
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   const updateEditDescriptionScrollbar = () => {
     const el = editDescriptionRef.current;
     if (!el) return;

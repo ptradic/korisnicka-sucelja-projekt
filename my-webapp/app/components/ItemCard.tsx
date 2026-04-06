@@ -86,12 +86,27 @@ export function ItemCard({
     if (isDragging) setIsHolding(false);
   }, [isDragging]);
 
+  // When isHolding but not dragging, listen for touchend on document.
+  // react-dnd swallows the element's onTouchEnd, but the document still
+  // receives it — so we can reliably detect when the finger lifts.
+  useEffect(() => {
+    if (!isHolding || isDragging) return;
+    const handleGlobalTouchEnd = () => setIsHolding(false);
+    document.addEventListener('touchend', handleGlobalTouchEnd);
+    document.addEventListener('touchcancel', handleGlobalTouchEnd);
+    return () => {
+      document.removeEventListener('touchend', handleGlobalTouchEnd);
+      document.removeEventListener('touchcancel', handleGlobalTouchEnd);
+    };
+  }, [isHolding, isDragging]);
+
   const colors = rarityColors[item.rarity] || rarityColors.common;
 
   return (
     <div
       ref={drag as any}
       onClick={() => {
+        clearHold();
         if (bulkSelectEnabled && onToggleSelect) {
           onToggleSelect(item);
           return;

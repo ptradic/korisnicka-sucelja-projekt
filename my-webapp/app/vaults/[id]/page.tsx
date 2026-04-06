@@ -905,6 +905,7 @@ export default function VaultDetailPage() {
             onUpdateCampaignSettings={isGM ? handleUpdateCampaignSettings : undefined}
             currentUserId={userId}
             onUpdateMyCharacterProfile={!isGM ? handleUpdateMyCharacterProfile : undefined}
+            onTutorialStart={startTutorial}
           />
           <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
             <InventoryView
@@ -933,7 +934,6 @@ export default function VaultDetailPage() {
               onCoinTransfer={isShared && !isGM ? handleSharedCoinTransfer : undefined}
               isShared={isShared}
               syncStatus={syncStatus}
-              onTutorialStart={startTutorial}
               onKickPlayer={isGM && !isShared && selectedPlayerId !== userId ? () => handleKickPlayer(selectedPlayerId) : undefined}
               onRenameShared={isGM && isShared ? handleRenameSharedLoot : undefined}
               onReorderInventory={handleReorderInventory}

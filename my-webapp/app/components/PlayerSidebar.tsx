@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrop, useDragLayer } from 'react-dnd';
-import { Package, Users, User, Copy, Check, Settings, X, Eye, EyeOff, Save, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, Users, User, Copy, Check, Settings, X, Eye, EyeOff, Save, ChevronLeft, ChevronRight, CircleHelp } from 'lucide-react';
 import type { Player } from '../types';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 import { calcTotalWeight } from '@/lib/utils';
@@ -22,6 +22,7 @@ interface PlayerSidebarProps {
   onUpdateCampaignSettings?: (updates: { name: string; password: string }) => Promise<void>;
   currentUserId?: string;
   onUpdateMyCharacterProfile?: (updates: { name: string; avatar: string }) => Promise<void>;
+  onTutorialStart?: () => void;
 }
 
 function isHttpAvatarUrl(value: string): boolean {
@@ -83,11 +84,13 @@ function CharacterNameModal({
   initialAvatar,
   onClose,
   onSave,
+  onTutorialStart,
 }: {
   initialName: string;
   initialAvatar: string;
   onClose: () => void;
   onSave: (updates: { name: string; avatar: string }) => Promise<void>;
+  onTutorialStart?: () => void;
 }) {
   const [name, setName] = useState(initialName);
   const [avatar, setAvatar] = useState(initialAvatar);
@@ -169,6 +172,16 @@ function CharacterNameModal({
             <p className="text-xs text-[#8B3A3A] bg-[#FFEBEE] border border-[#8B3A3A]/30 rounded-lg px-2 py-1.5">{error}</p>
           )}
 
+          {onTutorialStart && (
+            <button
+              onClick={() => { onClose(); onTutorialStart(); }}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 border-[#8B6F47]/30 bg-white/40 text-[#5C4A2F] hover:bg-white/60 hover:border-[#5C4A2F] transition-all text-sm font-medium"
+            >
+              <CircleHelp className="w-4 h-4" />
+              Inventory Help & Tutorial
+            </button>
+          )}
+
           <div className="flex gap-2">
             <button onClick={onClose} className="btn-secondary flex-1 px-4 py-2.5">Cancel</button>
             <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 px-4 py-2.5 disabled:opacity-60">
@@ -188,12 +201,14 @@ function VaultSettingsModal({
   initialPassword,
   onClose,
   onSave,
+  onTutorialStart,
 }: {
   campaignId: string;
   initialName: string;
   initialPassword: string;
   onClose: () => void;
   onSave: (updates: { name: string; password: string }) => Promise<void>;
+  onTutorialStart?: () => void;
 }) {
   const [name, setName] = useState(initialName);
   const [password, setPassword] = useState(initialPassword);
@@ -301,6 +316,16 @@ function VaultSettingsModal({
 
           {error && (
             <p className="text-xs text-[#8B3A3A] bg-[#FFEBEE] border border-[#8B3A3A]/30 rounded-lg px-2 py-1.5">{error}</p>
+          )}
+
+          {onTutorialStart && (
+            <button
+              onClick={() => { onClose(); onTutorialStart(); }}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 border-[#8B6F47]/30 bg-white/40 text-[#5C4A2F] hover:bg-white/60 hover:border-[#5C4A2F] transition-all text-sm font-medium"
+            >
+              <CircleHelp className="w-4 h-4" />
+              Inventory Help & Tutorial
+            </button>
           )}
 
           <div className="flex gap-2">
@@ -638,6 +663,7 @@ export function PlayerSidebar({
   onUpdateCampaignSettings,
   currentUserId,
   onUpdateMyCharacterProfile,
+  onTutorialStart,
 }: PlayerSidebarProps) {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showCharacterModal, setShowCharacterModal] = useState(false);
@@ -896,6 +922,7 @@ export function PlayerSidebar({
           initialPassword={campaignPassword || ''}
           onClose={() => setShowSettingsModal(false)}
           onSave={onUpdateCampaignSettings}
+          onTutorialStart={onTutorialStart}
         />
       )}
 
@@ -905,6 +932,7 @@ export function PlayerSidebar({
           initialAvatar={currentPlayer.avatar}
           onClose={() => setShowCharacterModal(false)}
           onSave={onUpdateMyCharacterProfile}
+          onTutorialStart={onTutorialStart}
         />
       )}
     </>

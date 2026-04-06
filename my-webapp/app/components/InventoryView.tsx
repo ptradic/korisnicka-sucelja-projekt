@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks, Repeat2, UserX, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, X, ListChecks, Repeat2, UserX, Pencil, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import { ItemCard } from './ItemCard';
@@ -25,7 +25,6 @@ interface InventoryViewProps {
   onCoinTransfer?: (amounts: Currency) => void;
   isShared?: boolean;
   syncStatus?: 'saving' | 'saved';
-  onTutorialStart?: () => void;
   onKickPlayer?: () => void;
   onRenameShared?: (name: string) => void;
   onReorderInventory?: (newInventory: Item[]) => void;
@@ -258,7 +257,6 @@ export function InventoryView({
   onCoinTransfer,
   isShared,
   syncStatus = 'saved',
-  onTutorialStart,
   onKickPlayer,
   onRenameShared,
   onReorderInventory,
@@ -922,13 +920,6 @@ export function InventoryView({
             className={`shrink-0 w-10 h-10 !p-0 rounded-lg ${bulkSelectEnabled ? 'btn-primary border-[#3D1409]' : 'btn-secondary text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'}`}
           >
             <ListChecks className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onTutorialStart}
-            title="Inventory help"
-            className="btn-secondary shrink-0 w-10 h-10 !p-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]"
-          >
-            <CircleHelp className="w-4 h-4" />
           </button>
         </div>
 

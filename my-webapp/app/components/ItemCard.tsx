@@ -12,6 +12,7 @@ interface ItemCardProps {
   selectedCount?: number;
   selectedItemIds?: string[];
   onToggleSelect?: (item: Item) => void;
+  onSelectAll?: (item: Item) => void;
 }
 
 const rarityColors: Record<string, { text: string; dot: string; bg: string; border: string }> = {
@@ -32,6 +33,7 @@ export function ItemCard({
   selectedCount = 0,
   selectedItemIds = [],
   onToggleSelect,
+  onSelectAll,
 }: ItemCardProps) {
   const dragIds = bulkSelectEnabled && isSelected && selectedItemIds.length > 0
     ? selectedItemIds
@@ -168,6 +170,14 @@ export function ItemCard({
       )}
       {item.quantity > 1 && (
         <div className="flex items-center gap-1 shrink-0">
+          {bulkSelectEnabled && selectedCount > 0 && selectedCount < item.quantity && onSelectAll && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onSelectAll(item); }}
+              className="text-[10px] text-[#5C1A1A] bg-[#F5E6D2] hover:bg-[#E8D5B7] border border-[#8B6F47]/40 px-1.5 py-0.5 rounded font-medium transition-colors"
+            >
+              All
+            </button>
+          )}
           {bulkSelectEnabled && selectedCount > 0 && (
             <span className="text-[10px] text-[#5C1A1A] bg-[#F5E6D2] border border-[#8B6F47]/40 px-1.5 py-0.5 rounded tabular-nums">
               {selectedCount}/{item.quantity}

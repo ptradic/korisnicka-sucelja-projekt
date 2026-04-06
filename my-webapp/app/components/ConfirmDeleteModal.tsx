@@ -32,7 +32,7 @@ export function ConfirmDeleteModal({ title, message, onConfirm, onCancel, confir
           <h3 className="text-lg font-extrabold text-[#3D1409]">{title}</h3>
         </div>
 
-        <p className="text-[#5C4A2F] text-sm mb-6">
+        <p className="text-[#5C4A2F] text-sm mb-6 whitespace-pre-line">
           {message || 'Are you sure? This cannot be undone.'}
         </p>
 

@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks, Repeat2, UserX, Pencil } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, CircleHelp, X, ListChecks, Repeat2, UserX, Pencil, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import { ItemCard } from './ItemCard';
@@ -29,6 +29,7 @@ interface InventoryViewProps {
   onKickPlayer?: () => void;
   onRenameShared?: (name: string) => void;
   onReorderInventory?: (newInventory: Item[]) => void;
+  onBulkRemove?: (itemIdsWithCounts: { id: string; count: number }[]) => void;
 }
 
 // Simple inline coin display — click to edit (read-only if no onChange)
@@ -261,6 +262,7 @@ export function InventoryView({
   onKickPlayer,
   onRenameShared,
   onReorderInventory,
+  onBulkRemove,
 }: InventoryViewProps) {
   type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
   type SortDirection = 'asc' | 'desc';
@@ -296,6 +298,7 @@ export function InventoryView({
   const [isRenamingShared, setIsRenamingShared] = useState(false);
   const [renameSharedValue, setRenameSharedValue] = useState('');
   const renameSharedInputRef = useRef<HTMLInputElement>(null);
+  const [showBulkRemoveConfirm, setShowBulkRemoveConfirm] = useState(false);
 
   const canReorder = sortField === 'none' && selectedCategory === 'all' && searchQuery === '' && !!onReorderInventory;
 
@@ -458,6 +461,25 @@ export function InventoryView({
   for (const id of selectedItemIds) {
     selectedCountById.set(id, (selectedCountById.get(id) || 0) + 1);
   }
+
+  const selectAllOfItem = (item: Item) => {
+    setSelectedItemIds((prev) => {
+      const withoutItem = prev.filter((id) => id !== item.id);
+      return [...withoutItem, ...Array(item.quantity).fill(item.id)];
+    });
+  };
+
+  const bulkRemoveItems = () => {
+    if (!onBulkRemove || selectedItemIds.length === 0) return;
+    const counts = new Map<string, number>();
+    for (const id of selectedItemIds) {
+      counts.set(id, (counts.get(id) || 0) + 1);
+    }
+    onBulkRemove(Array.from(counts.entries()).map(([id, count]) => ({ id, count })));
+    setSelectedItemIds([]);
+    setBulkSelectEnabled(false);
+    setShowBulkRemoveConfirm(false);
+  };
 
   const handleSortSelect = (field: SortField, direction: SortDirection = 'asc') => {
     setSortField(field);
@@ -971,16 +993,26 @@ export function InventoryView({
               <p className="text-[11px] font-semibold text-[#8B6F47] shrink-0">
                 {selectedFilterLabel}
               </p>
-              {bulkSelectEnabled && (
-                <p className="text-[11px] text-[#8B6F47]/70 italic flex-1 text-center">
-                  Tap items to select, then drag to move
-                </p>
-              )}
-              {bulkSelectEnabled && (
-                <span className="text-[11px] text-[#5C4A2F] whitespace-nowrap shrink-0">
-                  {selectedItemIds.length} selected
-                </span>
-              )}
+              {bulkSelectEnabled ? (
+                <div className="flex items-center gap-2 flex-1 justify-end">
+                  <span className="text-[11px] text-[#5C4A2F] whitespace-nowrap tabular-nums">
+                    {selectedItemIds.length} selected
+                  </span>
+                  {onBulkRemove && selectedItemIds.length > 0 && (
+                    <>
+                      <span className="text-[11px] text-[#8B6F47]">·</span>
+                      <button
+                        onClick={() => setShowBulkRemoveConfirm(true)}
+                        className="flex items-center gap-1 text-[11px] text-[#8B3A3A] hover:text-[#5C1A1A] font-medium transition-colors"
+                        title="Remove selected items"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Remove</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              ) : null}
             </div>
             {filteredItems.map((item) => (
               <ItemDropZone
@@ -999,6 +1031,7 @@ export function InventoryView({
                   selectedCount={selectedCountById.get(item.id) || 0}
                   selectedItemIds={selectedItemIds}
                   onToggleSelect={toggleItemSelection}
+                  onSelectAll={selectAllOfItem}
                 />
               </ItemDropZone>
             ))}
@@ -1047,6 +1080,29 @@ export function InventoryView({
           confirmLabel="Kick"
           onConfirm={() => { setShowKickConfirm(false); onKickPlayer(); }}
           onCancel={() => setShowKickConfirm(false)}
+        />
+      )}
+
+      {showBulkRemoveConfirm && (
+        <ConfirmDeleteModal
+          title="Remove Items"
+          message={(() => {
+            const uniqueIds = new Set(selectedItemIds);
+            const lines: string[] = [];
+            for (const id of uniqueIds) {
+              const item = filteredItems.find((i) => i.id === id);
+              if (!item) continue;
+              const count = selectedCountById.get(id) || 0;
+              lines.push(count >= item.quantity
+                ? `• ${item.name} (all)`
+                : `• ${item.name} (${count} of ${item.quantity})`
+              );
+            }
+            return `Remove ${selectedItemIds.length} item${selectedItemIds.length === 1 ? '' : 's'} from ${owner?.name ?? 'inventory'}?\n\n${lines.join('\n')}`;
+          })()}
+          confirmLabel="Remove"
+          onConfirm={bulkRemoveItems}
+          onCancel={() => setShowBulkRemoveConfirm(false)}
         />
       )}
     </div>

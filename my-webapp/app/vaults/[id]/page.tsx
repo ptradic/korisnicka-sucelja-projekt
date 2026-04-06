@@ -778,6 +778,63 @@ export default function VaultDetailPage() {
     }
   };
 
+  const handleBulkRemoveItems = async (itemIdsWithCounts: { id: string; count: number }[]) => {
+    if (!campaignId || !currentCampaign) return;
+
+    const totalRemoved = itemIdsWithCounts.reduce((sum, { count }) => sum + count, 0);
+    const uniqueCount = itemIdsWithCounts.length;
+    const summaryName = uniqueCount === 1
+      ? (() => {
+          const source = selectedPlayerId === 'shared' ? currentCampaign.sharedLoot : (playerInventories.find((p) => p.playerId === selectedPlayerId)?.inventory ?? []);
+          const item = source.find((i) => i.id === itemIdsWithCounts[0].id);
+          return item ? (totalRemoved > 1 ? `${totalRemoved}x ${item.name}` : item.name) : `${totalRemoved} item${totalRemoved === 1 ? '' : 's'}`;
+        })()
+      : `${totalRemoved} item${totalRemoved === 1 ? '' : 's'}`;
+
+    try {
+      if (selectedPlayerId === 'shared') {
+        const previousShared = [...currentCampaign.sharedLoot];
+        const updatedShared = [...currentCampaign.sharedLoot];
+        for (const { id, count } of itemIdsWithCounts) {
+          const idx = updatedShared.findIndex((i) => i.id === id);
+          if (idx < 0) continue;
+          if (count >= updatedShared[idx].quantity) {
+            updatedShared.splice(idx, 1);
+          } else {
+            updatedShared[idx] = { ...updatedShared[idx], quantity: updatedShared[idx].quantity - count };
+          }
+        }
+        await trackWrite(() => updateSharedLoot(campaignId, updatedShared));
+        setUndoRemoveInfo({
+          itemName: summaryName,
+          restore: () => trackWrite(() => updateSharedLoot(campaignId, previousShared)),
+        });
+      } else {
+        const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
+        if (!player) return;
+        const previousInventory = [...player.inventory];
+        const updatedInventory = [...player.inventory];
+        for (const { id, count } of itemIdsWithCounts) {
+          const idx = updatedInventory.findIndex((i) => i.id === id);
+          if (idx < 0) continue;
+          if (count >= updatedInventory[idx].quantity) {
+            updatedInventory.splice(idx, 1);
+          } else {
+            updatedInventory[idx] = { ...updatedInventory[idx], quantity: updatedInventory[idx].quantity - count };
+          }
+        }
+        await trackWrite(() => updatePlayerInventory(campaignId, selectedPlayerId, updatedInventory, player.currency, player.maxWeight));
+        setUndoRemoveInfo({
+          itemName: summaryName,
+          restore: () => trackWrite(() => updatePlayerInventory(campaignId, selectedPlayerId, previousInventory, player.currency, player.maxWeight)),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to bulk remove items:', error);
+      showActionError('Could not remove items', error, () => handleBulkRemoveItems(itemIdsWithCounts));
+    }
+  };
+
   // Campaign settings
   const handleUpdateCampaignSettings = async (updates: { name: string; password: string }) => {
     if (!campaignId || !userId || !currentCampaign) return;
@@ -880,6 +937,7 @@ export default function VaultDetailPage() {
               onKickPlayer={isGM && !isShared && selectedPlayerId !== userId ? () => handleKickPlayer(selectedPlayerId) : undefined}
               onRenameShared={isGM && isShared ? handleRenameSharedLoot : undefined}
               onReorderInventory={handleReorderInventory}
+              onBulkRemove={handleBulkRemoveItems}
             />
           </div>
         </div>

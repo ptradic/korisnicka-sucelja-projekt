@@ -18,21 +18,19 @@ export default function HomePage() {
   return (
     <main
       className="flex min-h-screen flex-col items-center overflow-hidden"
-      style={{ background: 'linear-gradient(to bottom, #3D1409 0%, #5C1F0F 100%)' }}
+      style={{ background: 'linear-gradient(to bottom, #3D1409 0%, #5C1A1A 40%, #7A2424 70%, #5C1A1A 100%)' }}
     >
 
       {/* Hero Section */}
       <section
         className="w-full text-center flex flex-col justify-center items-center min-h-screen relative pb-32"
       >
-        {/* SVG diamond pattern — fades from visible at top to transparent at bottom of hero */}
+        {/* SVG diamond pattern overlay — same as login page */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.05'/%3E%3C/svg%3E\")",
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
             backgroundSize: '40px 40px',
-            maskImage: 'linear-gradient(to bottom, black 35%, transparent 85%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 35%, transparent 85%)',
           }}
         />
         <div className="w-full max-w-5xl px-4 sm:px-10 flex flex-col items-center">

@@ -201,21 +201,23 @@ export default function GuidesPage() {
 
   return (
     <main
-      className="flex min-h-screen flex-col items-center overflow-hidden"
+      className="flex min-h-screen flex-col items-center overflow-hidden relative"
       style={{
-        background: 'linear-gradient(to bottom, #3D1409 0vh, #5C1A1A 35vh, #7A2424 62vh, #C8A97A 85vh, #E8D5B7 100vh, #DCC8A8 140vh, #E0CFAF 200vh)',
+        background: 'linear-gradient(to bottom, #3D1409 0%, #5C1A1A 40%, #7A2424 70%, #5C1A1A 100%)',
+        backgroundAttachment: 'fixed',
       }}
     >
+      {/* SVG diamond pattern — covers full page like login */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
+          backgroundSize: '40px 40px',
+        }}
+      />
+
       {/* ─── Hero — fills first viewport ─── */}
-      <section className="w-full text-center flex flex-col justify-center items-center min-h-screen relative pb-32">
-        {/* SVG diamond pattern overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
-            backgroundSize: '40px 40px',
-          }}
-        />
+      <section className="w-full text-center flex flex-col justify-center items-center min-h-screen relative pb-32 z-10">
         <div className="w-full max-w-5xl px-4 sm:px-10 flex flex-col items-center">
           <h1
             className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 text-[#F5EDE0] leading-tight fade-in-up delay-200"
@@ -239,18 +241,19 @@ export default function GuidesPage() {
       </section>
 
       {/* ─── Steps ─── */}
-      <div className="w-full max-w-5xl px-4 sm:px-10 mt-8 space-y-10 mb-12">
+      <div className="relative z-10 w-full max-w-5xl px-4 sm:px-10 mt-8 space-y-10 mb-12">
         {steps.map((step, i) => {
           const Icon = step.icon;
           return (
             <section
               key={step.number}
               ref={stepRefs[i]}
-              className="scroll-reveal bg-white/40 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-lg relative overflow-hidden"
+              className="scroll-reveal bg-[#F5EFE0] rounded-2xl p-6 sm:p-8 relative overflow-hidden"
+              style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}
             >
               {/* Step number accent */}
               <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-[#5C1A1A]/8 rounded-[58%_42%_60%_40%/45%_55%_45%_55%] rotate-12" />
-              <div className="absolute top-3 right-3 w-14 sm:w-16 text-center text-[#5C1A1A]/18 text-4xl sm:text-5xl font-extrabold leading-none select-none" style={{ fontFamily: "var(--font-archivo-black)" }}>
+              <div className="absolute top-3 right-3 w-14 sm:w-16 text-center text-[#5C1A1A]/15 text-4xl sm:text-5xl font-extrabold leading-none select-none" style={{ fontFamily: "var(--font-archivo-black)" }}>
                 {step.number}
               </div>
 
@@ -281,7 +284,7 @@ export default function GuidesPage() {
               </div>
 
               {/* Tip box */}
-              <div className="bg-linear-to-r from-[#5C1A1A]/8 to-transparent border-2 border-[#8B6F47]/50 rounded-xl p-4 flex items-start gap-3">
+              <div className="bg-[#5C1A1A]/8 border-2 border-[#8B6F47]/50 rounded-xl p-4 flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-[#5C1A1A] shrink-0 mt-0.5" />
                 <p className="text-sm text-[#5C4A2F] leading-relaxed">
                   <strong className="text-[#3D1409]">Tip:</strong> {step.tip}
@@ -294,7 +297,8 @@ export default function GuidesPage() {
         {/* ─── Bonus: 404 easter-egg link ─── */}
         <section
           ref={bonusRef}
-          className="scroll-reveal bg-white/40 backdrop-blur-sm rounded-2xl p-6 sm:p-10 shadow-lg"
+          className="scroll-reveal bg-[#F5EFE0] rounded-2xl p-6 sm:p-10"
+          style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}
         >
           <div className="flex items-center gap-3 mb-5">
             <div className="w-12 h-12 bg-linear-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg">

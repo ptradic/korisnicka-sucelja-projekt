@@ -38,7 +38,7 @@ const GM_STEPS: TutorialStep[] = [
   {
     selector: '[data-tutorial="search-toolbar"]',
     title: 'Search & Filter',
-    description: 'Search items by name, filter by category, sort by different properties, or bulk-select items for moving.',
+    description: 'Search items by name, filter by category, sort by different properties, or bulk-select items to move, remove, or sell them.',
     position: 'bottom',
   },
   {

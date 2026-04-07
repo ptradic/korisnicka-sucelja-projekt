@@ -102,7 +102,7 @@ const steps = [
     details: [
       'Select a player (or Shared Loot) and click "+ Add Item".',
       "In Add Items, choose between 5.5e items and custom items.",
-      "Search by name (minimum 2 characters for API search).",
+      "Search by name (minimum 2 characters to search).",
       "Pick an item to add it instantly to the selected inventory.",
     ],
     tip: "You can add to a player inventory or to Shared Loot depending on what is selected.",
@@ -124,15 +124,17 @@ const steps = [
   },
   {
     number: 8,
-    title: "Edit, Stack, and Remove Items",
+    title: "Edit, Stack, Remove, and Sell Items",
     icon: CheckCircle2,
     description:
-      "Open item details to update quantity, notes, attunement state, and other fields. Matching items stack automatically on add.",
+      "Open item details to update quantity, notes, attunement state, and other fields. Matching items stack automatically on add. Use bulk select to remove or sell multiple items at once.",
     details: [
       "Click an item card to open details.",
       "Adjust fields like quantity, notes, and attunement state.",
       "Delete items you no longer need from the same modal.",
       "When adding the same item signature, quantity stacks instead of duplicating.",
+      "Use the bulk-select button (checklist icon) to select multiple items, then choose Move, Remove, or Sell.",
+      "Sell calculates earnings at 80% of item value by default — adjustable before confirming.",
     ],
     tip: "Use clear naming and notes so players can understand loot at a glance.",
   },

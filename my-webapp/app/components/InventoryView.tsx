@@ -1101,7 +1101,13 @@ export function InventoryView({
       )}
 
       {/* Item list */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div
+        className="flex-1 min-h-0 flex flex-col"
+        style={{
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%235C1A1A' fill-opacity='0.04'/%3E%3C/svg%3E\")",
+          backgroundSize: '40px 40px',
+        }}
+      >
         {/* Scroll area + gradient wrapper */}
         <div className="relative flex-1 min-h-0">
         <div data-tutorial="item-list" className="h-full min-h-[80px] overflow-y-auto overflow-x-hidden p-4 sm:p-5 custom-scrollbar" ref={itemListRef}>

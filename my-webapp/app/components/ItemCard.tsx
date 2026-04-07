@@ -17,12 +17,12 @@ interface ItemCardProps {
 }
 
 const rarityColors: Record<string, { text: string; badgeBg: string; bg: string; border: string }> = {
-  common: { text: 'text-[#5C4A2F]', badgeBg: 'bg-[#A89A7C]', bg: 'hover:bg-[#F5F0E8]', border: 'border-[#A89A7C]/70' },
-  uncommon: { text: 'text-[#3D5A27]', badgeBg: 'bg-[#5C7A3B]', bg: 'hover:bg-[#E8F5E9]', border: 'border-[#5C7A3B]/70' },
-  rare: { text: 'text-[#2C4A7C]', badgeBg: 'bg-[#4A6FA5]', bg: 'hover:bg-[#E3F2FD]', border: 'border-[#4A6FA5]/70' },
-  'very rare': { text: 'text-[#5E3A7C]', badgeBg: 'bg-[#7E57A2]', bg: 'hover:bg-[#F3E5F5]', border: 'border-[#7E57A2]/70' },
-  legendary: { text: 'text-[#8B6914]', badgeBg: 'bg-[#B8860B]', bg: 'hover:bg-[#FFF8E1]', border: 'border-[#B8860B]/70' },
-  artifact: { text: 'text-[#6B2020]', badgeBg: 'bg-[#8B3A3A]', bg: 'hover:bg-[#FFEBEE]', border: 'border-[#8B3A3A]/70' },
+  common: { text: 'text-[#5C4A2F]', badgeBg: 'bg-[#A89A7C]', bg: 'bg-[#F5EFE0] hover:bg-[#F0E8D5]', border: 'border-[#A89A7C]/70' },
+  uncommon: { text: 'text-[#3D5A27]', badgeBg: 'bg-[#5C7A3B]', bg: 'bg-[#F5EFE0] hover:bg-[#E8F5E9]', border: 'border-[#5C7A3B]/70' },
+  rare: { text: 'text-[#2C4A7C]', badgeBg: 'bg-[#4A6FA5]', bg: 'bg-[#F5EFE0] hover:bg-[#E3F2FD]', border: 'border-[#4A6FA5]/70' },
+  'very rare': { text: 'text-[#5E3A7C]', badgeBg: 'bg-[#7E57A2]', bg: 'bg-[#F5EFE0] hover:bg-[#F3E5F5]', border: 'border-[#7E57A2]/70' },
+  legendary: { text: 'text-[#8B6914]', badgeBg: 'bg-[#B8860B]', bg: 'bg-[#F5EFE0] hover:bg-[#FFF8E1]', border: 'border-[#B8860B]/70' },
+  artifact: { text: 'text-[#6B2020]', badgeBg: 'bg-[#8B3A3A]', bg: 'bg-[#F5EFE0] hover:bg-[#FFEBEE]', border: 'border-[#8B3A3A]/70' },
 };
 
 const categoryIconMap: Record<Category, React.ComponentType<{ className?: string }>> = {
@@ -146,7 +146,7 @@ export function ItemCard({
       // WebkitTouchCallout:none suppresses the iOS/iPadOS long-press callout menu.
       style={{ touchAction: 'pan-y', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' } as React.CSSProperties}
       className={
-        'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all border-[3px] bg-white/40 select-none ' +
+        'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all border-[3px] select-none ' +
         colors.border + ' ' +
         colors.bg +
         (isSelected ? ' ring-2 ring-[#5C1A1A] bg-[#F5E6D2]' : '') +

@@ -1152,27 +1152,29 @@ export function InventoryView({
                 </div>
               ) : null}
             </div>
-            {filteredItems.map((item) => (
-              <ItemDropZone
-                key={item.id}
-                item={item}
-                ownerId={ownerId}
-                canReorder={canReorder}
-                onDrop={handleReorder}
-              >
-                <ItemCard
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {filteredItems.map((item) => (
+                <ItemDropZone
+                  key={item.id}
                   item={item}
                   ownerId={ownerId}
-                  onClick={() => onItemClick(item)}
-                  bulkSelectEnabled={bulkSelectEnabled}
-                  isSelected={(selectedCountById.get(item.id) || 0) > 0}
-                  selectedCount={selectedCountById.get(item.id) || 0}
-                  selectedItemIds={selectedItemIds}
-                  onToggleSelect={toggleItemSelection}
-                  onSelectAll={selectAllOfItem}
-                />
-              </ItemDropZone>
-            ))}
+                  canReorder={canReorder}
+                  onDrop={handleReorder}
+                >
+                  <ItemCard
+                    item={item}
+                    ownerId={ownerId}
+                    onClick={() => onItemClick(item)}
+                    bulkSelectEnabled={bulkSelectEnabled}
+                    isSelected={(selectedCountById.get(item.id) || 0) > 0}
+                    selectedCount={selectedCountById.get(item.id) || 0}
+                    selectedItemIds={selectedItemIds}
+                    onToggleSelect={toggleItemSelection}
+                    onSelectAll={selectAllOfItem}
+                  />
+                </ItemDropZone>
+              ))}
+            </div>
           </div>
           )}
 

@@ -40,6 +40,57 @@ D&D 5.5e (2024 SRD) campaign inventory manager. GMs manage player inventories an
 - `campaigns/{campaignId}/players/{playerId}` — PlayerInventoryDoc: playerId, playerName, color, avatar, inventory[], currency, maxWeight
 - `campaigns/{campaignId}/transferRequests/{requestId}` — TransferRequest (items) or CoinTransferRequest (type:'coin')
 
+## Design System
+
+### Color Palette
+- `#3D1409` — darkest red (background base, sidebar)
+- `#5C1A1A` — mid red (navbar bg, borders)
+- `#7A2424` — lighter red (gradient midpoint)
+- `#F5EFE0` — parchment (card backgrounds)
+- `#F5EDE0` — cream (active tab, headings on dark bg)
+- `#8B6F47` / `#D9C7AA` — warm tan (card borders, dividers)
+- `#3D1409` / `#5C4A2F` — dark brown (card body text)
+
+### Page Background Pattern (all pages)
+Every page uses this exact structure — do NOT deviate:
+```tsx
+// On the outermost element (main/div):
+style={{
+  background: 'linear-gradient(to bottom, #3D1409 0%, #5C1A1A 40%, #7A2424 70%, #5C1A1A 100%)',
+  backgroundAttachment: 'fixed',
+}}
+
+// Immediately inside, as first child:
+<div
+  className="fixed inset-0 pointer-events-none z-0"
+  style={{
+    backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
+    backgroundSize: '40px 40px',
+  }}
+/>
+// All content sections: relative z-10
+```
+- `fixed inset-0` (not `absolute`) ensures the diamond pattern covers the full viewport even on scroll
+- `backgroundAttachment: 'fixed'` keeps the gradient stationary while scrolling
+
+### Page Height
+Use `min-h-[calc(100vh-3.5rem)]` (not `min-h-screen`) to exclude the navbar height and avoid an unwanted scrollbar when content fits in view.
+
+### Parchment Card Style
+```tsx
+className="bg-[#F5EFE0] rounded-xl p-4"
+style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}
+```
+Larger cards use `rounded-2xl p-6`. Borders: `border border-[#8B6F47]/30` or `border-[#D9C7AA]` for dividers.
+
+### Skeleton Loaders (`app/components/skeletons/SkeletonLoader.tsx`)
+- `Skeleton` (dark bg pulse): `bg-[#5C1A1A]/40`
+- `SkeletonLight` (light bg pulse): `bg-[#F5EDE0]/15`
+- **Every time a page design changes, the corresponding skeleton must be updated to match.** `VaultListSkeleton` mirrors `/vaults` layout; `VaultDetailSkeleton` mirrors `/vaults/[id]` layout.
+
+### Navbar
+Background: flat `#5C1A1A` (not a gradient).
+
 ## Conventions
 - `@/` alias = project root
 - `cn()` from `lib/utils.ts` for Tailwind class merging

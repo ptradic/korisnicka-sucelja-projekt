@@ -8,4 +8,4 @@ The core app section. Requires authentication.
 - `page.tsx` — Vaults lobby (`/vaults`). Lists campaigns, lets GM create/delete, player join/leave. Shows `VaultsTutorial` on first visit.
 
 ## Subfolders
-- `[campaignId]/` — Individual campaign view. Contains the full inventory management screen: player tabs, item grid, drag-and-drop, GM controls.
+- `[campaignId]/` — Individual campaign view. Full inventory management screen. See `[id]/CLAUDE.md` for detailed structure (state, handlers, JSX layout, line ranges).

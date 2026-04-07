@@ -43,6 +43,34 @@ function cleanItems(items: Item[]): Item[] {
   return items.map(cleanItem);
 }
 
+function normalizeGoogleDriveImageUrl(urlValue: string): string {
+  const trimmed = urlValue.trim();
+  if (!trimmed) return trimmed;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return trimmed;
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  if (host !== 'drive.google.com') {
+    return trimmed;
+  }
+
+  const pathMatch = parsed.pathname.match(/^\/file\/d\/([^\/]+)/);
+  const idFromPath = pathMatch?.[1];
+  const idFromQuery = parsed.searchParams.get('id');
+  const fileId = idFromPath || idFromQuery;
+
+  if (!fileId) {
+    return trimmed;
+  }
+
+  return `https://lh3.googleusercontent.com/d/${encodeURIComponent(fileId)}`;
+}
+
 function getItemStackSignature(item: Item): string {
   return JSON.stringify({
     name: item.name.trim().toLowerCase(),
@@ -685,7 +713,7 @@ export async function updatePlayerProfileInCampaign(
   updates: { name: string; avatar: string }
 ): Promise<void> {
   const trimmedName = updates.name.trim();
-  const trimmedAvatar = updates.avatar.trim();
+  const trimmedAvatar = normalizeGoogleDriveImageUrl(updates.avatar);
 
   if (!trimmedName) {
     throw new Error('Character name is required.');

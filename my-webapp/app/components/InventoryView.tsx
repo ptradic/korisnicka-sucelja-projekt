@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, X, ListChecks, Repeat2, UserX, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, X, ListChecks, Repeat2, UserX, Pencil, Trash2, HandCoins } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import { ItemCard } from './ItemCard';
@@ -29,6 +29,7 @@ interface InventoryViewProps {
   onRenameShared?: (name: string) => void;
   onReorderInventory?: (newInventory: Item[]) => void;
   onBulkRemove?: (itemIdsWithCounts: { id: string; count: number }[]) => void;
+  onSellItems?: (itemIdsWithCounts: { id: string; count: number }[], earnings: Currency) => void;
 }
 
 // Simple inline coin display — click to edit (read-only if no onChange)
@@ -261,6 +262,7 @@ export function InventoryView({
   onRenameShared,
   onReorderInventory,
   onBulkRemove,
+  onSellItems,
 }: InventoryViewProps) {
   type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
   type SortDirection = 'asc' | 'desc';
@@ -297,6 +299,8 @@ export function InventoryView({
   const [renameSharedValue, setRenameSharedValue] = useState('');
   const renameSharedInputRef = useRef<HTMLInputElement>(null);
   const [showBulkRemoveConfirm, setShowBulkRemoveConfirm] = useState(false);
+  const [sellPercent, setSellPercent] = useState(80);
+  const [showSellPopup, setShowSellPopup] = useState(false);
 
   const canReorder = sortField === 'none' && selectedCategory === 'all' && searchQuery === '' && !!onReorderInventory;
 
@@ -375,6 +379,7 @@ export function InventoryView({
   };
 
   const toggleBulkSelect = () => {
+    setShowSellPopup(false);
     setBulkSelectEnabled((enabled) => {
       if (enabled) {
         setSelectedItemIds([]);
@@ -478,6 +483,50 @@ export function InventoryView({
     setBulkSelectEnabled(false);
     setShowBulkRemoveConfirm(false);
   };
+
+  // Convert any item value to copper pieces for calculation
+  const toCopper = (value: number, unit: string) => {
+    if (unit === 'gp') return value * 100;
+    if (unit === 'sp') return value * 10;
+    return value; // cp
+  };
+
+  // Calculate total sell value in copper pieces
+  const sellTotalCopper = (() => {
+    let total = 0;
+    for (const id of selectedItemIds) {
+      const item = filteredItems.find((i) => i.id === id);
+      if (!item || !item.value) continue;
+      total += toCopper(item.value, item.valueUnit || 'gp');
+    }
+    return Math.floor(total * (sellPercent / 100));
+  })();
+
+  // Convert copper total to Currency breakdown
+  const sellEarnings: Currency = (() => {
+    let remaining = sellTotalCopper;
+    const gp = Math.floor(remaining / 100);
+    remaining -= gp * 100;
+    const sp = Math.floor(remaining / 10);
+    remaining -= sp * 10;
+    return { pp: 0, gp, sp, cp: remaining };
+  })();
+
+  const handleSellConfirm = () => {
+    if (!onSellItems || selectedItemIds.length === 0) return;
+    const counts = new Map<string, number>();
+    for (const id of selectedItemIds) {
+      counts.set(id, (counts.get(id) || 0) + 1);
+    }
+    onSellItems(
+      Array.from(counts.entries()).map(([id, count]) => ({ id, count })),
+      sellEarnings,
+    );
+    setSelectedItemIds([]);
+    setBulkSelectEnabled(false);
+    setShowSellPopup(false);
+  };
+
 
   const handleSortSelect = (field: SortField, direction: SortDirection = 'asc') => {
     setSortField(field);
@@ -1002,6 +1051,19 @@ export function InventoryView({
                       </button>
                     </>
                   )}
+                  {onSellItems && selectedItemIds.length > 0 && (
+                    <>
+                      <span className="text-[11px] text-[#8B6F47]">·</span>
+                      <button
+                        onClick={() => setShowSellPopup(true)}
+                        className="flex items-center gap-1 text-[11px] text-[#B8860B] hover:text-[#8B6914] font-medium transition-colors"
+                        title="Sell selected items"
+                      >
+                        <HandCoins className="w-3.5 h-3.5" />
+                        <span>Sell</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               ) : null}
             </div>
@@ -1095,6 +1157,83 @@ export function InventoryView({
           onConfirm={bulkRemoveItems}
           onCancel={() => setShowBulkRemoveConfirm(false)}
         />
+      )}
+
+      {showSellPopup && onSellItems && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-60"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setShowSellPopup(false); }}
+        >
+          <div
+            className="bg-linear-to-br from-[#F5EFE0] to-[#E8D5B7] border-4 border-[#8B6F47] rounded-2xl max-w-sm w-full p-6 shadow-2xl"
+            style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-[#FFF8E1] border-2 border-[#B8860B]/40 rounded-xl flex items-center justify-center shrink-0">
+                <HandCoins className="w-5 h-5 text-[#B8860B]" />
+              </div>
+              <h3 className="text-lg font-extrabold text-[#3D1409]">Sell Items</h3>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-[#5C4A2F] mb-1.5">Sell percentage</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="200"
+                  value={sellPercent}
+                  onChange={(e) => setSellPercent(Math.max(1, Math.min(200, parseInt(e.target.value) || 80)))}
+                  className="w-16 px-2 py-1.5 text-sm font-bold text-center bg-white/70 border-2 border-[#8B6F47] rounded-lg text-[#3D1409] outline-none focus:border-[#5C1A1A] tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-sm text-[#5C4A2F]">% of item value</span>
+              </div>
+            </div>
+
+            <div className="max-h-40 overflow-y-auto mb-4 space-y-1 border-t border-b border-[#8B6F47]/20 py-2">
+              {Array.from(new Set(selectedItemIds)).map((id) => {
+                const item = filteredItems.find((i) => i.id === id);
+                if (!item) return null;
+                const count = selectedCountById.get(id) || 0;
+                const unitValue = item.value || 0;
+                const unit = item.valueUnit || 'gp';
+                const lineTotal = Math.floor(unitValue * count * (sellPercent / 100) * 100) / 100;
+                return (
+                  <div key={id} className="flex items-center justify-between text-sm">
+                    <span className="text-[#3D1409] truncate flex-1 min-w-0">
+                      {count > 1 ? `${count}x ` : ''}{item.name}
+                    </span>
+                    <span className="text-[#5C4A2F] shrink-0 ml-2 tabular-nums">
+                      {unitValue > 0 ? `${lineTotal} ${unit}` : 'no value'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center justify-between mb-5 bg-white/50 rounded-xl px-3 py-2.5 border border-[#8B6F47]/20">
+              <span className="text-sm font-semibold text-[#3D1409]">Total earnings</span>
+              <span className="text-base font-extrabold text-[#B8860B] tabular-nums">
+                {sellEarnings.gp > 0 ? `${sellEarnings.gp} gp ` : ''}
+                {sellEarnings.sp > 0 ? `${sellEarnings.sp} sp ` : ''}
+                {sellEarnings.cp > 0 ? `${sellEarnings.cp} cp` : ''}
+                {sellTotalCopper === 0 ? '0 gp' : ''}
+              </span>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setShowSellPopup(false)} className="btn-secondary flex-1 px-4 py-2.5">
+                Cancel
+              </button>
+              <button
+                onClick={handleSellConfirm}
+                className="btn-primary flex-1 px-4 py-2.5 from-[#8B6914] to-[#6B5010] hover:from-[#6B5010] hover:to-[#4A3808] border-[#6B5010]"
+              >
+                Sell ({selectedItemIds.length})
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

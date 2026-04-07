@@ -835,6 +835,87 @@ export default function VaultDetailPage() {
     }
   };
 
+  const handleSellItems = async (itemIdsWithCounts: { id: string; count: number }[], earnings: Currency) => {
+    if (!campaignId || !currentCampaign) return;
+
+    const totalRemoved = itemIdsWithCounts.reduce((sum, { count }) => sum + count, 0);
+    const uniqueCount = itemIdsWithCounts.length;
+    const summaryName = uniqueCount === 1
+      ? (() => {
+          const source = selectedPlayerId === 'shared' ? currentCampaign.sharedLoot : (playerInventories.find((p) => p.playerId === selectedPlayerId)?.inventory ?? []);
+          const item = source.find((i) => i.id === itemIdsWithCounts[0].id);
+          return item ? (totalRemoved > 1 ? `${totalRemoved}x ${item.name}` : item.name) : `${totalRemoved} item${totalRemoved === 1 ? '' : 's'}`;
+        })()
+      : `${totalRemoved} item${totalRemoved === 1 ? '' : 's'}`;
+
+    const earningsLabel = [
+      earnings.gp > 0 ? `${earnings.gp} gp` : '',
+      earnings.sp > 0 ? `${earnings.sp} sp` : '',
+      earnings.cp > 0 ? `${earnings.cp} cp` : '',
+    ].filter(Boolean).join(', ') || '0 gp';
+
+    try {
+      if (selectedPlayerId === 'shared') {
+        const previousShared = [...currentCampaign.sharedLoot];
+        const previousCurrency = { ...(currentCampaign.sharedCurrency ?? { pp: 0, gp: 0, sp: 0, cp: 0 }) };
+        const updatedShared = [...currentCampaign.sharedLoot];
+        for (const { id, count } of itemIdsWithCounts) {
+          const idx = updatedShared.findIndex((i) => i.id === id);
+          if (idx < 0) continue;
+          if (count >= updatedShared[idx].quantity) {
+            updatedShared.splice(idx, 1);
+          } else {
+            updatedShared[idx] = { ...updatedShared[idx], quantity: updatedShared[idx].quantity - count };
+          }
+        }
+        const updatedCurrency = {
+          pp: previousCurrency.pp,
+          gp: previousCurrency.gp + earnings.gp,
+          sp: previousCurrency.sp + earnings.sp,
+          cp: previousCurrency.cp + earnings.cp,
+        };
+        await trackWrite(() => updateSharedLoot(campaignId, updatedShared));
+        await trackWrite(() => updateSharedCurrency(campaignId, updatedCurrency));
+        setUndoRemoveInfo({
+          itemName: `Sold ${summaryName} for ${earningsLabel}`,
+          restore: async () => {
+            await trackWrite(() => updateSharedLoot(campaignId, previousShared));
+            await trackWrite(() => updateSharedCurrency(campaignId, previousCurrency));
+          },
+        });
+      } else {
+        const player = playerInventories.find((p) => p.playerId === selectedPlayerId);
+        if (!player) return;
+        const previousInventory = [...player.inventory];
+        const previousCurrency = { ...player.currency };
+        const updatedInventory = [...player.inventory];
+        for (const { id, count } of itemIdsWithCounts) {
+          const idx = updatedInventory.findIndex((i) => i.id === id);
+          if (idx < 0) continue;
+          if (count >= updatedInventory[idx].quantity) {
+            updatedInventory.splice(idx, 1);
+          } else {
+            updatedInventory[idx] = { ...updatedInventory[idx], quantity: updatedInventory[idx].quantity - count };
+          }
+        }
+        const updatedCurrency = {
+          pp: previousCurrency.pp,
+          gp: previousCurrency.gp + earnings.gp,
+          sp: previousCurrency.sp + earnings.sp,
+          cp: previousCurrency.cp + earnings.cp,
+        };
+        await trackWrite(() => updatePlayerInventory(campaignId, selectedPlayerId, updatedInventory, updatedCurrency, player.maxWeight));
+        setUndoRemoveInfo({
+          itemName: `Sold ${summaryName} for ${earningsLabel}`,
+          restore: () => trackWrite(() => updatePlayerInventory(campaignId, selectedPlayerId, previousInventory, previousCurrency, player.maxWeight)),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to sell items:', error);
+      showActionError('Could not sell items', error, () => handleSellItems(itemIdsWithCounts, earnings));
+    }
+  };
+
   // Campaign settings
   const handleUpdateCampaignSettings = async (updates: { name: string; password: string }) => {
     if (!campaignId || !userId || !currentCampaign) return;
@@ -938,6 +1019,7 @@ export default function VaultDetailPage() {
               onRenameShared={isGM && isShared ? handleRenameSharedLoot : undefined}
               onReorderInventory={handleReorderInventory}
               onBulkRemove={handleBulkRemoveItems}
+              onSellItems={handleSellItems}
             />
           </div>
         </div>

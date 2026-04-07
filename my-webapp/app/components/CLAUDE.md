@@ -41,10 +41,33 @@ Single item card. Draggable via react-dnd.
 - `onSelectAll?: (item) => void` — appears when `bulkSelectEnabled && selectedCount > 0 && selectedCount < item.quantity`
 
 ### `PlayerSidebar.tsx`
-Sidebar with player tabs, currency, weight.
-- Contains `VaultSettingsModal` (GM) and `CharacterNameModal` (player)
-- Both modals have "Inventory Help & Tutorial" button (`CircleHelp`) that calls `onTutorialStart`
-- `onTutorialStart?: () => void` prop on PlayerSidebar, VaultSettingsModal, CharacterNameModal
+Sidebar with player tabs, currency totals, weight bars.
+
+Key props:
+```ts
+players: Player[]
+selectedPlayerId: string | 'shared'
+onSelectPlayer: (id: string | 'shared') => void
+onMoveItem: (itemIds, fromId, toId) => void     // drag target
+dragOverPlayerId: string | 'shared' | null
+onDragOverChange: (id) => void
+sharedLootCount: number
+sharedLootName?: string
+campaignName: string
+campaignId: string
+campaignPassword: string
+isGM: boolean
+totalSlots: number
+onUpdateCampaignSettings?: (updates: { name, password }) => Promise<void>   // GM only
+currentUserId: string
+onUpdateMyCharacterProfile?: (updates: { name, avatar }) => Promise<void>   // player only
+onTutorialStart?: () => void
+```
+
+Contains two internal modals (same file):
+- `VaultSettingsModal` — GM: rename vault, change password, kick players. Has "Inventory Help & Tutorial" button.
+- `CharacterNameModal` — Player: change display name + avatar. Has "Inventory Help & Tutorial" button.
+Both modals call `onClose(); onTutorialStart?.()` on tutorial button click.
 
 ### `AddItemModal.tsx`
 Modal for adding items. Searches `2024master.json` SRD catalog via fuse.js. Shows last-added notification.

@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, X, ListChecks, Repeat2, UserX, Pencil, Trash2, HandCoins, Send } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, X, ListChecks, Repeat2, UserX, Pencil, Trash2, HandCoins } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import { ItemCard } from './ItemCard';
@@ -228,7 +228,7 @@ function SendCoinsButton({ onSend, ownerName }: { onSend: (amounts: Currency) =>
         }
         title={`Send coins to ${ownerName}`}
       >
-        <Send className={open ? 'w-3.5 h-3.5 text-white' : 'w-3.5 h-3.5 text-[#5C4A2F]'} />
+        <HandCoins className={open ? 'w-3.5 h-3.5 text-white' : 'w-3.5 h-3.5 text-[#5C4A2F]'} />
       </button>
 
       {open && (
@@ -239,7 +239,7 @@ function SendCoinsButton({ onSend, ownerName }: { onSend: (amounts: Currency) =>
             style={{ boxShadow: '0 8px 20px rgba(61, 20, 9, 0.25)' }}
           >
             <div className="text-xs font-bold text-[#3D1409] mb-1 flex items-center gap-1.5">
-              <Send className="w-3.5 h-3.5 text-[#B8860B]" />
+              <HandCoins className="w-3.5 h-3.5 text-[#B8860B]" />
               Send Coins to {ownerName}
             </div>
             <p className="text-[10px] text-[#8B6F47] mb-2">Coins will be deducted from your wallet. The recipient can accept or decline.</p>

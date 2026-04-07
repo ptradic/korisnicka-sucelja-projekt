@@ -476,3 +476,64 @@ export function CoinTransferRequestModal({ request, onAccept, onReject }: CoinTr
     </div>
   );
 }
+
+interface CoinTransferSentToastProps {
+  playerName: string;
+  coinLabel: string;
+  expiresAt: Date;
+  onCancel?: () => Promise<void> | void;
+  onDismiss: () => void;
+}
+
+export function CoinTransferSentToast({ playerName, coinLabel, expiresAt, onCancel, onDismiss }: CoinTransferSentToastProps) {
+  const [isCancelling, setIsCancelling] = useState(false);
+  const expiresAtTimestamp = Timestamp.fromDate(expiresAt);
+  const { formattedTime, isExpired } = useCountdown(expiresAtTimestamp);
+
+  useEffect(() => {
+    if (isExpired) onDismiss();
+  }, [isExpired, onDismiss]);
+
+  const handleCancel = async () => {
+    if (!onCancel || isCancelling) return;
+    setIsCancelling(true);
+    try {
+      await onCancel();
+      onDismiss();
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  return (
+    <div className="fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300 w-full max-w-sm sm:max-w-md px-4 sm:px-0">
+      <div className="px-3 sm:px-5 py-2 sm:py-3 rounded-xl shadow-xl border-2 flex items-start gap-2 sm:gap-3 transition-colors bg-[#5C1A1A] border-[#3D1409] text-white">
+        <Coins className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 sm:mt-0 text-[#F0C040]" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-semibold leading-tight">Coins Sent</p>
+          <p className="text-xs text-white/80 leading-tight">To {playerName}: {coinLabel}</p>
+        </div>
+        <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/20 rounded text-xs font-mono shrink-0">
+          <Clock className="w-3 h-3" />
+          <span className="hidden sm:inline">{formattedTime}</span>
+          <span className="sm:hidden">{formattedTime.split(':')[1]}s</span>
+        </div>
+        {onCancel && (
+          <button
+            onClick={handleCancel}
+            disabled={isCancelling}
+            className="btn-ghost shrink-0 px-2 py-1 border-transparent text-white hover:text-white hover:bg-white/20 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isCancelling ? '...' : 'Cancel'}
+          </button>
+        )}
+        <button
+          onClick={onDismiss}
+          className="btn-ghost shrink-0 !p-1 border-transparent text-white hover:text-white hover:bg-white/20 touch-manipulation"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}

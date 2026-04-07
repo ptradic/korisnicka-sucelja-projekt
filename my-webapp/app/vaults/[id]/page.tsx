@@ -12,7 +12,7 @@ import { PlayerSidebar } from '@/app/components/PlayerSidebar';
 import { InventoryView } from '@/app/components/InventoryView';
 import { AddItemModal } from '@/app/components/AddItemModal';
 import { ItemDetailsModal } from '@/app/components/ItemDetailsModal';
-import { TransferRequestModal, TransferSentToast, TransferExpiredToast, RemoveItemUndoToast, CoinTransferRequestModal } from '@/app/components/TransferRequestModal';
+import { TransferRequestModal, TransferSentToast, TransferExpiredToast, RemoveItemUndoToast, CoinTransferRequestModal, CoinTransferSentToast } from '@/app/components/TransferRequestModal';
 import { VaultDetailSkeleton } from '@/app/components/skeletons/SkeletonLoader';
 import { VaultTutorial, useVaultTutorial } from '@/app/components/VaultTutorial';
 import type { Item, Player, Currency } from '@/app/types';
@@ -46,6 +46,7 @@ import {
   createCoinTransferRequest,
   acceptCoinTransferRequest,
   rejectCoinTransferRequest,
+  cancelCoinTransferRequest,
   restoreRejectedCoinTransfer,
   subscribeToCoinTransferRequests,
   subscribeToRejectedOrExpiredCoinTransfers,
@@ -148,7 +149,7 @@ export default function VaultDetailPage() {
   /* ── Transfer state ── */
   const [pendingTransferRequests, setPendingTransferRequests] = useState<TransferRequest[]>([]);
   const [pendingCoinTransferRequests, setPendingCoinTransferRequests] = useState<CoinTransferRequest[]>([]);
-  const [coinTransferSentInfo, setCoinTransferSentInfo] = useState<{ requestId: string; playerName: string; expiresAt: Date } | null>(null);
+  const [coinTransferSentInfo, setCoinTransferSentInfo] = useState<{ requestId: string; playerName: string; amounts: Currency; expiresAt: Date } | null>(null);
   const [transferSentInfo, setTransferSentInfo] = useState<{ requestIds: string[]; playerName: string; itemLabel: string; expiresAt: Date } | null>(null);
   const [expiredTransferInfo, setExpiredTransferInfo] = useState<{ playerName: string; itemName: string; isReceiver: boolean } | null>(null);
   const [undoRemoveInfo, setUndoRemoveInfo] = useState<{ itemName: string; restore: () => Promise<void> } | null>(null);
@@ -513,7 +514,7 @@ export default function VaultDetailPage() {
         amounts
       ));
       const expiresAt = new Date(Date.now() + 30 * 1000);
-      setCoinTransferSentInfo({ requestId, playerName: recipientInv.playerName, expiresAt });
+      setCoinTransferSentInfo({ requestId, playerName: recipientInv.playerName, amounts, expiresAt });
       setTimeout(() => setCoinTransferSentInfo(null), 33000);
     } catch (error) {
       console.error('Failed to send coins:', error);
@@ -539,6 +540,17 @@ export default function VaultDetailPage() {
     } catch (error) {
       console.error('Failed to reject coin transfer:', error);
       showActionError('Could not reject coin transfer', error, () => handleRejectCoinTransfer(request));
+      throw error;
+    }
+  };
+
+  const handleCancelCoinTransfer = async (requestId: string) => {
+    if (!campaignId || !userId) return;
+    try {
+      await trackWrite(() => cancelCoinTransferRequest(campaignId, requestId, userId));
+    } catch (error) {
+      console.error('Failed to cancel coin transfer:', error);
+      showActionError('Could not cancel coin transfer', error, () => handleCancelCoinTransfer(requestId));
       throw error;
     }
   };
@@ -1092,7 +1104,7 @@ export default function VaultDetailPage() {
               maxWeight={isShared ? undefined : selectedPlayer?.maxWeight}
               onMaxWeightChange={isShared ? undefined : (newMax: number) => handleMaxWeightChange(selectedPlayerId, newMax)}
               currency={isShared ? (currentCampaign?.sharedCurrency ?? { pp: 0, gp: 0, sp: 0, cp: 0 }) : selectedPlayer?.currency}
-              onCurrencyChange={isShared ? undefined : (c: Currency) => handleCurrencyChange(selectedPlayerId, c)}
+              onCurrencyChange={isShared || (!isGM && selectedPlayerId !== userId) ? undefined : (c: Currency) => handleCurrencyChange(selectedPlayerId, c)}
               onCoinTransfer={isShared && !isGM ? handleSharedCoinTransfer : undefined}
               isShared={isShared}
               syncStatus={syncStatus}
@@ -1152,6 +1164,26 @@ export default function VaultDetailPage() {
             request={pendingCoinTransferRequests[0]}
             onAccept={() => handleAcceptCoinTransfer(pendingCoinTransferRequests[0])}
             onReject={() => handleRejectCoinTransfer(pendingCoinTransferRequests[0])}
+          />
+        )}
+
+        {/* Coin Transfer Sent Toast */}
+        {coinTransferSentInfo && (
+          <CoinTransferSentToast
+            playerName={coinTransferSentInfo.playerName}
+            coinLabel={(() => {
+              const a = coinTransferSentInfo.amounts;
+              const parts = [
+                a.pp ? `${a.pp} pp` : '',
+                a.gp ? `${a.gp} gp` : '',
+                a.sp ? `${a.sp} sp` : '',
+                a.cp ? `${a.cp} cp` : '',
+              ].filter(Boolean);
+              return parts.join(', ') || '0 gp';
+            })()}
+            expiresAt={coinTransferSentInfo.expiresAt}
+            onCancel={() => handleCancelCoinTransfer(coinTransferSentInfo.requestId)}
+            onDismiss={() => setCoinTransferSentInfo(null)}
           />
         )}
 

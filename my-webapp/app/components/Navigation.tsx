@@ -584,8 +584,8 @@ export function Navigation() {
         className="md:hidden fixed top-0 left-0 right-0 z-40 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl transition-all duration-300"
         style={{
           background: isOpen
-            ? 'linear-gradient(to right, #5C1A1A, #7A2424)'
-            : navTransparent ? 'linear-gradient(to right, #5C1A1A, #7A2424)' : 'rgba(245, 239, 224, 0.95)',
+            ? '#5C1A1A'
+            : navTransparent ? '#5C1A1A' : 'rgba(245, 239, 224, 0.95)',
           transition: 'background 0.3s ease-in-out'
         }}
       >
@@ -709,7 +709,7 @@ export function Navigation() {
         className={cn(
           "hidden md:block fixed top-0 left-0 right-0 backdrop-blur-md border-b-4 border-[#3D1409] shadow-xl z-50 transition-all duration-300"
         )}
-        style={navTransparent ? { background: 'linear-gradient(to right, #5C1A1A, #7A2424)' } : undefined}
+        style={navTransparent ? { background: '#5C1A1A' } : undefined}
       >
         <div className="w-full px-3 md:px-4 xl:px-6">
           <div className="flex items-center h-14 gap-2 xl:gap-6">

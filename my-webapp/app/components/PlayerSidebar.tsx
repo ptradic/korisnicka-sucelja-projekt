@@ -165,7 +165,7 @@ function CharacterNameModal({
               type="url"
               inputMode="url"
             />
-            <p className="text-[11px] text-[#5C4A2F] mt-1">Use a direct image URL (http or https), or leave blank.</p>
+            <p className="text-[11px] text-[#5C4A2F] mt-1">Use a direct image URL, you may use google drive links to your image by setting its privacy to "Anyone with the link".</p>
           </div>
 
           {error && (

@@ -36,39 +36,40 @@ export function VaultLobby({ onSelectVault, onCreateVault, onJoinVault, vaults, 
 
   return (
     <main
-      className="flex min-h-screen flex-col items-center overflow-hidden"
+      className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center overflow-hidden relative"
       style={{
-        background: 'linear-gradient(to bottom, #3D1409 0vh, #5C1A1A 20vh, #7A2424 40vh, #C8A97A 60vh, #E8D5B7 75vh, #DCC8A8 120vh, #E0CFAF 180vh)',
+        background: 'linear-gradient(to bottom, #3D1409 0%, #5C1A1A 40%, #7A2424 70%, #5C1A1A 100%)',
+        backgroundAttachment: 'fixed',
       }}
     >
-      {/* Hero section with diamond pattern */}
-      <section className="w-full relative">
-        {/* SVG diamond pattern overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
-            backgroundSize: '40px 40px',
-          }}
-        />
+      {/* SVG diamond pattern — fixed, covers full page */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
+          backgroundSize: '40px 40px',
+        }}
+      />
+      {/* Hero section */}
+      <section className="w-full relative z-10">
 
         {/* Role tabs */}
         {topContent}
 
         {/* Create / Join Vault Section */}
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="mb-8" data-tutorial="action-button">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="mb-4" data-tutorial="action-button">
             {isGM ? (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="w-full border-2 border-dashed border-[#F5EDE0]/30 rounded-2xl p-8 hover:bg-white/10 hover:border-[#F5EDE0]/50 transition-all duration-300 group"
+                className="w-full border-2 border-dashed border-[#F5EDE0]/30 rounded-xl p-4 hover:bg-white/10 hover:border-[#F5EDE0]/50 transition-all duration-300 group"
               >
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 bg-white/15 group-hover:bg-white/25 rounded-full flex items-center justify-center border-2 border-white/20 backdrop-blur-sm transition-all duration-300">
-                    <Plus className="w-8 h-8 text-[#F5EDE0]" />
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white/15 group-hover:bg-white/25 rounded-full flex items-center justify-center border-2 border-white/20 backdrop-blur-sm transition-all duration-300 shrink-0">
+                    <Plus className="w-5 h-5 text-[#F5EDE0]" />
                   </div>
-                  <div>
-                    <h3 className="text-[#F5EDE0] font-bold mb-1">Create New Campaign Vault</h3>
+                  <div className="text-left">
+                    <h3 className="text-[#F5EDE0] font-bold">Create New Campaign Vault</h3>
                     <p className="text-[#F5EDE0]/60 text-sm">Start managing inventory for a new adventure</p>
                   </div>
                 </div>
@@ -76,14 +77,14 @@ export function VaultLobby({ onSelectVault, onCreateVault, onJoinVault, vaults, 
             ) : (
               <button
                 onClick={() => setShowJoinModal(true)}
-                className="w-full border-2 border-dashed border-[#F5EDE0]/30 rounded-2xl p-8 hover:bg-white/10 hover:border-[#F5EDE0]/50 transition-all duration-300 group"
+                className="w-full border-2 border-dashed border-[#F5EDE0]/30 rounded-xl p-4 hover:bg-white/10 hover:border-[#F5EDE0]/50 transition-all duration-300 group"
               >
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 bg-white/15 group-hover:bg-white/25 rounded-full flex items-center justify-center border-2 border-white/20 backdrop-blur-sm transition-all duration-300">
-                    <LogIn className="w-8 h-8 text-[#F5EDE0]" />
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white/15 group-hover:bg-white/25 rounded-full flex items-center justify-center border-2 border-white/20 backdrop-blur-sm transition-all duration-300 shrink-0">
+                    <LogIn className="w-5 h-5 text-[#F5EDE0]" />
                   </div>
-                  <div>
-                    <h3 className="text-[#F5EDE0] font-bold mb-1">Join Campaign Vault</h3>
+                  <div className="text-left">
+                    <h3 className="text-[#F5EDE0] font-bold">Join Campaign Vault</h3>
                     <p className="text-[#F5EDE0]/60 text-sm">Enter a vault name and password to join your party</p>
                   </div>
                 </div>
@@ -93,12 +94,12 @@ export function VaultLobby({ onSelectVault, onCreateVault, onJoinVault, vaults, 
         </div>
       </section>
 
-      {/* Vault list section — on the beige portion of the gradient */}
-      <div className="w-full max-w-7xl mx-auto px-6 pb-12" data-tutorial="vault-list">
+      {/* Vault list section */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 pb-4" data-tutorial="vault-list">
         <div className="flex items-center gap-2 mb-4">
-          <Package className="w-5 h-5 text-[#3D1409]" />
-          <h2 className="text-[#3D1409] font-bold">Your Campaign Vaults</h2>
-          <span className="text-[#5C4A2F] text-sm">({vaults.length})</span>
+          <Package className="w-5 h-5 text-[#F5EDE0]" />
+          <h2 className="text-[#F5EDE0] font-bold">Your Campaign Vaults</h2>
+          <span className="text-[#F5EDE0]/70 text-sm">({vaults.length})</span>
         </div>
 
         {vaults.length === 0 ? (
@@ -155,38 +156,38 @@ function VaultCard({ vault, isGM, onOpen, onAction }: { vault: Vault; isGM: bool
   return (
     <>
       <div
-        className="bg-[#F5EFE0] border-4 border-[#8B6F47]/30 rounded-2xl p-6 text-left cursor-pointer group hover:border-[#8B6F47] hover:shadow-xl transition-all duration-300"
+        className="bg-[#F5EFE0] border-2 border-[#8B6F47]/30 rounded-xl p-4 text-left cursor-pointer group hover:border-[#8B6F47] hover:shadow-xl transition-all duration-300"
         onClick={onOpen}
       >
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-2">
           <div className="flex-1 min-w-0">
-            <h3 className="text-[#3D1409] font-bold truncate mb-1">{vault.name}</h3>
-            <p className="text-[#5C4A2F] text-sm line-clamp-2">{vault.description}</p>
+            <h3 className="text-[#3D1409] font-bold truncate">{vault.name}</h3>
+            <p className="text-[#5C4A2F] text-xs line-clamp-1">{vault.description}</p>
           </div>
           <button
             onClick={handleDelete}
-            className="ml-2 p-2 rounded-lg text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#8B3A3A]/10 transition-colors duration-200"
+            className="ml-2 p-1.5 rounded-lg text-[#8B6F47] hover:text-[#8B3A3A] hover:bg-[#8B3A3A]/10 transition-colors duration-200"
             title={isGM ? 'Delete vault' : 'Leave vault'}
           >
-            {isGM ? <Trash2 className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
+            {isGM ? <Trash2 className="w-3.5 h-3.5" /> : <LogOut className="w-3.5 h-3.5" />}
           </button>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-[#5C4A2F]">
-            <Users className="w-4 h-4" />
+        <div className="flex items-center gap-4 text-xs text-[#5C4A2F] mb-2">
+          <div className="flex items-center gap-1">
+            <Users className="w-3.5 h-3.5" />
             <span>{vault.playerCount} players</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-[#5C4A2F]">
-            <Calendar className="w-4 h-4" />
+          <div className="flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5" />
             <span>Last accessed: {new Date(vault.lastAccessed).toLocaleDateString()}</span>
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t-2 border-[#D9C7AA]">
-          <div className="text-[#5C1A1A] text-sm font-semibold group-hover:text-[#3D1409] transition-colors flex items-center gap-1">
+        <div className="pt-2 border-t border-[#D9C7AA]">
+          <div className="text-[#5C1A1A] text-xs font-semibold group-hover:text-[#3D1409] transition-colors flex items-center gap-1">
             Open Vault
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-300" />
           </div>
         </div>
       </div>

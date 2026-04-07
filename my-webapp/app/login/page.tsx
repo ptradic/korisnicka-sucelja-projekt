@@ -260,11 +260,12 @@ export default function LoginPage() {
       className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4 py-8 relative"
       style={{
         background: 'linear-gradient(to bottom, #3D1409 0%, #5C1A1A 40%, #7A2424 70%, #5C1A1A 100%)',
+        backgroundAttachment: 'fixed',
       }}
     >
-      {/* Diamond pattern overlay */}
+      {/* Diamond pattern overlay — fixed like other pages */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="fixed inset-0 pointer-events-none z-0"
         style={{
           backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
           backgroundSize: '40px 40px',

@@ -169,21 +169,22 @@ export default function SupportPage() {
 
   return (
     <main
-      className="flex min-h-screen flex-col items-center overflow-hidden"
+      className="flex min-h-screen flex-col items-center overflow-hidden relative"
       style={{
-        background: 'linear-gradient(to bottom, #3D1409 0vh, #5C1A1A 35vh, #7A2424 62vh, #C8A97A 85vh, #E8D5B7 100vh, #DCC8A8 140vh, #E0CFAF 200vh)',
+        background: 'linear-gradient(to bottom, #3D1409 0%, #5C1A1A 40%, #7A2424 70%, #5C1A1A 100%)',
+        backgroundAttachment: 'fixed',
       }}
     >
+      {/* SVG diamond pattern — fixed, covers full page */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
+          backgroundSize: '40px 40px',
+        }}
+      />
       {/* Hero + Links — fills first viewport */}
-      <section className="w-full text-center flex flex-col justify-center items-center min-h-screen relative pb-32">
-        {/* SVG diamond pattern overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='%23F5EDE0' fill-opacity='0.04'/%3E%3C/svg%3E\")",
-            backgroundSize: '40px 40px',
-          }}
-        />
+      <section className="w-full text-center flex flex-col justify-center items-center min-h-screen relative pb-32 z-10">
         <div className="w-full max-w-5xl px-4 sm:px-10 flex flex-col items-center">
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-10 text-[#F5EDE0] leading-tight fade-in-up delay-200" style={{ fontFamily: 'var(--font-archivo-black)' }}>
             <span className="block sm:inline">Support &</span>{' '}
@@ -226,10 +227,10 @@ export default function SupportPage() {
       </section>
 
       {/* Below-the-fold content */}
-      <div className="w-full max-w-5xl px-4 sm:px-10 mt-8">
+      <div className="relative z-10 w-full max-w-5xl px-4 sm:px-10 mt-8">
 
         {/* Feedback Form Section */}
-        <section ref={feedbackRef} className="scroll-reveal bg-white/40 backdrop-blur-sm rounded-2xl p-6 sm:p-10 shadow-lg mb-12">
+        <section ref={feedbackRef} className="scroll-reveal bg-[#F5EFE0] rounded-2xl p-6 sm:p-10 mb-12" style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}>
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-linear-to-br from-[#5C1A1A] to-[#7A2424] rounded-xl flex items-center justify-center shadow-lg">
               <Mail className="w-6 h-6 text-white" />
@@ -370,7 +371,7 @@ export default function SupportPage() {
         </section>
 
         {/* Additional Help */}
-        <section ref={helpRef} className="scroll-reveal bg-linear-to-br from-[#5C1A1A]/10 to-transparent border-4 border-[#8B6F47] rounded-2xl p-6 sm:p-8 mb-10">
+        <section ref={helpRef} className="scroll-reveal bg-[#F5EFE0] rounded-2xl p-6 sm:p-8 mb-10" style={{ boxShadow: '0 20px 50px rgba(61, 20, 9, 0.35)' }}>
           <h3 className="text-2xl font-bold mb-4 text-[#3D1409]">Need Immediate Help?</h3>
           <p className="text-[#5C4A2F] leading-relaxed mb-4">
             Check out our <a href="/guides" className="text-[#5C1A1A] font-semibold hover:underline">Guides & Tutorials</a> for step-by-step walkthroughs, or visit the <Link href="/support/faq" className="text-[#5C1A1A] font-semibold hover:underline">FAQ</Link> for answers to common questions.

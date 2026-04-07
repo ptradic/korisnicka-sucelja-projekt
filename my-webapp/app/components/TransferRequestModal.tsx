@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Package, ArrowRight, Check, X, AlertCircle, Clock, Trash2 } from 'lucide-react';
-import type { TransferRequest } from '@/src/firebaseService';
+import { Package, ArrowRight, Check, X, AlertCircle, Clock, Trash2, Coins } from 'lucide-react';
+import type { TransferRequest, CoinTransferRequest } from '@/src/firebaseService';
+import type { Currency } from '@/app/types';
 import { useCountdown } from '@/app/hooks/useCountdown';
 import { Timestamp } from 'firebase/firestore';
 
@@ -348,6 +349,129 @@ export function TransferExpiredToast({ playerName, itemName, isReceiver, onDismi
         >
           <X className="w-4 h-4" />
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Coin Transfer Request Modal ─────────────────────────────── */
+
+function formatCoins(amounts: Currency): string {
+  const parts: string[] = [];
+  if (amounts.pp) parts.push(`${amounts.pp} pp`);
+  if (amounts.gp) parts.push(`${amounts.gp} gp`);
+  if (amounts.sp) parts.push(`${amounts.sp} sp`);
+  if (amounts.cp) parts.push(`${amounts.cp} cp`);
+  return parts.join(', ') || '0 gp';
+}
+
+interface CoinTransferRequestModalProps {
+  request: CoinTransferRequest;
+  onAccept: () => Promise<void>;
+  onReject: () => Promise<void>;
+}
+
+export function CoinTransferRequestModal({ request, onAccept, onReject }: CoinTransferRequestModalProps) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(() => getRemainingSeconds(request.expiresAt));
+  const hasAutoRejected = useRef(false);
+
+  useEffect(() => {
+    setIsProcessing(false);
+    setError(null);
+    setTimeLeft(getRemainingSeconds(request.expiresAt));
+    hasAutoRejected.current = false;
+  }, [request.id, request.expiresAt]);
+
+  useEffect(() => {
+    if (isProcessing) return;
+    const interval = setInterval(() => {
+      const remaining = getRemainingSeconds(request.expiresAt);
+      setTimeLeft(remaining);
+      if (remaining <= 0) clearInterval(interval);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isProcessing, request.id, request.expiresAt]);
+
+  useEffect(() => {
+    if (timeLeft === 0 && !isProcessing && !hasAutoRejected.current) {
+      hasAutoRejected.current = true;
+      handleReject();
+    }
+  }, [timeLeft, isProcessing]);
+
+  const handleAccept = async () => {
+    setIsProcessing(true);
+    setError(null);
+    try { await onAccept(); } catch (err: any) {
+      setError(err.message || 'Failed to accept');
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReject = async () => {
+    setIsProcessing(true);
+    setError(null);
+    try { await onReject(); } catch (err: any) {
+      setError(err.message || 'Failed to reject');
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleReject} />
+      <div className="relative bg-[#F5EFE0] border-4 border-[#3D1409] rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 bg-[#5C1A1A]/10 border-2 border-[#5C1A1A]/30 rounded-full">
+          <Clock className="w-4 h-4 text-[#5C1A1A]" />
+          <span className={`text-sm font-bold ${timeLeft <= 2 ? 'text-red-600' : 'text-[#5C1A1A]'}`}>{timeLeft}s</span>
+        </div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-full bg-[#B8860B]/10 flex items-center justify-center">
+            <Coins className="w-6 h-6 text-[#B8860B]" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-[#3D1409]">Coin Transfer</h2>
+            <p className="text-sm text-[#8B6F47]">Someone wants to send you coins</p>
+          </div>
+        </div>
+        <div className="bg-white/60 border-2 border-[#8B6F47]/30 rounded-xl p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-center">
+              <div className="w-10 h-10 rounded-full bg-[#5C1A1A] text-white flex items-center justify-center mx-auto mb-1 font-bold">
+                {request.fromPlayerName.charAt(0).toUpperCase()}
+              </div>
+              <p className="text-xs font-semibold text-[#3D1409] max-w-20 truncate">{request.fromPlayerName}</p>
+            </div>
+            <ArrowRight className="w-6 h-6 text-[#8B6F47]" />
+            <div className="text-center">
+              <div className="w-10 h-10 rounded-full bg-[#3D1409] text-white flex items-center justify-center mx-auto mb-1 font-bold">
+                {request.toPlayerName.charAt(0).toUpperCase()}
+              </div>
+              <p className="text-xs font-semibold text-[#3D1409] max-w-20 truncate">{request.toPlayerName}</p>
+              <p className="text-[10px] text-[#8B6F47]">(You)</p>
+            </div>
+          </div>
+          <div className="border-t border-[#8B6F47]/20 pt-3 text-center">
+            <p className="text-lg font-extrabold text-[#B8860B]">{formatCoins(request.amounts)}</p>
+          </div>
+        </div>
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 border-2 border-red-200 rounded-xl mb-4">
+            <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+        <div className="flex gap-3">
+          <button onClick={handleReject} disabled={isProcessing} className="btn-secondary flex-1 hover:border-red-500 hover:bg-red-50 disabled:opacity-50">
+            <X className="w-5 h-5" /><span>Decline</span>
+          </button>
+          <button onClick={handleAccept} disabled={isProcessing} className="btn-primary flex-1 disabled:opacity-50">
+            {isProcessing ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Check className="w-5 h-5" />}
+            <span>{isProcessing ? 'Processing...' : 'Accept'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

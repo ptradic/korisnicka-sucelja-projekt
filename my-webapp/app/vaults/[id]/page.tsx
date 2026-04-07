@@ -12,7 +12,7 @@ import { PlayerSidebar } from '@/app/components/PlayerSidebar';
 import { InventoryView } from '@/app/components/InventoryView';
 import { AddItemModal } from '@/app/components/AddItemModal';
 import { ItemDetailsModal } from '@/app/components/ItemDetailsModal';
-import { TransferRequestModal, TransferSentToast, TransferExpiredToast, RemoveItemUndoToast } from '@/app/components/TransferRequestModal';
+import { TransferRequestModal, TransferSentToast, TransferExpiredToast, RemoveItemUndoToast, CoinTransferRequestModal } from '@/app/components/TransferRequestModal';
 import { VaultDetailSkeleton } from '@/app/components/skeletons/SkeletonLoader';
 import { VaultTutorial, useVaultTutorial } from '@/app/components/VaultTutorial';
 import type { Item, Player, Currency } from '@/app/types';
@@ -43,8 +43,14 @@ import {
   deleteUserHomebrewItem,
   updateSharedCurrency,
   kickPlayer,
+  createCoinTransferRequest,
+  acceptCoinTransferRequest,
+  rejectCoinTransferRequest,
+  restoreRejectedCoinTransfer,
+  subscribeToCoinTransferRequests,
+  subscribeToRejectedOrExpiredCoinTransfers,
 } from '@/src/firebaseService';
-import type { CampaignDoc, PlayerInventoryDoc, TransferRequest } from '@/src/firebaseService';
+import type { CampaignDoc, PlayerInventoryDoc, TransferRequest, CoinTransferRequest } from '@/src/firebaseService';
 
 /* ── Multi-backend DnD configuration ─────────────────────────────────── */
 const HTML5toTouch = {
@@ -141,6 +147,8 @@ export default function VaultDetailPage() {
 
   /* ── Transfer state ── */
   const [pendingTransferRequests, setPendingTransferRequests] = useState<TransferRequest[]>([]);
+  const [pendingCoinTransferRequests, setPendingCoinTransferRequests] = useState<CoinTransferRequest[]>([]);
+  const [coinTransferSentInfo, setCoinTransferSentInfo] = useState<{ requestId: string; playerName: string; expiresAt: Date } | null>(null);
   const [transferSentInfo, setTransferSentInfo] = useState<{ requestIds: string[]; playerName: string; itemLabel: string; expiresAt: Date } | null>(null);
   const [expiredTransferInfo, setExpiredTransferInfo] = useState<{ playerName: string; itemName: string; isReceiver: boolean } | null>(null);
   const [undoRemoveInfo, setUndoRemoveInfo] = useState<{ itemName: string; restore: () => Promise<void> } | null>(null);
@@ -288,6 +296,33 @@ export default function VaultDetailPage() {
 
     return () => clearInterval(interval);
   }, [campaignId, userId, userRole, showActionError]);
+
+  // 6b. Coin transfer requests — incoming
+  useEffect(() => {
+    if (!campaignId || !userId || userRole === 'gm') {
+      setPendingCoinTransferRequests([]);
+      return;
+    }
+    const unsub = subscribeToCoinTransferRequests(campaignId, userId, (requests) => {
+      setPendingCoinTransferRequests(requests);
+    });
+    return () => unsub();
+  }, [campaignId, userId, userRole]);
+
+  // 6c. Coin transfer requests — rejected/expired auto-restore to sender
+  useEffect(() => {
+    if (!campaignId || !userId || userRole === 'gm') return;
+    const unsub = subscribeToRejectedOrExpiredCoinTransfers(campaignId, userId, async (requests) => {
+      for (const req of requests) {
+        try {
+          await restoreRejectedCoinTransfer(campaignId, req.id, userId);
+        } catch (err) {
+          console.error('Failed to restore coin transfer:', err);
+        }
+      }
+    });
+    return () => unsub();
+  }, [campaignId, userId, userRole]);
 
   // 7. GM cleanup: remove stale inventory docs
   useEffect(() => {
@@ -458,6 +493,52 @@ export default function VaultDetailPage() {
     } catch (error) {
       console.error('Failed to cancel transfer:', error);
       showActionError('Could not cancel transfer', error, () => handleCancelSentTransfer(requestIds), 'Try cancelling again');
+      throw error;
+    }
+  };
+
+  // Coin transfers
+  const handleSendCoins = async (amounts: Currency) => {
+    if (!campaignId || !userId || !selectedPlayerId || selectedPlayerId === 'shared') return;
+    const myInv = playerInventories.find((p) => p.playerId === userId);
+    const recipientInv = playerInventories.find((p) => p.playerId === selectedPlayerId);
+    if (!myInv || !recipientInv) return;
+    try {
+      const requestId = await trackWrite(() => createCoinTransferRequest(
+        campaignId,
+        userId,
+        myInv.playerName,
+        selectedPlayerId,
+        recipientInv.playerName,
+        amounts
+      ));
+      const expiresAt = new Date(Date.now() + 30 * 1000);
+      setCoinTransferSentInfo({ requestId, playerName: recipientInv.playerName, expiresAt });
+      setTimeout(() => setCoinTransferSentInfo(null), 33000);
+    } catch (error) {
+      console.error('Failed to send coins:', error);
+      showActionError('Could not send coins', error, () => handleSendCoins(amounts));
+    }
+  };
+
+  const handleAcceptCoinTransfer = async (request: CoinTransferRequest) => {
+    if (!campaignId || !userId) return;
+    try {
+      await trackWrite(() => acceptCoinTransferRequest(campaignId, request.id, userId));
+    } catch (error) {
+      console.error('Failed to accept coin transfer:', error);
+      showActionError('Could not accept coin transfer', error, () => handleAcceptCoinTransfer(request));
+      throw error;
+    }
+  };
+
+  const handleRejectCoinTransfer = async (request: CoinTransferRequest) => {
+    if (!campaignId) return;
+    try {
+      await trackWrite(() => rejectCoinTransferRequest(campaignId, request.id));
+    } catch (error) {
+      console.error('Failed to reject coin transfer:', error);
+      showActionError('Could not reject coin transfer', error, () => handleRejectCoinTransfer(request));
       throw error;
     }
   };
@@ -1020,6 +1101,7 @@ export default function VaultDetailPage() {
               onReorderInventory={handleReorderInventory}
               onBulkRemove={handleBulkRemoveItems}
               onSellItems={handleSellItems}
+              onSendCoins={!isGM && !isShared && selectedPlayerId !== userId ? handleSendCoins : undefined}
             />
           </div>
         </div>
@@ -1061,6 +1143,15 @@ export default function VaultDetailPage() {
             request={pendingTransferRequests[0]}
             onAccept={() => handleAcceptTransfer(pendingTransferRequests[0])}
             onReject={() => handleRejectTransfer(pendingTransferRequests[0])}
+          />
+        )}
+
+        {/* Coin Transfer Request Modal */}
+        {pendingCoinTransferRequests.length > 0 && (
+          <CoinTransferRequestModal
+            request={pendingCoinTransferRequests[0]}
+            onAccept={() => handleAcceptCoinTransfer(pendingCoinTransferRequests[0])}
+            onReject={() => handleRejectCoinTransfer(pendingCoinTransferRequests[0])}
           />
         )}
 

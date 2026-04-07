@@ -8,7 +8,7 @@ import { useScrollReveal } from "@/app/hooks/useScrollReveal";
 const quickLinks = [
   {
     id: "github",
-    href: "https://github.com/ptradic",
+    href: "https://github.com/ptradic/trailblazers-vault/issues",
     title: "GitHub Issues",
     desc: "Report bugs or request features",
     icon: Github,

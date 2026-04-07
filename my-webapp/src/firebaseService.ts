@@ -1127,21 +1127,22 @@ export function subscribeToTransferRequests(
   return onSnapshot(q, async (snapshot) => {
     const requests: TransferRequest[] = [];
     const expiredRequests: TransferRequest[] = [];
-    
+
     snapshot.forEach((docSnap) => {
       const request = docSnap.data() as TransferRequest;
+      if ((request as any).type === 'coin') return; // skip coin transfers
       if (isTransferExpired(request)) {
         expiredRequests.push(request);
       } else {
         requests.push(request);
       }
     });
-    
+
     // Mark expired requests (they will be restored by sender's subscription)
     for (const expired of expiredRequests) {
       await markTransferAsExpired(campaignId, expired.id);
     }
-    
+
     callback(requests);
   });
 }
@@ -1159,6 +1160,7 @@ export function subscribeToRejectedOrExpiredTransfers(
     const requests: TransferRequest[] = [];
     snapshot.forEach((docSnap) => {
       const request = docSnap.data() as TransferRequest;
+      if ((request as any).type === 'coin') return; // skip coin transfers
       // Include both rejected and expired status
       if (request.status === 'rejected' || request.status === 'expired') {
         requests.push(request);
@@ -1217,6 +1219,217 @@ export async function deleteUserProfile(uid: string): Promise<void> {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+ *  COIN TRANSFER REQUESTS
+ *  Coins are escrowed on send (deducted from sender immediately).
+ *  On accept → added to recipient. On reject/expire → restored to sender.
+ * ═══════════════════════════════════════════════════════════════ */
+
+export interface CoinTransferRequest {
+  id: string;
+  type: 'coin'; // discriminator — stored in transferRequests collection
+  campaignId: string;
+  fromPlayerId: string;
+  fromPlayerName: string;
+  toPlayerId: string;
+  toPlayerName: string;
+  amounts: Currency; // what is being sent
+  createdAt: Timestamp;
+  expiresAt: Timestamp;
+  status: 'pending' | 'accepted' | 'rejected' | 'expired';
+}
+
+export async function createCoinTransferRequest(
+  campaignId: string,
+  fromPlayerId: string,
+  fromPlayerName: string,
+  toPlayerId: string,
+  toPlayerName: string,
+  amounts: Currency,
+): Promise<string> {
+  // Validate sender has enough coins before touching anything
+  const senderInventory = await getPlayerInventory(campaignId, fromPlayerId);
+  if (!senderInventory) throw new Error('Sender inventory not found');
+
+  const c = senderInventory.currency;
+  if (
+    c.pp - amounts.pp < 0 ||
+    c.gp - amounts.gp < 0 ||
+    c.sp - amounts.sp < 0 ||
+    c.cp - amounts.cp < 0
+  ) {
+    throw new Error('Not enough coins to send.');
+  }
+
+  const requestId = `cointransfer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const expiresAt = Timestamp.fromDate(new Date(Date.now() + TRANSFER_EXPIRATION_SECONDS * 1000));
+
+  const request: CoinTransferRequest = {
+    id: requestId,
+    type: 'coin',
+    campaignId,
+    fromPlayerId,
+    fromPlayerName,
+    toPlayerId,
+    toPlayerName,
+    amounts,
+    createdAt: serverTimestamp() as Timestamp,
+    expiresAt,
+    status: 'pending',
+  };
+
+  // Write request FIRST — if this fails, coins are untouched
+  await setDoc(doc(db, 'campaigns', campaignId, 'transferRequests', requestId), request);
+
+  // Deduct coins from sender (escrow) only after request is safely stored
+  const updatedCurrency: Currency = {
+    pp: c.pp - amounts.pp,
+    gp: c.gp - amounts.gp,
+    sp: c.sp - amounts.sp,
+    cp: c.cp - amounts.cp,
+  };
+  await updatePlayerInventory(campaignId, fromPlayerId, senderInventory.inventory, updatedCurrency, senderInventory.maxWeight);
+
+  return requestId;
+}
+
+export async function acceptCoinTransferRequest(
+  campaignId: string,
+  requestId: string,
+  recipientId: string,
+): Promise<void> {
+  const requestRef = doc(db, 'campaigns', campaignId, 'transferRequests', requestId);
+  const snap = await getDoc(requestRef);
+  if (!snap.exists()) throw new Error('Coin transfer request not found');
+
+  const request = snap.data() as CoinTransferRequest;
+  if (request.status !== 'pending') throw new Error('Request is no longer pending');
+  if (request.toPlayerId !== recipientId) throw new Error('Only the recipient can accept this request.');
+
+  const recipientInventory = await getPlayerInventory(campaignId, recipientId);
+  if (!recipientInventory) throw new Error('Recipient inventory not found');
+
+  const c = recipientInventory.currency;
+  const updatedCurrency: Currency = {
+    pp: c.pp + request.amounts.pp,
+    gp: c.gp + request.amounts.gp,
+    sp: c.sp + request.amounts.sp,
+    cp: c.cp + request.amounts.cp,
+  };
+  await updatePlayerInventory(campaignId, recipientId, recipientInventory.inventory, updatedCurrency, recipientInventory.maxWeight);
+  await deleteDoc(requestRef);
+}
+
+export async function rejectCoinTransferRequest(
+  campaignId: string,
+  requestId: string,
+): Promise<void> {
+  const requestRef = doc(db, 'campaigns', campaignId, 'transferRequests', requestId);
+  await updateDoc(requestRef, { status: 'rejected' });
+}
+
+export async function cancelCoinTransferRequest(
+  campaignId: string,
+  requestId: string,
+  senderId: string,
+): Promise<void> {
+  const requestRef = doc(db, 'campaigns', campaignId, 'transferRequests', requestId);
+  const snap = await getDoc(requestRef);
+  if (!snap.exists()) return;
+
+  const request = snap.data() as CoinTransferRequest;
+  if (request.fromPlayerId !== senderId) throw new Error('Only the sender can cancel this request.');
+  if (request.status !== 'pending') return;
+
+  // Restore coins to sender
+  const senderInventory = await getPlayerInventory(campaignId, senderId);
+  if (senderInventory) {
+    const c = senderInventory.currency;
+    await updatePlayerInventory(campaignId, senderId, senderInventory.inventory, {
+      pp: c.pp + request.amounts.pp,
+      gp: c.gp + request.amounts.gp,
+      sp: c.sp + request.amounts.sp,
+      cp: c.cp + request.amounts.cp,
+    }, senderInventory.maxWeight);
+  }
+  await deleteDoc(requestRef);
+}
+
+export async function restoreRejectedCoinTransfer(
+  campaignId: string,
+  requestId: string,
+  senderId: string,
+): Promise<void> {
+  const requestRef = doc(db, 'campaigns', campaignId, 'transferRequests', requestId);
+  const snap = await getDoc(requestRef);
+  if (!snap.exists()) return;
+
+  const request = snap.data() as CoinTransferRequest;
+  if (request.status !== 'rejected' && request.status !== 'expired') return;
+  if (request.fromPlayerId !== senderId) throw new Error('Only the sender can restore this request.');
+
+  const senderInventory = await getPlayerInventory(campaignId, senderId);
+  if (senderInventory) {
+    const c = senderInventory.currency;
+    await updatePlayerInventory(campaignId, senderId, senderInventory.inventory, {
+      pp: c.pp + request.amounts.pp,
+      gp: c.gp + request.amounts.gp,
+      sp: c.sp + request.amounts.sp,
+      cp: c.cp + request.amounts.cp,
+    }, senderInventory.maxWeight);
+  }
+  await deleteDoc(requestRef);
+}
+
+export function subscribeToCoinTransferRequests(
+  campaignId: string,
+  playerId: string,
+  callback: (requests: CoinTransferRequest[]) => void,
+): () => void {
+  const q = query(
+    collection(db, 'campaigns', campaignId, 'transferRequests'),
+    where('toPlayerId', '==', playerId),
+    where('status', '==', 'pending'),
+  );
+  return onSnapshot(q, async (snapshot) => {
+    const live: CoinTransferRequest[] = [];
+    const expired: CoinTransferRequest[] = [];
+    snapshot.forEach((d) => {
+      const r = d.data() as CoinTransferRequest;
+      if (r.type !== 'coin') return; // only coin transfers
+      if (r.expiresAt && r.expiresAt.toDate() < new Date()) {
+        expired.push(r);
+      } else {
+        live.push(r);
+      }
+    });
+    for (const r of expired) {
+      await updateDoc(doc(db, 'campaigns', campaignId, 'transferRequests', r.id), { status: 'expired' });
+    }
+    callback(live);
+  });
+}
+
+export function subscribeToRejectedOrExpiredCoinTransfers(
+  campaignId: string,
+  playerId: string,
+  callback: (requests: CoinTransferRequest[]) => void,
+): () => void {
+  const q = query(
+    collection(db, 'campaigns', campaignId, 'transferRequests'),
+    where('fromPlayerId', '==', playerId),
+  );
+  return onSnapshot(q, (snapshot) => {
+    const done: CoinTransferRequest[] = [];
+    snapshot.forEach((d) => {
+      const r = d.data() as CoinTransferRequest;
+      if (r.type !== 'coin') return; // only coin transfers
+      if (r.status === 'rejected' || r.status === 'expired') done.push(r);
+    });
+    callback(done);
+  });
+}
+
 export function subscribeToPendingTransfersFromMe(
   campaignId: string,
   playerId: string,
@@ -1228,21 +1441,22 @@ export function subscribeToPendingTransfersFromMe(
   return onSnapshot(q, async (snapshot) => {
     const requests: TransferRequest[] = [];
     const expiredRequests: TransferRequest[] = [];
-    
+
     snapshot.forEach((docSnap) => {
       const request = docSnap.data() as TransferRequest;
+      if ((request as any).type === 'coin') return; // skip coin transfers
       if (isTransferExpired(request)) {
         expiredRequests.push(request);
       } else {
         requests.push(request);
       }
     });
-    
+
     // Sender can also mark expired requests (ensures expiration even if recipient is offline)
     for (const expired of expiredRequests) {
       await markTransferAsExpired(campaignId, expired.id);
     }
-    
+
     callback(requests);
   });
 }

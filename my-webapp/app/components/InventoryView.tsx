@@ -1,4 +1,4 @@
-import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, X, ListChecks, Repeat2, UserX, Pencil, Trash2, HandCoins } from 'lucide-react';
+import { Plus, Search, Weight, Minus, Coins, ArrowUpDown, Filter, X, ListChecks, Repeat2, UserX, Pencil, Trash2, HandCoins, Send } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import { ItemCard } from './ItemCard';
@@ -30,6 +30,7 @@ interface InventoryViewProps {
   onReorderInventory?: (newInventory: Item[]) => void;
   onBulkRemove?: (itemIdsWithCounts: { id: string; count: number }[]) => void;
   onSellItems?: (itemIdsWithCounts: { id: string; count: number }[], earnings: Currency) => void;
+  onSendCoins?: (amounts: Currency) => void;
 }
 
 // Simple inline coin display — click to edit (read-only if no onChange)
@@ -190,6 +191,86 @@ function AddCoinsButton({
   );
 }
 
+function SendCoinsButton({ onSend, ownerName }: { onSend: (amounts: Currency) => void; ownerName: string }) {
+  const [open, setOpen] = useState(false);
+  const [amounts, setAmounts] = useState<Currency>({ pp: 0, gp: 0, sp: 0, cp: 0 });
+  const [error, setError] = useState('');
+
+  const coinTypes: { key: keyof Currency; label: string; color: string }[] = [
+    { key: 'pp', label: 'PP', color: 'text-[#8B8B8B]' },
+    { key: 'gp', label: 'GP', color: 'text-[#B8860B]' },
+    { key: 'sp', label: 'SP', color: 'text-[#808080]' },
+    { key: 'cp', label: 'CP', color: 'text-[#B87333]' },
+  ];
+
+  const handleSubmit = () => {
+    if (!amounts.pp && !amounts.gp && !amounts.sp && !amounts.cp) {
+      setError('Enter at least one coin amount.');
+      return;
+    }
+    if (Object.values(amounts).some((v) => v < 0)) {
+      setError('Amounts must be positive.');
+      return;
+    }
+    onSend(amounts);
+    setAmounts({ pp: 0, gp: 0, sp: 0, cp: 0 });
+    setError('');
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => { setOpen(!open); setError(''); }}
+        className={open
+          ? 'btn-primary h-7 min-w-10 !px-1.5 !py-0 rounded-lg text-white border-[#3D1409]'
+          : 'btn-secondary h-7 min-w-10 !px-1.5 !py-0 rounded-lg text-[#5C4A2F] border-[#8B6F47]/60 hover:border-[#5C4A2F]'
+        }
+        title={`Send coins to ${ownerName}`}
+      >
+        <Send className={open ? 'w-3.5 h-3.5 text-white' : 'w-3.5 h-3.5 text-[#5C4A2F]'} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+          <div
+            className="absolute right-0 top-full mt-2 z-30 bg-[#F5EFE0] border-3 border-[#8B6F47] rounded-xl p-3 shadow-2xl min-w-[200px]"
+            style={{ boxShadow: '0 8px 20px rgba(61, 20, 9, 0.25)' }}
+          >
+            <div className="text-xs font-bold text-[#3D1409] mb-1 flex items-center gap-1.5">
+              <Send className="w-3.5 h-3.5 text-[#B8860B]" />
+              Send Coins to {ownerName}
+            </div>
+            <p className="text-[10px] text-[#8B6F47] mb-2">Coins will be deducted from your wallet. The recipient can accept or decline.</p>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              {coinTypes.map(({ key, label, color }) => (
+                <div key={key} className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min="0"
+                    value={amounts[key] || ''}
+                    onChange={(e) => setAmounts({ ...amounts, [key]: Math.max(0, parseInt(e.target.value) || 0) })}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); if (e.key === 'Escape') setOpen(false); }}
+                    placeholder="0"
+                    className="w-14 px-2 py-1 text-xs bg-white/70 border-2 border-[#8B6F47]/60 rounded-lg text-[#3D1409] text-center outline-none focus:border-[#5C1A1A] tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span className={'text-[11px] font-bold ' + color}>{label}</span>
+                </div>
+              ))}
+            </div>
+            {error && <p className="text-[10px] text-[#8B3A3A] mb-2">{error}</p>}
+            <div className="flex gap-2">
+              <button onClick={() => setOpen(false)} className="btn-secondary flex-1 !px-2 !py-1.5 rounded-lg text-xs text-[#5C4A2F] border-[#8B6F47]/40">Cancel</button>
+              <button onClick={handleSubmit} className="btn-primary flex-1 !px-2 !py-1.5 rounded-lg text-xs font-semibold">Send</button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function ItemDropZone({
   item,
   ownerId,
@@ -263,6 +344,7 @@ export function InventoryView({
   onReorderInventory,
   onBulkRemove,
   onSellItems,
+  onSendCoins,
 }: InventoryViewProps) {
   type SortField = 'none' | 'name' | 'rarity' | 'weight' | 'value';
   type SortDirection = 'asc' | 'desc';
@@ -735,6 +817,9 @@ export function InventoryView({
                 }
               />
             ) : null}
+            {onSendCoins && (
+              <SendCoinsButton onSend={onSendCoins} ownerName={owner?.name ?? 'player'} />
+            )}
           </div>
         )}
 

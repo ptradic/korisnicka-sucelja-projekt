@@ -51,7 +51,23 @@ D&D 5.5e (2024 SRD) campaign inventory manager. GMs manage player inventories an
 - `#8B6F47` / `#D9C7AA` — warm tan (card borders, dividers)
 - `#3D1409` / `#5C4A2F` — dark brown (card body text)
 
-### Page Background Pattern (all pages)
+### Vault Detail Page (`/vaults/[id]`) — DIFFERENT Design
+The vault detail page is **parchment-based**, NOT the dark red gradient. Do not apply the red gradient pattern there.
+- Outer container: `bg-[#EDE5D0]` (neutral parchment base)
+- Sidebar (`PlayerSidebar`): `bg-[#D9C7AA] border-r-4 border-[#3D1409] w-52`
+- Mobile tab bar: `bg-[#D9C7AA] border-b-4 border-[#3D1409]`
+- Header (`InventoryView` top): `bg-[#F5EFE0] border-b-[3px] border-[#3D1409] shadow-md`
+- Category filter bar: `bg-[#E8D5B7] border-b-2 border-[#8B6F47]/50`
+- Item list area: parchment `#EDE5D0` base + subtle diamond pattern (`#5C1A1A` at `fill-opacity='0.04'`)
+- Add Item footer: `bg-[#D4C4A8]`
+- Item cards: solid `bg-[#F5EFE0]` (not transparent)
+- Skeleton pulse on parchment backgrounds: use `Skeleton` (`bg-[#5C1A1A]/40`), not `SkeletonLight`
+
+### Diamond Pattern Color Rule
+The diamond pattern always uses **light fill on dark background** or **dark fill on light background** — never try to make red diamonds on a parchment background by using `#5C1A1A` at low opacity; that always looks brown. The correct parchment diamond pattern uses `fill='%235C1A1A' fill-opacity='0.04'` for a subtle warm texture, not a visible red.
+
+### Page Background Pattern (marketing/auth pages only)
+Pages: `/`, `/login`, `/vaults` lobby, `/guides`, `/support`. Do NOT apply to `/vaults/[id]`.
 Every page uses this exact structure — do NOT deviate:
 ```tsx
 // On the outermost element (main/div):

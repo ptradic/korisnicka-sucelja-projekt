@@ -6,6 +6,7 @@ import { normalizeCategory } from '../types';
 import { ItemDetailsModal } from './ItemDetailsModal';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 import masterItemData from '@/2024master.json';
+import weaponDataJson from '@/2024weapons.json';
 
 interface AddItemModalProps {
   onClose: () => void;
@@ -45,6 +46,10 @@ interface MasterItem {
   requires_attunement?: boolean;
   attunement_detail?: string | null;
   document?: { key?: string };
+}
+
+interface WeaponTypeEntry {
+  Name: string;
 }
 
 const categories: Category[] = ['weapons', 'armor', 'consumables', 'magic-gear', 'adventuring-gear', 'wealth-valuables'];
@@ -111,6 +116,7 @@ const DND_MIN_QUERY_LENGTH = 2;
 const DND_MAX_RESULTS = 120;
 
 const masterItems = masterItemData as MasterItem[];
+const weaponTypes = Array.from(new Set((weaponDataJson as WeaponTypeEntry[]).map((weapon) => weapon.Name.trim()).filter(Boolean)));
 
 const DND_CATEGORY_MAP: Record<string, Category> = {
   weapon: 'weapons',
@@ -1240,6 +1246,7 @@ function CustomItemForm({
     name: '',
     description: '',
     category: 'adventuring-gear' as Category,
+    weaponType: '',
     rarity: 'common' as Rarity,
     quantity: 1,
     weight: '',
@@ -1256,6 +1263,7 @@ function CustomItemForm({
 
   const [errors, setErrors] = useState<{
     name?: string;
+    weaponType?: string;
     quantity?: string;
     weight?: string;
     value?: string;
@@ -1272,6 +1280,7 @@ function CustomItemForm({
   const validateForm = () => {
     const nextErrors: {
       name?: string;
+      weaponType?: string;
       quantity?: string;
       weight?: string;
       value?: string;
@@ -1279,6 +1288,10 @@ function CustomItemForm({
 
     if (!formData.name.trim()) {
       nextErrors.name = 'Name is required';
+    }
+
+    if (formData.category === 'weapons' && !formData.weaponType.trim()) {
+      nextErrors.weaponType = 'Weapon type is required';
     }
 
     if (!Number.isFinite(formData.quantity) || formData.quantity < 1) {
@@ -1310,7 +1323,7 @@ function CustomItemForm({
 
     const item: Omit<Item, 'id'> = {
       name: formData.name.trim(),
-      type: formData.name.trim(),
+      type: formData.category === 'weapons' ? formData.weaponType.trim() : formData.name.trim(),
       sourcebook: isGM ? 'homebrew' : 'PLAYER CUSTOM',
       category: formData.category,
       rarity: isGM ? formData.rarity : 'common',
@@ -1433,7 +1446,15 @@ function CustomItemForm({
             </label>
             <select
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value as Category })}
+              onChange={(e) => {
+                const nextCategory = e.target.value as Category;
+                setFormData((prev) => ({
+                  ...prev,
+                  category: nextCategory,
+                  weaponType: nextCategory === 'weapons' ? prev.weaponType : '',
+                }));
+                if (errors.weaponType) setErrors((prev) => ({ ...prev, weaponType: undefined }));
+              }}
               className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
             >
               {categories.map((cat) => (
@@ -1441,6 +1462,30 @@ function CustomItemForm({
               ))}
             </select>
           </div>
+
+          {formData.category === 'weapons' && (
+            <div className="col-span-2 order-2">
+              <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
+                Weapon Type <span className="text-[#8B3A3A]">*</span>
+              </label>
+              <select
+                value={formData.weaponType}
+                onChange={(e) => {
+                  setFormData({ ...formData, weaponType: e.target.value });
+                  if (errors.weaponType) setErrors((prev) => ({ ...prev, weaponType: undefined }));
+                }}
+                className={inputClass(!!errors.weaponType)}
+                aria-invalid={!!errors.weaponType}
+              >
+                <option value="">Select a weapon type</option>
+                {weaponTypes.map((weaponType) => (
+                  <option key={weaponType} value={weaponType}>{weaponType}</option>
+                ))}
+              </select>
+              {errors.weaponType && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.weaponType}</p>}
+            </div>
+          )}
+
           <div className="order-2">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Rarity <span className="text-[#8B3A3A]">*</span>

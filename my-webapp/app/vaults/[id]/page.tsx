@@ -35,6 +35,7 @@ import {
   checkAndExpirePendingTransfers,
   deletePlayerInventoryDoc,
   updateCampaignSettings,
+  updateSharedLootEnabled,
   updateSharedLootName,
   createUserHomebrewItem,
   bulkImportHomebrewItems,
@@ -342,6 +343,8 @@ export default function VaultDetailPage() {
     });
   }, [campaignId, currentCampaign, playerInventories, userRole, trackWrite]);
 
+  const sharedLootEnabled = currentCampaign?.sharedLootEnabled !== false;
+
   // 8. Auto-select player when current selection becomes invalid
   const activePlayerInventories = currentCampaign
     ? playerInventories.filter((inventoryDoc) => currentCampaign.playerIds.includes(inventoryDoc.playerId))
@@ -358,6 +361,18 @@ export default function VaultDetailPage() {
   })).sort((a, b) => a.name.localeCompare(b.name));
 
   useEffect(() => {
+    // If shared loot is disabled and 'shared' is selected, switch to a real player
+    if (selectedPlayerId === 'shared' && !sharedLootEnabled && players.length > 0) {
+      const myUserId = userIdRef.current;
+      const myRole = userRoleRef.current;
+      const myInventoryExists = players.some((player) => player.id === myUserId);
+      if (myRole === 'player' && myUserId && myInventoryExists) {
+        setSelectedPlayerId(myUserId);
+      } else {
+        setSelectedPlayerId(players[0].id);
+      }
+      return;
+    }
     if (selectedPlayerId === 'shared' || players.length === 0) return;
     const stillExists = players.some((player) => player.id === selectedPlayerId);
     if (!stillExists) {
@@ -370,7 +385,7 @@ export default function VaultDetailPage() {
         setSelectedPlayerId('shared');
       }
     }
-  }, [selectedPlayerId, players]);
+  }, [selectedPlayerId, players, sharedLootEnabled]);
 
   /* ═══════════════════════════════════════════════════════════════════ *
    *  HANDLERS                                                         *
@@ -1010,6 +1025,17 @@ export default function VaultDetailPage() {
   };
 
   // Campaign settings
+  const handleToggleSharedLoot = async (enabled: boolean) => {
+    if (!campaignId || !userId || !currentCampaign) return;
+    try {
+      await trackWrite(() => updateSharedLootEnabled(campaignId, userId, enabled));
+      setCurrentCampaign({ ...currentCampaign, sharedLootEnabled: enabled });
+    } catch (error) {
+      showActionError('Could not update shared loot setting', error, () => handleToggleSharedLoot(enabled));
+      throw error;
+    }
+  };
+
   const handleUpdateCampaignSettings = async (updates: { name: string; password: string }) => {
     if (!campaignId || !userId || !currentCampaign) return;
 
@@ -1071,12 +1097,14 @@ export default function VaultDetailPage() {
             onDragOverChange={setDragOverPlayerId}
             sharedLootCount={currentCampaign?.sharedLoot.length || 0}
             sharedLootName={currentCampaign?.sharedLootName}
+            sharedLootEnabled={sharedLootEnabled}
             campaignName={currentCampaign?.name ?? 'Campaign'}
             campaignId={campaignId}
             campaignPassword={currentCampaign?.password || ''}
             isGM={isGM}
             totalSlots={currentCampaign?.playerIds.length || players.length}
             onUpdateCampaignSettings={isGM ? handleUpdateCampaignSettings : undefined}
+            onToggleSharedLoot={isGM ? handleToggleSharedLoot : undefined}
             currentUserId={userId}
             onUpdateMyCharacterProfile={!isGM ? handleUpdateMyCharacterProfile : undefined}
             onTutorialStart={startTutorial}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrop, useDragLayer } from 'react-dnd';
-import { Package, Users, User, Copy, Check, Settings, X, Eye, EyeOff, Save, ChevronLeft, ChevronRight, CircleHelp } from 'lucide-react';
+import { Package, Users, User, Copy, Check, Settings, X, Eye, EyeOff, Save, ChevronLeft, ChevronRight, CircleHelp, Backpack } from 'lucide-react';
 import type { Player } from '../types';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 import { calcTotalWeight } from '@/lib/utils';
@@ -14,12 +14,14 @@ interface PlayerSidebarProps {
   onDragOverChange: (playerId: string | 'shared' | null) => void;
   sharedLootCount: number;
   sharedLootName?: string;
+  sharedLootEnabled?: boolean;
   campaignName: string;
   campaignId?: string;
   campaignPassword?: string;
   isGM?: boolean;
   totalSlots: number;
   onUpdateCampaignSettings?: (updates: { name: string; password: string }) => Promise<void>;
+  onToggleSharedLoot?: (enabled: boolean) => Promise<void>;
   currentUserId?: string;
   onUpdateMyCharacterProfile?: (updates: { name: string; avatar: string }) => Promise<void>;
   onTutorialStart?: () => void;
@@ -199,22 +201,28 @@ function VaultSettingsModal({
   campaignId,
   initialName,
   initialPassword,
+  initialSharedLootEnabled,
   onClose,
   onSave,
+  onToggleSharedLoot,
   onTutorialStart,
 }: {
   campaignId: string;
   initialName: string;
   initialPassword: string;
+  initialSharedLootEnabled: boolean;
   onClose: () => void;
   onSave: (updates: { name: string; password: string }) => Promise<void>;
+  onToggleSharedLoot?: (enabled: boolean) => Promise<void>;
   onTutorialStart?: () => void;
 }) {
   const [name, setName] = useState(initialName);
   const [password, setPassword] = useState(initialPassword);
+  const [sharedLootOn, setSharedLootOn] = useState(initialSharedLootEnabled);
   const [copied, setCopied] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [togglingSharedLoot, setTogglingSharedLoot] = useState(false);
   const [error, setError] = useState('');
   const mouseDownOnBackdrop = useRef(false);
 
@@ -244,6 +252,20 @@ function VaultSettingsModal({
       setError(e?.message || 'Could not save vault settings.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleSharedLoot = async () => {
+    if (!onToggleSharedLoot || togglingSharedLoot) return;
+    const next = !sharedLootOn;
+    setTogglingSharedLoot(true);
+    try {
+      await onToggleSharedLoot(next);
+      setSharedLootOn(next);
+    } catch (e: any) {
+      setError(e?.message || 'Could not update shared loot setting.');
+    } finally {
+      setTogglingSharedLoot(false);
     }
   };
 
@@ -313,6 +335,32 @@ function VaultSettingsModal({
               </button>
             </div>
           </div>
+
+          {onToggleSharedLoot && (
+            <button
+              type="button"
+              onClick={() => void handleToggleSharedLoot()}
+              disabled={togglingSharedLoot}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 transition-all duration-200 disabled:opacity-60 ${
+                sharedLootOn
+                  ? 'bg-[#5C1A1A]/10 border-[#5C1A1A]/40 hover:border-[#5C1A1A]/60'
+                  : 'bg-white/40 border-[#8B6F47]/40 hover:border-[#8B6F47]/60'
+              }`}
+            >
+              <Backpack className={`w-4 h-4 shrink-0 ${sharedLootOn ? 'text-[#5C1A1A]' : 'text-[#8B6F47]'}`} />
+              <div className="flex-1 text-left">
+                <p className={`text-sm font-semibold ${sharedLootOn ? 'text-[#3D1409]' : 'text-[#5C4A2F]'}`}>
+                  Shared Loot (Bag of Holding)
+                </p>
+                <p className="text-[#5C4A2F] text-xs">
+                  {sharedLootOn ? 'Visible to all — items are preserved when hidden' : 'Hidden — items are still stored'}
+                </p>
+              </div>
+              <div className={`w-10 h-5 rounded-full transition-colors duration-200 relative shrink-0 ${sharedLootOn ? 'bg-[#5C1A1A]' : 'bg-[#8B6F47]/40'}`}>
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${sharedLootOn ? 'translate-x-5' : 'translate-x-0'}`} />
+              </div>
+            </button>
+          )}
 
           {error && (
             <p className="text-xs text-[#8B3A3A] bg-[#FFEBEE] border border-[#8B3A3A]/30 rounded-lg px-2 py-1.5">{error}</p>
@@ -655,12 +703,14 @@ export function PlayerSidebar({
   onDragOverChange,
   sharedLootCount,
   sharedLootName,
+  sharedLootEnabled = true,
   campaignName,
   campaignId,
   campaignPassword,
   isGM,
   totalSlots,
   onUpdateCampaignSettings,
+  onToggleSharedLoot,
   currentUserId,
   onUpdateMyCharacterProfile,
   onTutorialStart,
@@ -789,15 +839,17 @@ export function PlayerSidebar({
                 isAnyDragging={isSidebarOver}
               />
             ))}
-            <SharedPill
-              isSelected={selectedPlayerId === 'shared'}
-              onClick={() => onSelectPlayer('shared')}
-              onDrop={handleDrop('shared')}
-              itemCount={sharedLootCount}
-              isBeingDraggedOver={dragOverPlayerId === 'shared'}
-              isAnyDragging={isSidebarOver}
-              name={sharedLootName || 'Shared'}
-            />
+            {sharedLootEnabled && (
+              <SharedPill
+                isSelected={selectedPlayerId === 'shared'}
+                onClick={() => onSelectPlayer('shared')}
+                onDrop={handleDrop('shared')}
+                itemCount={sharedLootCount}
+                isBeingDraggedOver={dragOverPlayerId === 'shared'}
+                isAnyDragging={isSidebarOver}
+                name={sharedLootName || 'Shared'}
+              />
+            )}
           </div>
           {canScrollRight && !isSidebarOver && (
             <>
@@ -873,20 +925,22 @@ export function PlayerSidebar({
             </div>
 
             {/* Shared Loot */}
-            <div data-tutorial="shared-loot" className="mt-3 pt-2 border-t-2 border-[#8B6F47]/30">
-              <div className="flex items-center gap-1.5 text-[#5C4A2F] text-[10px] font-semibold uppercase tracking-wider mb-1 px-0.5">
-                <Package className="w-3 h-3" />
-                <span>Shared</span>
+            {sharedLootEnabled && (
+              <div data-tutorial="shared-loot" className="mt-3 pt-2 border-t-2 border-[#8B6F47]/30">
+                <div className="flex items-center gap-1.5 text-[#5C4A2F] text-[10px] font-semibold uppercase tracking-wider mb-1 px-0.5">
+                  <Package className="w-3 h-3" />
+                  <span>Shared</span>
+                </div>
+                <SharedLootSlot
+                  isSelected={selectedPlayerId === 'shared'}
+                  onClick={() => onSelectPlayer('shared')}
+                  onDrop={handleDrop('shared')}
+                  itemCount={sharedLootCount}
+                  isBeingDraggedOver={dragOverPlayerId === 'shared'}
+                  name={sharedLootName || 'Shared Loot'}
+                />
               </div>
-              <SharedLootSlot
-                isSelected={selectedPlayerId === 'shared'}
-                onClick={() => onSelectPlayer('shared')}
-                onDrop={handleDrop('shared')}
-                itemCount={sharedLootCount}
-                isBeingDraggedOver={dragOverPlayerId === 'shared'}
-                name={sharedLootName || 'Shared Loot'}
-              />
-            </div>
+            )}
           </div>
 
           {showDesktopListScrollbar && (
@@ -920,8 +974,10 @@ export function PlayerSidebar({
           campaignId={campaignId}
           initialName={campaignName}
           initialPassword={campaignPassword || ''}
+          initialSharedLootEnabled={sharedLootEnabled}
           onClose={() => setShowSettingsModal(false)}
           onSave={onUpdateCampaignSettings}
+          onToggleSharedLoot={onToggleSharedLoot}
           onTutorialStart={onTutorialStart}
         />
       )}

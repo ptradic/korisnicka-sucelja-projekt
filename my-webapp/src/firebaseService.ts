@@ -125,6 +125,7 @@ export interface CampaignDoc {
   sharedCurrency?: Currency;
   customItemPool?: Item[];
   sharedLootName?: string;
+  sharedLootEnabled?: boolean; // undefined = true (legacy), false = disabled
   password?: string; // Optional password for joining
 }
 
@@ -371,6 +372,7 @@ export async function createCampaign(
     updatedAt: serverTimestamp() as Timestamp,
     sharedLoot: [],
     customItemPool: [],
+    sharedLootEnabled: true,
     password,
   };
 
@@ -411,6 +413,16 @@ export async function updateCampaignSettings(
   await updateDoc(doc(db, 'campaigns', campaignId), {
     name: updates.name.trim(),
     password: updates.password,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateSharedLootEnabled(campaignId: string, gmId: string, enabled: boolean): Promise<void> {
+  const campaign = await getCampaign(campaignId);
+  if (!campaign) throw new Error('Campaign not found');
+  if (campaign.gmId !== gmId) throw new Error('Only the GM can change shared loot settings.');
+  await updateDoc(doc(db, 'campaigns', campaignId), {
+    sharedLootEnabled: enabled,
     updatedAt: serverTimestamp(),
   });
 }

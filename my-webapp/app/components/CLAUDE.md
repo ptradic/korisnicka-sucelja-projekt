@@ -53,19 +53,21 @@ dragOverPlayerId: string | 'shared' | null
 onDragOverChange: (id) => void
 sharedLootCount: number
 sharedLootName?: string
+sharedLootEnabled?: boolean           // default true; false = hide tab (items preserved)
 campaignName: string
 campaignId: string
 campaignPassword: string
 isGM: boolean
 totalSlots: number
 onUpdateCampaignSettings?: (updates: { name, password }) => Promise<void>   // GM only
+onToggleSharedLoot?: (enabled: boolean) => Promise<void>                    // GM only
 currentUserId: string
 onUpdateMyCharacterProfile?: (updates: { name, avatar }) => Promise<void>   // player only
 onTutorialStart?: () => void
 ```
 
 Contains two internal modals (same file):
-- `VaultSettingsModal` — GM: rename vault, change password, kick players. Has "Inventory Help & Tutorial" button.
+- `VaultSettingsModal` — GM: rename vault, change password, toggle shared loot (Bag of Holding). Has "Inventory Help & Tutorial" button. Props include `initialSharedLootEnabled` and `onToggleSharedLoot`. Toggle saves immediately on click (independent of Save button).
 - `CharacterNameModal` — Player: change display name + avatar. Has "Inventory Help & Tutorial" button.
 Both modals call `onClose(); onTutorialStart?.()` on tutorial button click.
 

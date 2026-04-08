@@ -10,7 +10,8 @@ All Firestore read/write operations. **~1450 lines — read targeted sections, n
 
 ### Types / Interfaces
 - `UserDoc` — uid, email, name, role ('gm'|'player'), createdAt, updatedAt
-- `CampaignDoc` — id, name, gmId, gmName, playerIds[], createdAt, sharedLoot, sharedCurrency, sharedLootName, password, customItemPool
+- `CampaignDoc` — id, name, gmId, gmName, playerIds[], createdAt, sharedLoot, sharedCurrency, sharedLootName, sharedLootEnabled?, password, customItemPool
+  - `sharedLootEnabled?: boolean` — `undefined`/`true` = visible, `false` = hidden (items preserved). Toggled by GM in vault settings.
 - `PlayerInventoryDoc` — playerId, playerName, color, avatar, inventory, currency, maxWeight
 - `TransferRequest` — id, campaignId, fromPlayerId, fromPlayerName, toPlayerId, toPlayerName, itemName, itemId, quantity, status ('pending'|'accepted'|'rejected'|'expired'), createdAt, expiresAt
 - `CoinTransferRequest` — id, **type:'coin'**, campaignId, fromPlayerId, fromPlayerName, toPlayerId, toPlayerName, amounts: Currency, status, createdAt, expiresAt
@@ -46,6 +47,7 @@ If a new subcollection is needed: ask the user to paste their current rules, the
 - `deleteCampaign(campaignId, gmId)` — GM only
 - `leaveCampaign(campaignId, userId)` — player leaves
 - `updateCampaignSettings(campaignId, userId, { name, password })`
+- `updateSharedLootEnabled(campaignId, gmId, enabled: boolean)` — show/hide shared loot tab (items never deleted)
 - `updateSharedLootName(campaignId, userId, name)`
 - `kickPlayer(campaignId, gmId, playerId)`
 

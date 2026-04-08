@@ -45,6 +45,7 @@ selectedPlayer = players.find(p => p.id === selectedPlayerId)
 isShared = selectedPlayerId === 'shared'
 isGM = userRole === 'gm'
 syncStatus: 'saving' | 'saved'
+sharedLootEnabled = currentCampaign?.sharedLootEnabled !== false   // undefined/true = shown
 ```
 
 ## Handlers (lines ~386–990)
@@ -63,6 +64,7 @@ syncStatus: 'saving' | 'saved'
 - `handleDeleteSelectedItem(baseItem)` — single item delete with undo toast
 - `handleBulkRemoveItems(itemIdsWithCounts[])` — bulk delete with undo toast
 - `handleSellItems(itemIdsWithCounts[], earnings)` — removes items, adds earnings to currency, undo toast
+- `handleToggleSharedLoot(enabled)` — calls `updateSharedLootEnabled`, updates `currentCampaign` state locally
 - `handleUpdateCampaignSettings(updates)` / `handleKickPlayer(playerId)` / `handleUpdateMyCharacterProfile(updates)`
 
 ## JSX Structure (lines ~1002–1138)

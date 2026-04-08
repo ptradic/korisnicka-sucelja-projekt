@@ -34,6 +34,10 @@ export type ValueUnit = 'gp' | 'sp' | 'cp';
 export interface Item {
   id: string;
   name: string;
+  type?: string;
+  damage?: string;
+  properties?: string;
+  mastery?: string;
   sourcebook?: string;
   description?: string;
   category: Category;

@@ -37,6 +37,7 @@ interface MasterItem {
   name: string;
   desc?: string;
   category?: { name: string; key: string };
+  weapon?: { name?: string; key?: string } | null;
   rarity?: { key: string } | null;
   is_magic_item?: boolean;
   weight?: string;
@@ -195,6 +196,8 @@ function transformMasterItem(item: MasterItem): Omit<Item, 'id'> {
   const category = mapDndCategory(item);
   const parsedCost = parseCost(item.cost, Boolean(item.is_magic_item));
   const categoryLabel = item.category?.name?.trim();
+  const weaponName = item.weapon?.name?.trim();
+  const normalizedCategoryLabel = categoryLabel?.toLowerCase();
   const attunementDetail = item.attunement_detail?.trim();
   const metadataLine = [categoryLabel, attunementDetail].filter(Boolean).join(', ');
   const metadataLineBold = metadataLine ? `**${metadataLine}**` : '';
@@ -205,6 +208,7 @@ function transformMasterItem(item: MasterItem): Omit<Item, 'id'> {
 
   return {
     name: item.name,
+    type: weaponName || (normalizedCategoryLabel === 'staff' ? 'Quarterstaff' : item.name),
     sourcebook: item.document?.key || 'unknown',
     description,
     category,
@@ -1306,6 +1310,7 @@ function CustomItemForm({
 
     const item: Omit<Item, 'id'> = {
       name: formData.name.trim(),
+      type: formData.name.trim(),
       sourcebook: isGM ? 'homebrew' : 'PLAYER CUSTOM',
       category: formData.category,
       rarity: isGM ? formData.rarity : 'common',
@@ -1581,7 +1586,7 @@ export function AddItemModal({
 
   const handleSelectTemplate = (template: Item) => {
     const { id, ...rest } = template;
-    onAdd({ ...rest, createdAt: new Date().toISOString() });
+    onAdd({ ...rest, type: rest.type || rest.name, createdAt: new Date().toISOString() });
     setLastAddedName(template.name);
     if (lastAddedTimeout.current) clearTimeout(lastAddedTimeout.current);
     lastAddedTimeout.current = setTimeout(() => setLastAddedName(null), 2000);

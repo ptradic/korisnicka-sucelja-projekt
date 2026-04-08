@@ -16,6 +16,7 @@ import { TransferRequestModal, TransferSentToast, TransferExpiredToast, RemoveIt
 import { VaultDetailSkeleton } from '@/app/components/skeletons/SkeletonLoader';
 import { VaultTutorial, useVaultTutorial } from '@/app/components/VaultTutorial';
 import type { Item, Player, Currency } from '@/app/types';
+import weaponDataJson from '@/2024weapons.json';
 import {
   getCampaign,
   subscribeToCampaign,
@@ -75,6 +76,32 @@ const HTML5toTouch = {
 /* ── Item stack signature (identical items stack by quantity) ────────── */
 type StackComparableItem = Pick<Item, 'name' | 'category' | 'rarity' | 'weight'> &
   Partial<Pick<Item, 'description' | 'value' | 'valueUnit' | 'valueUnknown' | 'notes' | 'attunement' | 'attuned' | 'sourcebook'>>;
+
+interface WeaponLookupEntry {
+  Name: string;
+  Damage: string;
+  Properties: string;
+  Mastery: string;
+}
+
+const weaponData = weaponDataJson as WeaponLookupEntry[];
+const weaponByName = new Map(
+  weaponData.map((weapon) => [weapon.Name.trim().toLowerCase(), weapon])
+);
+
+function getWeaponStatsByType(item: Omit<Item, 'id'>): Pick<Item, 'damage' | 'properties' | 'mastery'> {
+  const lookupKey = (item.type || item.name || '').trim().toLowerCase();
+  if (!lookupKey) return {};
+
+  const weapon = weaponByName.get(lookupKey);
+  if (!weapon) return {};
+
+  return {
+    damage: weapon.Damage,
+    properties: weapon.Properties,
+    mastery: weapon.Mastery,
+  };
+}
 
 function getItemStackSignature(item: StackComparableItem): string {
   return JSON.stringify({
@@ -646,19 +673,42 @@ export default function VaultDetailPage() {
     if (!campaignId || !currentCampaign) return;
 
     try {
+      const resolvedType = item.type || item.name;
+      const weaponStats = getWeaponStatsByType({ ...item, type: resolvedType });
+      const itemWithResolvedData: Omit<Item, 'id'> = {
+        ...item,
+        type: resolvedType,
+        damage: item.damage || weaponStats.damage,
+        properties: item.properties || weaponStats.properties,
+        mastery: item.mastery || weaponStats.mastery,
+      };
+
       if (isShared) {
         const existingIndex = currentCampaign.sharedLoot.findIndex(
-          (i) => getItemStackSignature(i) === getItemStackSignature(item)
+          (i) => getItemStackSignature(i) === getItemStackSignature(itemWithResolvedData)
         );
 
         let updatedShared: Item[];
         if (existingIndex >= 0) {
           updatedShared = [...currentCampaign.sharedLoot];
-          updatedShared[existingIndex].quantity += item.quantity;
+          updatedShared[existingIndex].quantity += itemWithResolvedData.quantity;
+          if (!updatedShared[existingIndex].type) {
+            updatedShared[existingIndex].type = resolvedType;
+          }
+          if (!updatedShared[existingIndex].damage && itemWithResolvedData.damage) {
+            updatedShared[existingIndex].damage = itemWithResolvedData.damage;
+          }
+          if (!updatedShared[existingIndex].properties && itemWithResolvedData.properties) {
+            updatedShared[existingIndex].properties = itemWithResolvedData.properties;
+          }
+          if (!updatedShared[existingIndex].mastery && itemWithResolvedData.mastery) {
+            updatedShared[existingIndex].mastery = itemWithResolvedData.mastery;
+          }
         } else {
           const newItem: Item = {
-            ...item,
-            sourcebook: item.sourcebook || 'unknown',
+            ...itemWithResolvedData,
+            type: resolvedType,
+            sourcebook: itemWithResolvedData.sourcebook || 'unknown',
             id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           };
           updatedShared = [...currentCampaign.sharedLoot, newItem];
@@ -666,17 +716,30 @@ export default function VaultDetailPage() {
         await trackWrite(() => updateSharedLoot(campaignId, updatedShared));
       } else if (selectedPlayer) {
         const existingIndex = selectedPlayer.inventory.findIndex(
-          (i) => getItemStackSignature(i) === getItemStackSignature(item)
+          (i) => getItemStackSignature(i) === getItemStackSignature(itemWithResolvedData)
         );
 
         let updatedInventory: Item[];
         if (existingIndex >= 0) {
           updatedInventory = [...selectedPlayer.inventory];
-          updatedInventory[existingIndex].quantity += item.quantity;
+          updatedInventory[existingIndex].quantity += itemWithResolvedData.quantity;
+          if (!updatedInventory[existingIndex].type) {
+            updatedInventory[existingIndex].type = resolvedType;
+          }
+          if (!updatedInventory[existingIndex].damage && itemWithResolvedData.damage) {
+            updatedInventory[existingIndex].damage = itemWithResolvedData.damage;
+          }
+          if (!updatedInventory[existingIndex].properties && itemWithResolvedData.properties) {
+            updatedInventory[existingIndex].properties = itemWithResolvedData.properties;
+          }
+          if (!updatedInventory[existingIndex].mastery && itemWithResolvedData.mastery) {
+            updatedInventory[existingIndex].mastery = itemWithResolvedData.mastery;
+          }
         } else {
           const newItem: Item = {
-            ...item,
-            sourcebook: item.sourcebook || 'unknown',
+            ...itemWithResolvedData,
+            type: resolvedType,
+            sourcebook: itemWithResolvedData.sourcebook || 'unknown',
             id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           };
           updatedInventory = [...selectedPlayer.inventory, newItem];

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote, Sword, Shield, Droplet, Backpack, Gem, EyeOff, Eye } from 'lucide-react';
+import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote, Sword, Shield, Droplet, Backpack, Gem, EyeOff, Eye, ScrollText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { normalizeCategory, type Item, type Category, type Rarity, type ValueUnit } from '../types';
@@ -631,6 +631,34 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   )}
                 </div>
               </div>
+
+              {(item.damage || item.properties || item.mastery) && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
+                    <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
+                      <Sword className="w-3.5 h-3.5" />
+                      <span>Damage</span>
+                    </div>
+                    <p className="text-[#3D1409] font-bold text-sm">{item.damage || '-'}</p>
+                  </div>
+
+                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
+                    <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
+                      <ScrollText className="w-3.5 h-3.5" />
+                      <span>Properties</span>
+                    </div>
+                    <p className="text-[#3D1409] font-bold text-sm">{item.properties || '-'}</p>
+                  </div>
+
+                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
+                    <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Mastery</span>
+                    </div>
+                    <p className="text-[#3D1409] font-bold text-sm">{item.mastery || '-'}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Attunement badge with toggle */}
               {item.attunement && onUpdate && (canEdit || canToggleAttunement) && (

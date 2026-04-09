@@ -329,6 +329,115 @@ export function dehydrateItem(item: Item): Item {
   return minimal as Item;
 }
 
+function normalizeName(value: string | undefined): string {
+  return (value || '').trim().toLowerCase();
+}
+
+function isHomebrewItem(item: Item): boolean {
+  return normalizeName(item.sourcebook) === 'homebrew';
+}
+
+export function hydrateItemFromCustomItemPool(dbItem: Item, customItemPool: Item[]): Item {
+  if (!isHomebrewItem(dbItem)) {
+    return dbItem;
+  }
+
+  const lookupName = normalizeName(dbItem.name);
+  if (!lookupName) {
+    return dbItem;
+  }
+
+  const poolBase = customItemPool.find((item) => isHomebrewItem(item) && normalizeName(item.name) === lookupName);
+  if (!poolBase) {
+    return dbItem;
+  }
+
+  const {
+    id: _poolId,
+    quantity: _poolQuantity,
+    createdAt: _poolCreatedAt,
+    ...poolTemplate
+  } = poolBase;
+
+  void _poolId;
+  void _poolQuantity;
+  void _poolCreatedAt;
+
+  return {
+    ...poolTemplate,
+    ...dbItem,
+  };
+}
+
+export function hydratePlayerInventoryWithCustomItemPool(doc: PlayerInventoryDoc, customItemPool: Item[]): PlayerInventoryDoc {
+  return {
+    ...doc,
+    inventory: (doc.inventory || []).map((item) => hydrateItemFromCustomItemPool(hydrateItem(item), customItemPool)),
+  };
+}
+
+export function dehydrateItemToCustomItemPool(item: Item, customItemPool: Item[]): Item {
+  if (!isHomebrewItem(item)) {
+    return item;
+  }
+
+  const lookupName = normalizeName(item.name);
+  if (!lookupName) {
+    return item;
+  }
+
+  const poolBase = customItemPool.find((poolItem) => isHomebrewItem(poolItem) && normalizeName(poolItem.name) === lookupName);
+  if (!poolBase) {
+    return item;
+  }
+
+  const minimal: Partial<Item> & Pick<Item, 'id' | 'name' | 'quantity'> = {
+    id: item.id,
+    name: item.name,
+    quantity: item.quantity,
+    sourcebook: 'homebrew',
+  };
+
+  for (const [key, value] of Object.entries(item)) {
+    if (key === 'id' || key === 'name' || key === 'quantity' || key === 'sourcebook' || key === 'type' || key === 'source_key' || key === 'source_index') {
+      continue;
+    }
+    if (value === undefined) {
+      continue;
+    }
+
+    const baseValue = (poolBase as any)[key];
+    if (value === baseValue) {
+      continue;
+    }
+
+    if (key === 'createdAt') {
+      continue;
+    }
+    if (key === 'hiddenFromOthers' && value === false) {
+      continue;
+    }
+    if (key === 'attuned' && value === false && !baseValue) {
+      continue;
+    }
+
+    (minimal as any)[key] = value;
+  }
+
+  return minimal as Item;
+}
+
+export function dehydratePlayerInventoryToCustomItemPool(doc: PlayerInventoryDoc, customItemPool: Item[]): PlayerInventoryDoc {
+  return {
+    ...doc,
+    inventory: (doc.inventory || []).map((item) => dehydrateItemToCustomItemPool(item, customItemPool)),
+  };
+}
+
+export function dehydrateInventoryItemsToCustomItemPool(items: Item[], customItemPool: Item[]): Item[] {
+  return (items || []).map((item) => dehydrateItemToCustomItemPool(item, customItemPool));
+}
+
 export function hydrateCampaign(doc: CampaignDoc): CampaignDoc {
   return {
     ...doc,

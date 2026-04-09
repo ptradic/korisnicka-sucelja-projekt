@@ -27,9 +27,11 @@ import {
 import { auth, db, googleProvider } from './firebase';
 import type { Item, Player, Currency } from '@/app/types';
 import {
+  dehydrateInventoryItemsToCustomItemPool,
   dehydrateItem,
   hydrateCampaign,
   hydratePlayerInventory,
+  hydratePlayerInventoryWithCustomItemPool,
   hydrateTransferRequest,
   hydrateUserDoc,
 } from '@/src/hydrateItems';
@@ -49,6 +51,19 @@ function cleanItem(item: Item): Item {
 
 function cleanItems(items: Item[]): Item[] {
   return items.map(cleanItem);
+}
+
+function normalizeHomebrewName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+function hasHomebrewNameConflict(items: Item[], name: string, excludeId?: string): boolean {
+  const normalizedCandidate = normalizeHomebrewName(name);
+  if (!normalizedCandidate) {
+    return false;
+  }
+
+  return items.some((item) => item.id !== excludeId && normalizeHomebrewName(item.name) === normalizedCandidate);
 }
 
 function normalizeGoogleDriveImageUrl(urlValue: string): string {
@@ -247,15 +262,20 @@ export async function createUserHomebrewItem(uid: string, item: Omit<Item, 'id'>
     throw new Error('User profile not found');
   }
 
+  const existingHomebrew = userDoc.userHomebrew ?? [];
+  if (hasHomebrewNameConflict(existingHomebrew, item.name)) {
+    throw new Error('A homebrew item with this name already exists.');
+  }
+
   const nextItem: Item = cleanItem({
     ...item,
     sourcebook: item.sourcebook || 'homebrew',
     id: `hb-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     createdAt: item.createdAt || new Date().toISOString(),
-  });
+  } as Item);
 
   await updateDoc(doc(db, 'users', uid), {
-    userHomebrew: [...(userDoc.userHomebrew ?? []), nextItem],
+    userHomebrew: [...existingHomebrew, nextItem],
     updatedAt: serverTimestamp(),
   });
 
@@ -268,13 +288,23 @@ export async function updateUserHomebrewItem(uid: string, updatedItem: Item): Pr
     throw new Error('User profile not found');
   }
 
-  const existingIndex = (userDoc.userHomebrew ?? []).findIndex((item) => item.id === updatedItem.id);
+  const existingHomebrew = userDoc.userHomebrew ?? [];
+  const existingIndex = existingHomebrew.findIndex((item) => item.id === updatedItem.id);
   if (existingIndex < 0) {
     throw new Error('Homebrew item not found');
   }
 
-  const nextHomebrew = [...(userDoc.userHomebrew ?? [])];
-  nextHomebrew[existingIndex] = cleanItem(updatedItem);
+  if (hasHomebrewNameConflict(existingHomebrew, updatedItem.name, updatedItem.id)) {
+    throw new Error('A homebrew item with this name already exists.');
+  }
+
+  const normalizedUpdatedItem = cleanItem({
+    ...updatedItem,
+    sourcebook: updatedItem.sourcebook || 'homebrew',
+  });
+
+  const nextHomebrew = [...existingHomebrew];
+  nextHomebrew[existingIndex] = normalizedUpdatedItem;
 
   const campaignsSnap = await getDocs(query(collection(db, 'campaigns'), where('gmId', '==', uid)));
   const batch = writeBatch(db);
@@ -291,7 +321,7 @@ export async function updateUserHomebrewItem(uid: string, updatedItem: Item): Pr
     if (poolIndex < 0) return;
 
     const nextPool = [...pool];
-    nextPool[poolIndex] = cleanItem(updatedItem);
+    nextPool[poolIndex] = normalizedUpdatedItem;
 
     batch.update(campaignDocSnap.ref, {
       customItemPool: cleanItems(nextPool),
@@ -306,21 +336,30 @@ export async function bulkImportHomebrewItems(uid: string, items: Omit<Item, 'id
   const userDoc = await getUserDoc(uid);
   if (!userDoc) throw new Error('User profile not found');
 
-  const existingNames = new Set((userDoc.userHomebrew ?? []).map((i) => i.name.toLowerCase().trim()));
+  const existingHomebrew = userDoc.userHomebrew ?? [];
+  const seenNames = new Set(existingHomebrew.map((item) => normalizeHomebrewName(item.name)));
+  const importTimestamp = Date.now();
 
-  const newItems: Item[] = items
-    .filter((item) => !existingNames.has(item.name.toLowerCase().trim()))
-    .map((item, idx) => cleanItem({
+  const newItems: Item[] = [];
+  for (const [idx, item] of items.entries()) {
+    const normalizedName = normalizeHomebrewName(item.name);
+    if (!normalizedName || seenNames.has(normalizedName)) {
+      continue;
+    }
+
+    seenNames.add(normalizedName);
+    newItems.push(cleanItem({
       ...item,
       sourcebook: item.sourcebook || 'homebrew',
-      id: `hb-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 10)}`,
+      id: `hb-${importTimestamp}-${idx}-${Math.random().toString(36).slice(2, 10)}`,
       createdAt: item.createdAt || new Date().toISOString(),
-    }));
+    } as Item));
+  }
 
   if (newItems.length === 0) return [];
 
   await updateDoc(doc(db, 'users', uid), {
-    userHomebrew: [...(userDoc.userHomebrew ?? []), ...newItems],
+    userHomebrew: [...existingHomebrew, ...newItems],
     updatedAt: serverTimestamp(),
   });
 
@@ -715,8 +754,20 @@ export async function updatePlayerInventory(
   maxWeight?: number
 ): Promise<void> {
   const docRef = doc(db, 'campaigns', campaignId, 'playerInventories', playerId);
+  let inventoryForWrite = inventory;
+
+  try {
+    const campaignSnap = await getDoc(doc(db, 'campaigns', campaignId));
+    if (campaignSnap.exists()) {
+      const campaign = hydrateCampaign(campaignSnap.data() as CampaignDoc);
+      inventoryForWrite = dehydrateInventoryItemsToCustomItemPool(inventory, campaign.customItemPool ?? []);
+    }
+  } catch {
+    // Keep write path resilient if campaign read fails.
+  }
+
   const updateData: any = {
-    inventory: cleanItems(inventory),
+    inventory: cleanItems(inventoryForWrite),
     updatedAt: serverTimestamp(),
   };
   if (currency) {
@@ -896,14 +947,44 @@ export function subscribeToPlayerInventories(
   campaignId: string,
   callback: (inventories: PlayerInventoryDoc[]) => void
 ): () => void {
+  const campaignRef = doc(db, 'campaigns', campaignId);
   const collectionRef = collection(db, 'campaigns', campaignId, 'playerInventories');
-  return onSnapshot(collectionRef, (snapshot) => {
-    const inventories: PlayerInventoryDoc[] = [];
-    snapshot.forEach((doc) => {
-      inventories.push(hydratePlayerInventory(doc.data() as PlayerInventoryDoc));
-    });
-    callback(inventories);
+  let latestPool: Item[] = [];
+  let latestRawInventories: PlayerInventoryDoc[] = [];
+
+  const emit = () => {
+    callback(
+      latestRawInventories.map((playerInventory) =>
+        hydratePlayerInventoryWithCustomItemPool(hydratePlayerInventory(playerInventory), latestPool)
+      )
+    );
+  };
+
+  const unsubscribeCampaign = onSnapshot(campaignRef, (docSnap) => {
+    if (!docSnap.exists()) {
+      latestPool = [];
+      emit();
+      return;
+    }
+
+    const campaign = hydrateCampaign(docSnap.data() as CampaignDoc);
+    latestPool = campaign.customItemPool ?? [];
+    emit();
   });
+
+  const unsubscribeInventories = onSnapshot(collectionRef, (snapshot) => {
+    const inventories: PlayerInventoryDoc[] = [];
+    snapshot.forEach((docSnap) => {
+      inventories.push(docSnap.data() as PlayerInventoryDoc);
+    });
+    latestRawInventories = inventories;
+    emit();
+  });
+
+  return () => {
+    unsubscribeCampaign();
+    unsubscribeInventories();
+  };
 }
 
 // ==================== Transfer Requests ====================

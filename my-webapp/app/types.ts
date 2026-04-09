@@ -38,6 +38,9 @@ export interface Item {
   damage?: string;
   properties?: string;
   mastery?: string;
+  armorClass?: string;
+  strengthRequirement?: string;
+  stealth?: string;
   sourcebook?: string;
   description?: string;
   category: Category;
@@ -52,6 +55,11 @@ export interface Item {
   attuned?: boolean;
   hiddenFromOthers?: boolean;
   createdAt?: string;
+
+  // Optimized DB Storage
+  source_key?: string;
+  // Legacy reference kept for previously stored items.
+  source_index?: number;
 }
 
 export interface Currency {

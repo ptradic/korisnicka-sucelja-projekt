@@ -26,12 +26,20 @@ import {
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
 import type { Item, Player, Currency } from '@/app/types';
+import {
+  dehydrateItem,
+  hydrateCampaign,
+  hydratePlayerInventory,
+  hydrateTransferRequest,
+  hydrateUserDoc,
+} from '@/src/hydrateItems';
 
 // Helper function to remove undefined values from objects (Firestore doesn't allow undefined)
 function cleanItem(item: Item): Item {
+  const dehydrated = dehydrateItem(item);
   const cleaned: any = {};
-  Object.keys(item).forEach((key) => {
-    const value = (item as any)[key];
+  Object.keys(dehydrated).forEach((key) => {
+    const value = (dehydrated as any)[key];
     if (value !== undefined) {
       cleaned[key] = value;
     }
@@ -72,8 +80,9 @@ function normalizeGoogleDriveImageUrl(urlValue: string): string {
 }
 
 function getItemStackSignature(item: Item): string {
+  const normalizedName = typeof item.name === 'string' ? item.name.trim().toLowerCase() : '';
   return JSON.stringify({
-    name: item.name.trim().toLowerCase(),
+    name: normalizedName,
     category: item.category,
     rarity: item.rarity,
     description: item.description ?? '',
@@ -211,7 +220,7 @@ export async function getUserDoc(uid: string): Promise<UserDoc | null> {
   const docRef = doc(db, 'users', uid);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return docSnap.data() as UserDoc;
+    return hydrateUserDoc(docSnap.data() as UserDoc);
   }
   return null;
 }
@@ -392,7 +401,7 @@ export async function getCampaign(campaignId: string): Promise<CampaignDoc | nul
   const docRef = doc(db, 'campaigns', campaignId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return docSnap.data() as CampaignDoc;
+    return hydrateCampaign(docSnap.data() as CampaignDoc);
   }
   return null;
 }
@@ -689,7 +698,7 @@ async function getPlayerInventory(
   const docRef = doc(db, 'campaigns', campaignId, 'playerInventories', playerId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return docSnap.data() as PlayerInventoryDoc;
+    return hydratePlayerInventory(docSnap.data() as PlayerInventoryDoc);
   }
   return null;
 }
@@ -878,7 +887,7 @@ export function subscribeToCampaign(
   const docRef = doc(db, 'campaigns', campaignId);
   return onSnapshot(docRef, (doc) => {
     if (doc.exists()) {
-      callback(doc.data() as CampaignDoc);
+      callback(hydrateCampaign(doc.data() as CampaignDoc));
     }
   });
 }
@@ -891,7 +900,7 @@ export function subscribeToPlayerInventories(
   return onSnapshot(collectionRef, (snapshot) => {
     const inventories: PlayerInventoryDoc[] = [];
     snapshot.forEach((doc) => {
-      inventories.push(doc.data() as PlayerInventoryDoc);
+      inventories.push(hydratePlayerInventory(doc.data() as PlayerInventoryDoc));
     });
     callback(inventories);
   });
@@ -991,7 +1000,7 @@ export async function acceptTransferRequest(
     throw new Error('Transfer request not found');
   }
   
-  const request = requestSnap.data() as TransferRequest;
+  const request = hydrateTransferRequest(requestSnap.data() as TransferRequest);
   
   if (request.status !== 'pending') {
     throw new Error('Transfer request is no longer pending');
@@ -1048,7 +1057,7 @@ export async function cancelTransferRequest(
   
   if (!requestSnap.exists()) return;
   
-  const request = requestSnap.data() as TransferRequest;
+  const request = hydrateTransferRequest(requestSnap.data() as TransferRequest);
 
   if (request.fromPlayerId !== senderId) {
     throw new Error('Only the sender can cancel this transfer request.');
@@ -1091,7 +1100,7 @@ export async function restoreRejectedTransfer(
   
   if (!requestSnap.exists()) return;
   
-  const request = requestSnap.data() as TransferRequest;
+  const request = hydrateTransferRequest(requestSnap.data() as TransferRequest);
   
   // Handle both rejected and expired statuses
   if (request.status !== 'rejected' && request.status !== 'expired') return;
@@ -1149,7 +1158,7 @@ export async function checkAndExpirePendingTransfers(
   const snapshot = await getDocs(q);
   
   for (const docSnap of snapshot.docs) {
-    const request = docSnap.data() as TransferRequest;
+    const request = hydrateTransferRequest(docSnap.data() as TransferRequest);
     if (isTransferExpired(request)) {
       await markTransferAsExpired(campaignId, request.id);
     }
@@ -1169,7 +1178,7 @@ export function subscribeToTransferRequests(
     const expiredRequests: TransferRequest[] = [];
 
     snapshot.forEach((docSnap) => {
-      const request = docSnap.data() as TransferRequest;
+      const request = hydrateTransferRequest(docSnap.data() as TransferRequest);
       if ((request as any).type === 'coin') return; // skip coin transfers
       if (isTransferExpired(request)) {
         expiredRequests.push(request);
@@ -1199,7 +1208,7 @@ export function subscribeToRejectedOrExpiredTransfers(
   return onSnapshot(q, (snapshot) => {
     const requests: TransferRequest[] = [];
     snapshot.forEach((docSnap) => {
-      const request = docSnap.data() as TransferRequest;
+      const request = hydrateTransferRequest(docSnap.data() as TransferRequest);
       if ((request as any).type === 'coin') return; // skip coin transfers
       // Include both rejected and expired status
       if (request.status === 'rejected' || request.status === 'expired') {
@@ -1483,7 +1492,7 @@ export function subscribeToPendingTransfersFromMe(
     const expiredRequests: TransferRequest[] = [];
 
     snapshot.forEach((docSnap) => {
-      const request = docSnap.data() as TransferRequest;
+      const request = hydrateTransferRequest(docSnap.data() as TransferRequest);
       if ((request as any).type === 'coin') return; // skip coin transfers
       if (isTransferExpired(request)) {
         expiredRequests.push(request);

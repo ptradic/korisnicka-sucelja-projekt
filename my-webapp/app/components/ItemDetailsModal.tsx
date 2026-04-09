@@ -1,10 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote, Sword, Shield, Droplet, Backpack, Gem, EyeOff, Eye, ScrollText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { normalizeCategory, type Item, type Category, type Rarity, type ValueUnit } from '../types';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
+import companionDataJson from '@/2024companion.json';
 
 interface ItemDetailsModalProps {
   item: Item;
@@ -17,10 +18,51 @@ interface ItemDetailsModalProps {
   canEdit?: boolean;
   canToggleHidden?: boolean;
   canToggleAttunement?: boolean;
+  showQuantity?: boolean;
+}
+
+interface WeaponLookupEntry {
+  Name?: string;
+  Damage?: string;
+  Properties?: string;
+  Mastery?: string;
+}
+
+interface ArmorLookupEntry {
+  Armor?: string;
+  'Armor Class (AC)'?: string;
+  Strength?: string;
+  Stealth?: string;
+}
+
+interface CompanionDefinitionsData {
+  weapons?: WeaponLookupEntry[];
+  armors?: ArmorLookupEntry[];
+  propertyDefinitions?: Record<string, string>;
+  masteryDefinitions?: Record<string, string>;
 }
 
 const categories: Category[] = ['weapons', 'armor', 'consumables', 'magic-gear', 'adventuring-gear', 'wealth-valuables'];
 const rarities: Rarity[] = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'];
+const companionDefinitions = Array.isArray(companionDataJson)
+  ? { weapons: companionDataJson as WeaponLookupEntry[] }
+  : (companionDataJson as CompanionDefinitionsData);
+const companionWeapons = companionDefinitions.weapons ?? [];
+const companionArmors = companionDefinitions.armors ?? [];
+const weaponTypes = Array.from(new Set(companionWeapons.map((weapon) => weapon.Name?.trim()).filter(Boolean))) as string[];
+const armorTypes = Array.from(new Set(companionArmors.map((armor) => armor.Armor?.trim()).filter(Boolean))) as string[];
+const weaponTypeMap = new Map(
+  companionWeapons
+    .map((weapon) => [weapon.Name?.trim().toLowerCase(), weapon] as const)
+    .filter(([name]) => Boolean(name)),
+);
+const armorTypeMap = new Map(
+  companionArmors
+    .map((armor) => [armor.Armor?.trim().toLowerCase(), armor] as const)
+    .filter(([name]) => Boolean(name)),
+);
+const propertyOptions = Object.keys(companionDefinitions.propertyDefinitions ?? {});
+const masteryOptions = Object.keys(companionDefinitions.masteryDefinitions ?? {});
 
 const formatCategoryLabel = (category: string) => {
   if (category === 'wealth-valuables') return 'Wealth & Valuables';
@@ -81,12 +123,60 @@ function getValueColor(valueUnit: ValueUnit): string {
   return 'text-[#B8860B]';
 }
 
-export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, deleteLabel = 'Remove', confirmOnDelete = false, canEdit = true, canToggleHidden = false, canToggleAttunement = false }: ItemDetailsModalProps) {
+function splitChoiceList(value: string): string[] {
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function matchesChoiceToken(token: string, option: string): boolean {
+  const normalizedToken = token.toLowerCase();
+  const normalizedOption = option.toLowerCase();
+  return (
+    normalizedToken === normalizedOption
+    || normalizedToken.startsWith(`${normalizedOption} `)
+    || normalizedToken.startsWith(`${normalizedOption}(`)
+  );
+}
+
+function mapValueToChoices(value: string, options: string[]): string[] {
+  const tokens = splitChoiceList(value);
+  const matched = tokens
+    .map((token) => options.find((option) => matchesChoiceToken(token, option)))
+    .filter((option): option is string => Boolean(option));
+
+  return Array.from(new Set(matched));
+}
+
+function getUnmappedTokens(value: string, options: string[]): string[] {
+  return splitChoiceList(value).filter(
+    (token) => !options.some((option) => matchesChoiceToken(token, option)),
+  );
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function extractPropertyOptionsFromText(value: string): string[] {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return [];
+
+  return propertyOptions.filter((option) => {
+    const pattern = new RegExp(`(^|[^a-z])${escapeRegExp(option.toLowerCase())}(?=[^a-z]|$)`, 'i');
+    return pattern.test(normalized);
+  });
+}
+
+export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, deleteLabel = 'Remove', confirmOnDelete = false, canEdit = true, canToggleHidden = false, canToggleAttunement = false, showQuantity = true }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isPropertyPickerOpen, setIsPropertyPickerOpen] = useState(false);
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
   const backdropMouseDown = useRef(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const propertyPickerRef = useRef<HTMLDivElement | null>(null);
   const editDescriptionRef = useRef<HTMLTextAreaElement | null>(null);
   const editDescriptionTrackRef = useRef<HTMLDivElement | null>(null);
   const isEditDescriptionDragging = useRef(false);
@@ -207,16 +297,75 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
   const initialGpValue = item.value && item.value > 0
     ? toGpValue(item.value, (item.valueUnit || 'gp') as ValueUnit)
     : null;
+  const initialCategory = normalizeCategory(item.category);
+  const initialWeaponType = initialCategory === 'weapons' ? (item.type || item.name || '') : '';
+  const initialArmorType = initialCategory === 'armor' ? (item.type || item.name || '') : '';
   const [formData, setFormData] = useState({
     name: item.name,
     description: item.description,
     category: item.category,
+    weaponType: initialWeaponType,
+    armorType: initialArmorType,
     rarity: item.rarity,
+    quantity: item.quantity.toString(),
+    damage: item.damage || '',
+    properties: item.properties || '',
+    mastery: item.mastery || '',
+    armorClass: item.armorClass || '',
+    strengthRequirement: item.strengthRequirement || '',
+    stealth: item.stealth || '',
     weight: item.weight.toString(),
     value: initialGpValue ? initialGpValue.toString() : '',
     attunement: item.attunement || false,
     attuned: item.attuned || false,
   });
+  const selectedPropertyOptions = useMemo(
+    () => mapValueToChoices(formData.properties, propertyOptions),
+    [formData.properties],
+  );
+  const customPropertyTokens = useMemo(
+    () => getUnmappedTokens(formData.properties, propertyOptions),
+    [formData.properties],
+  );
+  const selectedMasteryOption = useMemo(() => {
+    const selected = mapValueToChoices(formData.mastery, masteryOptions);
+    return selected[0] || '';
+  }, [formData.mastery]);
+  const customMasteryValue = useMemo(() => {
+    const unmapped = getUnmappedTokens(formData.mastery, masteryOptions);
+    return unmapped[0] || '';
+  }, [formData.mastery]);
+
+  const togglePropertyOption = (option: string) => {
+    setFormData((prev) => {
+      const currentKnown = mapValueToChoices(prev.properties, propertyOptions);
+      const currentCustom = getUnmappedTokens(prev.properties, propertyOptions);
+      const nextKnown = currentKnown.includes(option)
+        ? currentKnown.filter((value) => value !== option)
+        : [...currentKnown, option];
+
+      return {
+        ...prev,
+        properties: [...nextKnown, ...currentCustom].join(', '),
+      };
+    });
+  };
+
+  useEffect(() => {
+    if (!isPropertyPickerOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!propertyPickerRef.current) return;
+      if (!propertyPickerRef.current.contains(event.target as Node)) {
+        setIsPropertyPickerOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [isPropertyPickerOpen]);
 
   const handleSave = async () => {
     if (!onUpdate) {
@@ -226,6 +375,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
 
     const parsedValue = formData.value ? parseFloat(formData.value) : 0;
     const hasEstimatedValue = Number.isFinite(parsedValue) && parsedValue > 0;
+    const parsedQuantity = formData.quantity === '' ? 1 : Number(formData.quantity);
     const parsedWeight = formData.weight === '' ? 0 : Number(formData.weight);
     const normalizedValue = hasEstimatedValue
       ? normalizeValueUnit(parsedValue, 'gp')
@@ -233,9 +383,21 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
 
     await onUpdate({
       name: formData.name,
+      type: normalizeCategory(formData.category) === 'weapons'
+        ? (formData.weaponType.trim() || formData.name.trim())
+        : normalizeCategory(formData.category) === 'armor'
+          ? (formData.armorType.trim() || formData.name.trim())
+        : formData.name.trim(),
       description: formData.description,
       category: formData.category,
       rarity: formData.rarity,
+      quantity: Number.isFinite(parsedQuantity) && parsedQuantity >= 1 ? Math.floor(parsedQuantity) : 1,
+      damage: formData.damage.trim() || undefined,
+      properties: formData.properties.trim() || undefined,
+      mastery: formData.mastery.trim() || undefined,
+      armorClass: formData.armorClass.trim() || undefined,
+      strengthRequirement: formData.strengthRequirement.trim() || undefined,
+      stealth: formData.stealth.trim() || undefined,
       weight: Number.isFinite(parsedWeight) && parsedWeight >= 0 ? parsedWeight : 0,
       value: normalizedValue ? normalizedValue.value : undefined,
       valueUnit: normalizedValue ? normalizedValue.valueUnit : undefined,
@@ -262,6 +424,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
   const displayValue = item.value && item.value > 0
     ? normalizeValueUnit(item.value, (item.valueUnit || 'gp') as ValueUnit)
     : null;
+  const quantityMultiplier = showQuantity ? item.quantity : 1;
 
   const gradient = rarityGradients[item.rarity] || rarityGradients.common;
   const activeCategory = normalizeCategory(isEditing ? formData.category : item.category);
@@ -320,7 +483,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
             <div className="flex items-center justify-between gap-2">
               <p className={`text-sm font-extrabold capitalize ${rarityColors[item.rarity]}`}>
                 {item.rarity} {item.category}
-                {item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
+                {showQuantity && item.quantity > 1 && <span className="text-[#5C4A2F] ml-1">× {item.quantity}</span>}
               </p>
               <p className="text-[10px] text-[#5C4A2F] uppercase tracking-wide shrink-0">Sourcebook: {item.sourcebook || 'unknown'}</p>
             </div>
@@ -342,9 +505,9 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
           >
           {isEditing ? (
             <>
-              <div className="flex-1 min-h-0 flex flex-col">
-                <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Description</label>
-                <div className="relative flex-1 min-h-0">
+              <div className="shrink-0 flex flex-col">
+                <label className="block text-[#3D1409] font-semibold text-sm mb-0.5 shrink-0">Description</label>
+                <div className="relative" style={{ height: '120px' }}>
                   <textarea
                     ref={editDescriptionRef}
                     defaultValue={formData.description}
@@ -361,7 +524,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                     onKeyDown={(e) => {
                       e.stopPropagation();
                     }}
-                    className="w-full h-full min-h-28 pl-3 pr-10 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 custom-scrollbar resize-none"
+                    className="w-full h-full pl-3 pr-10 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 custom-scrollbar resize-none"
                     placeholder="Describe the item..."
                   />
 
@@ -385,14 +548,31 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
               </div>
 
               {/* Row 1: Category + Rarity */}
-              <div className="grid grid-cols-2 gap-2 shrink-0">
-                <div>
+              <div className="flex flex-wrap gap-2 shrink-0">
+                <div className="min-w-[220px] flex-1">
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
                     Category <span className="text-[#8B3A3A]">*</span>
                   </label>
                   <select
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value as Category })}
+                    onChange={(e) => {
+                      const nextCategory = e.target.value as Category;
+                      setFormData((prev) => ({
+                        ...prev,
+                        category: nextCategory,
+                        weaponType: normalizeCategory(nextCategory) === 'weapons' ? prev.weaponType : '',
+                        armorType: normalizeCategory(nextCategory) === 'armor' ? prev.armorType : '',
+                        damage: normalizeCategory(nextCategory) === 'weapons' ? prev.damage : '',
+                        properties: normalizeCategory(nextCategory) === 'weapons' ? prev.properties : '',
+                        mastery: normalizeCategory(nextCategory) === 'weapons' ? prev.mastery : '',
+                        armorClass: normalizeCategory(nextCategory) === 'armor' ? prev.armorClass : '',
+                        strengthRequirement: normalizeCategory(nextCategory) === 'armor' ? prev.strengthRequirement : '',
+                        stealth: normalizeCategory(nextCategory) === 'armor' ? prev.stealth : '',
+                      }));
+                      if (normalizeCategory(nextCategory) !== 'weapons') {
+                        setIsPropertyPickerOpen(false);
+                      }
+                    }}
                     className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
                   >
                     {categories.map(cat => (
@@ -401,7 +581,68 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   </select>
                 </div>
 
-                <div>
+                {normalizeCategory(formData.category) === 'weapons' && (
+                  <div className="min-w-[220px] flex-1">
+                    <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
+                      Weapon Type <span className="text-[#8B3A3A]">*</span>
+                    </label>
+                    <select
+                      value={formData.weaponType}
+                      onChange={(e) => {
+                        const selectedWeaponType = e.target.value;
+                        const matchedWeapon = weaponTypeMap.get(selectedWeaponType.trim().toLowerCase());
+                        const mappedProperties = matchedWeapon?.Properties
+                          ? extractPropertyOptionsFromText(matchedWeapon.Properties).join(', ')
+                          : '';
+
+                        setFormData((prev) => ({
+                          ...prev,
+                          weaponType: selectedWeaponType,
+                          damage: matchedWeapon?.Damage ?? prev.damage,
+                          properties: mappedProperties || prev.properties,
+                          mastery: matchedWeapon?.Mastery ?? prev.mastery,
+                        }));
+                      }}
+                      className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                    >
+                      <option value="">Select a weapon type</option>
+                      {weaponTypes.map((weaponType) => (
+                        <option key={weaponType} value={weaponType}>{weaponType}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {normalizeCategory(formData.category) === 'armor' && (
+                  <div className="min-w-[220px] flex-1">
+                    <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
+                      Armor Type <span className="text-[#8B3A3A]">*</span>
+                    </label>
+                    <select
+                      value={formData.armorType}
+                      onChange={(e) => {
+                        const selectedArmorType = e.target.value;
+                        const matchedArmor = armorTypeMap.get(selectedArmorType.trim().toLowerCase());
+
+                        setFormData((prev) => ({
+                          ...prev,
+                          armorType: selectedArmorType,
+                          armorClass: matchedArmor?.['Armor Class (AC)'] ?? prev.armorClass,
+                          strengthRequirement: matchedArmor?.Strength ?? prev.strengthRequirement,
+                          stealth: matchedArmor?.Stealth ?? prev.stealth,
+                        }));
+                      }}
+                      className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                    >
+                      <option value="">Select an armor type</option>
+                      {armorTypes.map((armorType) => (
+                        <option key={armorType} value={armorType}>{armorType}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="min-w-[220px] flex-1">
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
                     Rarity <span className="text-[#8B3A3A]">*</span>
                   </label>
@@ -417,9 +658,24 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                 </div>
               </div>
 
-              {/* Row 2: Weight + Value + Attunement */}
-              <div className="grid grid-cols-3 gap-2 shrink-0">
-                <div>
+              {/* Row 2: Quantity + Weight + Value + Attunement */}
+              <div className="flex flex-wrap gap-2 shrink-0">
+                <div className="min-w-[180px] flex-1">
+                  <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
+                    Quantity <span className="text-[#8B3A3A]">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                    className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                    placeholder="1"
+                  />
+                </div>
+
+                <div className="min-w-[180px] flex-1">
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Weight (lbs)</label>
                   <input
                     type="number"
@@ -432,7 +688,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   />
                 </div>
 
-                <div>
+                <div className="min-w-[180px] flex-1">
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Value (gp)</label>
                   <input
                     type="number"
@@ -445,7 +701,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   />
                 </div>
 
-                <div>
+                <div className="min-w-[180px] flex-1">
                   <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Attunement</label>
                   <select
                     value={formData.attunement ? 'requires' : 'does-not-require'}
@@ -464,6 +720,114 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                   </select>
                 </div>
               </div>
+
+              {/* Row 3: Weapon fields */}
+              {normalizeCategory(formData.category) === 'weapons' && (
+                <div className="flex flex-wrap gap-2 shrink-0">
+                  <div className="min-w-[180px] flex-1">
+                    <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Damage</label>
+                    <input
+                      type="text"
+                      value={formData.damage}
+                      onChange={(e) => setFormData({ ...formData, damage: e.target.value })}
+                      className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                      placeholder="e.g., 1d8 Slashing"
+                    />
+                  </div>
+
+                  <div className="min-w-[180px] flex-1">
+                    <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Properties</label>
+                    <div className="relative" ref={propertyPickerRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsPropertyPickerOpen((prev) => !prev)}
+                        className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 flex items-center justify-between text-left"
+                      >
+                        <span>{selectedPropertyOptions.length > 0 ? `${selectedPropertyOptions.length} selected` : 'Select properties'}</span>
+                        <span className="text-xs text-[#8B6F47]">{isPropertyPickerOpen ? 'Close' : 'Open'}</span>
+                      </button>
+
+                      {isPropertyPickerOpen && (
+                        <div className="absolute left-0 right-0 z-20 mt-1 rounded-xl border-3 border-[#8B6F47] bg-[#F5EFE0] p-2 shadow-lg max-h-[180px] overflow-y-auto custom-scrollbar space-y-1.5">
+                          {propertyOptions.map((option) => (
+                            <label key={option} className="flex items-center gap-2 text-xs text-[#3D1409] cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={selectedPropertyOptions.includes(option)}
+                                onChange={() => togglePropertyOption(option)}
+                                className="h-3.5 w-3.5 rounded border-[#8B6F47] text-[#5C1A1A] focus:ring-[#5C1A1A]/30"
+                              />
+                              <span>{option}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {selectedPropertyOptions.length > 0 && (
+                      <p className="mt-1 text-[10px] text-[#5C4A2F] leading-relaxed">{selectedPropertyOptions.join(', ')}</p>
+                    )}
+                    {customPropertyTokens.length > 0 && (
+                      <p className="mt-1 text-[10px] text-[#8B6F47]">
+                        Custom values kept: {customPropertyTokens.join(', ')}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="min-w-[180px] flex-1">
+                    <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Mastery</label>
+                    <select
+                      value={selectedMasteryOption || customMasteryValue}
+                      onChange={(e) => setFormData({ ...formData, mastery: e.target.value })}
+                      className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                    >
+                      <option value="">Select mastery</option>
+                      {customMasteryValue && !masteryOptions.includes(customMasteryValue) && (
+                        <option value={customMasteryValue}>{customMasteryValue} (custom)</option>
+                      )}
+                      {masteryOptions.map((mastery) => (
+                        <option key={mastery} value={mastery}>{mastery}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {normalizeCategory(formData.category) === 'armor' && (
+                <div className="flex flex-wrap gap-2 shrink-0">
+                  <div className="min-w-[180px] flex-1">
+                    <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Armor Class</label>
+                    <input
+                      type="text"
+                      value={formData.armorClass}
+                      onChange={(e) => setFormData({ ...formData, armorClass: e.target.value })}
+                      className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                      placeholder="e.g., 16"
+                    />
+                  </div>
+
+                  <div className="min-w-[180px] flex-1">
+                    <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Strength</label>
+                    <input
+                      type="text"
+                      value={formData.strengthRequirement}
+                      onChange={(e) => setFormData({ ...formData, strengthRequirement: e.target.value })}
+                      className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                      placeholder="e.g., 15 or -"
+                    />
+                  </div>
+
+                  <div className="min-w-[180px] flex-1">
+                    <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Stealth</label>
+                    <input
+                      type="text"
+                      value={formData.stealth}
+                      onChange={(e) => setFormData({ ...formData, stealth: e.target.value })}
+                      className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] placeholder:text-[#8B6F47]/50 focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300"
+                      placeholder="e.g., Disadvantage or -"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="border-t-2 border-[#DCC8A8] shrink-0" />
 
@@ -485,6 +849,34 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
             </>
           ) : (
             <>
+              {normalizeCategory(item.category) === 'weapons' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
+                    <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
+                      <Sword className="w-3.5 h-3.5" />
+                      <span>Damage</span>
+                    </div>
+                    <p className="text-[#3D1409] font-bold text-sm">{item.damage || '-'}</p>
+                  </div>
+
+                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
+                    <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
+                      <ScrollText className="w-3.5 h-3.5" />
+                      <span>Properties</span>
+                    </div>
+                    <p className="text-[#3D1409] font-bold text-sm">{item.properties || '-'}</p>
+                  </div>
+
+                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
+                    <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Mastery</span>
+                    </div>
+                    <p className="text-[#3D1409] font-bold text-sm">{item.mastery || '-'}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Description */}
               {item.description && (
                 <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
@@ -522,15 +914,15 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
               )}
 
               {/* Stats row */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className={`grid gap-3 ${showQuantity ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
                 <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
                   <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
                     <Weight className="w-3.5 h-3.5" />
                     <span>Weight</span>
                   </div>
                   <p className="text-[#3D1409] font-bold text-sm">
-                    {(item.weight * item.quantity).toFixed(1)} lbs
-                    {item.quantity > 1 && (
+                    {(item.weight * quantityMultiplier).toFixed(1)} lbs
+                    {showQuantity && item.quantity > 1 && (
                       <span className="text-[#5C4A2F] text-xs font-normal ml-1">
                         ({item.weight} × {item.quantity})
                       </span>
@@ -547,8 +939,8 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                     <p className="text-[#8B6F47] font-bold text-sm">Not estimated</p>
                   ) : (
                     <p className={getValueColor(displayValue.valueUnit) + ' font-bold text-sm'}>
-                      {(displayValue.value * item.quantity).toLocaleString()} {displayValue.valueUnit}
-                      {item.quantity > 1 && (
+                      {(displayValue.value * quantityMultiplier).toLocaleString()} {displayValue.valueUnit}
+                      {showQuantity && item.quantity > 1 && (
                         <span className="text-[#5C4A2F] text-xs font-normal ml-1">
                           ({displayValue.value} × {item.quantity})
                         </span>
@@ -558,6 +950,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                 </div>
 
                 {/* Mobile: horizontal bar with big buttons */}
+                {showQuantity && (
                 <div className="sm:hidden bg-white/50 border-2 border-[#DCC8A8] rounded-xl px-2 py-1.5 col-span-2 flex items-center justify-between gap-2">
                   {onUpdate && (
                     <button
@@ -595,8 +988,10 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                     <div />
                   )}
                 </div>
+                )}
 
                 {/* Desktop: original card layout */}
+                {showQuantity && (
                 <div className="hidden sm:block bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
                   <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
                     <Package className="w-3.5 h-3.5" />
@@ -630,32 +1025,33 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                     <p className="text-[#3D1409] font-bold text-sm">{item.quantity}</p>
                   )}
                 </div>
+                )}
               </div>
 
-              {(item.damage || item.properties || item.mastery) && (
+              {normalizeCategory(item.category) === 'armor' && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
                     <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
-                      <Sword className="w-3.5 h-3.5" />
-                      <span>Damage</span>
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>Armor Class</span>
                     </div>
-                    <p className="text-[#3D1409] font-bold text-sm">{item.damage || '-'}</p>
+                    <p className="text-[#3D1409] font-bold text-sm">{item.armorClass || '-'}</p>
                   </div>
 
                   <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
                     <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
-                      <ScrollText className="w-3.5 h-3.5" />
-                      <span>Properties</span>
+                      <Weight className="w-3.5 h-3.5" />
+                      <span>Strength</span>
                     </div>
-                    <p className="text-[#3D1409] font-bold text-sm">{item.properties || '-'}</p>
+                    <p className="text-[#3D1409] font-bold text-sm">{item.strengthRequirement || '-'}</p>
                   </div>
 
                   <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
                     <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Mastery</span>
+                      <EyeOff className="w-3.5 h-3.5" />
+                      <span>Stealth</span>
                     </div>
-                    <p className="text-[#3D1409] font-bold text-sm">{item.mastery || '-'}</p>
+                    <p className="text-[#3D1409] font-bold text-sm">{item.stealth || '-'}</p>
                   </div>
                 </div>
               )}

@@ -16,7 +16,7 @@ import { TransferRequestModal, TransferSentToast, TransferExpiredToast, RemoveIt
 import { VaultDetailSkeleton } from '@/app/components/skeletons/SkeletonLoader';
 import { VaultTutorial, useVaultTutorial } from '@/app/components/VaultTutorial';
 import type { Item, Player, Currency } from '@/app/types';
-import weaponDataJson from '@/2024weapons.json';
+import weaponDataJson from '@/2024companion.json';
 import {
   getCampaign,
   subscribeToCampaign,
@@ -84,9 +84,29 @@ interface WeaponLookupEntry {
   Mastery: string;
 }
 
-const weaponData = weaponDataJson as WeaponLookupEntry[];
+interface ArmorLookupEntry {
+  Armor: string;
+  'Armor Class (AC)': string;
+  Strength: string;
+  Stealth: string;
+}
+
+interface CompanionWeaponsData {
+  weapons?: WeaponLookupEntry[];
+  armors?: ArmorLookupEntry[];
+}
+
+const weaponData = Array.isArray(weaponDataJson)
+  ? (weaponDataJson as WeaponLookupEntry[])
+  : ((weaponDataJson as CompanionWeaponsData).weapons ?? []);
+const armorData = Array.isArray(weaponDataJson)
+  ? []
+  : ((weaponDataJson as CompanionWeaponsData).armors ?? []);
 const weaponByName = new Map(
   weaponData.map((weapon) => [weapon.Name.trim().toLowerCase(), weapon])
+);
+const armorByName = new Map(
+  armorData.map((armor) => [armor.Armor.trim().toLowerCase(), armor])
 );
 
 function getWeaponStatsByType(item: Omit<Item, 'id'>): Pick<Item, 'damage' | 'properties' | 'mastery'> {
@@ -103,9 +123,24 @@ function getWeaponStatsByType(item: Omit<Item, 'id'>): Pick<Item, 'damage' | 'pr
   };
 }
 
+function getArmorStatsByType(item: Omit<Item, 'id'>): Pick<Item, 'armorClass' | 'strengthRequirement' | 'stealth'> {
+  const lookupKey = (item.type || item.name || '').trim().toLowerCase();
+  if (!lookupKey) return {};
+
+  const armor = armorByName.get(lookupKey);
+  if (!armor) return {};
+
+  return {
+    armorClass: armor['Armor Class (AC)'],
+    strengthRequirement: armor.Strength,
+    stealth: armor.Stealth,
+  };
+}
+
 function getItemStackSignature(item: StackComparableItem): string {
+  const normalizedName = typeof item.name === 'string' ? item.name.trim().toLowerCase() : '';
   return JSON.stringify({
-    name: item.name.trim().toLowerCase(),
+    name: normalizedName,
     category: item.category,
     rarity: item.rarity,
     description: item.description ?? '',
@@ -675,12 +710,16 @@ export default function VaultDetailPage() {
     try {
       const resolvedType = item.type || item.name;
       const weaponStats = getWeaponStatsByType({ ...item, type: resolvedType });
+      const armorStats = getArmorStatsByType({ ...item, type: resolvedType });
       const itemWithResolvedData: Omit<Item, 'id'> = {
         ...item,
         type: resolvedType,
         damage: item.damage || weaponStats.damage,
         properties: item.properties || weaponStats.properties,
         mastery: item.mastery || weaponStats.mastery,
+        armorClass: item.armorClass || armorStats.armorClass,
+        strengthRequirement: item.strengthRequirement || armorStats.strengthRequirement,
+        stealth: item.stealth || armorStats.stealth,
       };
 
       if (isShared) {
@@ -703,6 +742,15 @@ export default function VaultDetailPage() {
           }
           if (!updatedShared[existingIndex].mastery && itemWithResolvedData.mastery) {
             updatedShared[existingIndex].mastery = itemWithResolvedData.mastery;
+          }
+          if (!updatedShared[existingIndex].armorClass && itemWithResolvedData.armorClass) {
+            updatedShared[existingIndex].armorClass = itemWithResolvedData.armorClass;
+          }
+          if (!updatedShared[existingIndex].strengthRequirement && itemWithResolvedData.strengthRequirement) {
+            updatedShared[existingIndex].strengthRequirement = itemWithResolvedData.strengthRequirement;
+          }
+          if (!updatedShared[existingIndex].stealth && itemWithResolvedData.stealth) {
+            updatedShared[existingIndex].stealth = itemWithResolvedData.stealth;
           }
         } else {
           const newItem: Item = {
@@ -734,6 +782,15 @@ export default function VaultDetailPage() {
           }
           if (!updatedInventory[existingIndex].mastery && itemWithResolvedData.mastery) {
             updatedInventory[existingIndex].mastery = itemWithResolvedData.mastery;
+          }
+          if (!updatedInventory[existingIndex].armorClass && itemWithResolvedData.armorClass) {
+            updatedInventory[existingIndex].armorClass = itemWithResolvedData.armorClass;
+          }
+          if (!updatedInventory[existingIndex].strengthRequirement && itemWithResolvedData.strengthRequirement) {
+            updatedInventory[existingIndex].strengthRequirement = itemWithResolvedData.strengthRequirement;
+          }
+          if (!updatedInventory[existingIndex].stealth && itemWithResolvedData.stealth) {
+            updatedInventory[existingIndex].stealth = itemWithResolvedData.stealth;
           }
         } else {
           const newItem: Item = {

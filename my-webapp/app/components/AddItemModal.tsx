@@ -6,7 +6,7 @@ import { normalizeCategory } from '../types';
 import { ItemDetailsModal } from './ItemDetailsModal';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 import masterItemData from '@/2024master.json';
-import weaponDataJson from '@/2024weapons.json';
+import weaponDataJson from '@/2024companion.json';
 
 interface AddItemModalProps {
   onClose: () => void;
@@ -39,6 +39,7 @@ interface MasterItem {
   desc?: string;
   category?: { name: string; key: string };
   weapon?: { name?: string; key?: string } | null;
+  armor?: { name?: string; key?: string } | null;
   rarity?: { key: string } | null;
   is_magic_item?: boolean;
   weight?: string;
@@ -50,6 +51,23 @@ interface MasterItem {
 
 interface WeaponTypeEntry {
   Name: string;
+  Damage?: string;
+  Properties?: string;
+  Mastery?: string;
+}
+
+interface ArmorTypeEntry {
+  Armor: string;
+  'Armor Class (AC)'?: string;
+  Strength?: string;
+  Stealth?: string;
+}
+
+interface CompanionWeaponsData {
+  weapons?: WeaponTypeEntry[];
+  armors?: ArmorTypeEntry[];
+  propertyDefinitions?: Record<string, string>;
+  masteryDefinitions?: Record<string, string>;
 }
 
 const categories: Category[] = ['weapons', 'armor', 'consumables', 'magic-gear', 'adventuring-gear', 'wealth-valuables'];
@@ -116,7 +134,26 @@ const DND_MIN_QUERY_LENGTH = 2;
 const DND_MAX_RESULTS = 120;
 
 const masterItems = masterItemData as MasterItem[];
-const weaponTypes = Array.from(new Set((weaponDataJson as WeaponTypeEntry[]).map((weapon) => weapon.Name.trim()).filter(Boolean)));
+const companionWeapons = Array.isArray(weaponDataJson)
+  ? (weaponDataJson as WeaponTypeEntry[])
+  : ((weaponDataJson as CompanionWeaponsData).weapons ?? []);
+const companionArmors = Array.isArray(weaponDataJson)
+  ? []
+  : ((weaponDataJson as CompanionWeaponsData).armors ?? []);
+const weaponTypes = Array.from(new Set(companionWeapons.map((weapon) => weapon.Name.trim()).filter(Boolean)));
+const armorTypes = Array.from(new Set(companionArmors.map((armor) => armor.Armor.trim()).filter(Boolean)));
+const weaponTypeMap = new Map(
+  companionWeapons
+    .map((weapon) => [weapon.Name.trim().toLowerCase(), weapon] as const)
+    .filter(([name]) => Boolean(name)),
+);
+const armorTypeMap = new Map(
+  companionArmors
+    .map((armor) => [armor.Armor.trim().toLowerCase(), armor] as const)
+    .filter(([name]) => Boolean(name)),
+);
+const propertyOptions = Object.keys(Array.isArray(weaponDataJson) ? {} : ((weaponDataJson as CompanionWeaponsData).propertyDefinitions ?? {}));
+const masteryOptions = Object.keys(Array.isArray(weaponDataJson) ? {} : ((weaponDataJson as CompanionWeaponsData).masteryDefinitions ?? {}));
 
 const DND_CATEGORY_MAP: Record<string, Category> = {
   weapon: 'weapons',
@@ -198,11 +235,30 @@ function parseCost(costRaw: string | undefined, isMagicItem: boolean): { value?:
   return { value: Number(gpValue.toFixed(2)), valueUnit: unit };
 }
 
+function getArmorStatsByType(typeOrName: string): Pick<Item, 'armorClass' | 'strengthRequirement' | 'stealth'> {
+  const lookupKey = typeOrName.trim().toLowerCase();
+  if (!lookupKey) {
+    return {};
+  }
+
+  const armor = armorTypeMap.get(lookupKey);
+  if (!armor) {
+    return {};
+  }
+
+  return {
+    armorClass: armor['Armor Class (AC)'] || undefined,
+    strengthRequirement: armor.Strength || undefined,
+    stealth: armor.Stealth || undefined,
+  };
+}
+
 function transformMasterItem(item: MasterItem): Omit<Item, 'id'> {
   const category = mapDndCategory(item);
   const parsedCost = parseCost(item.cost, Boolean(item.is_magic_item));
   const categoryLabel = item.category?.name?.trim();
   const weaponName = item.weapon?.name?.trim();
+  const armorName = item.armor?.name?.trim();
   const normalizedCategoryLabel = categoryLabel?.toLowerCase();
   const attunementDetail = item.attunement_detail?.trim();
   const metadataLine = [categoryLabel, attunementDetail].filter(Boolean).join(', ');
@@ -211,11 +267,16 @@ function transformMasterItem(item: MasterItem): Omit<Item, 'id'> {
   const description = metadataLineBold
     ? [metadataLineBold, baseDescription].filter(Boolean).join('\n\n')
     : (baseDescription || undefined);
+  const resolvedType = weaponName
+    || armorName
+    || (normalizedCategoryLabel === 'staff' ? 'Quarterstaff' : item.name);
+  const armorStats = getArmorStatsByType(resolvedType);
 
   return {
+    source_key: item.key,
     name: item.name,
-    type: weaponName || (normalizedCategoryLabel === 'staff' ? 'Quarterstaff' : item.name),
-    sourcebook: item.document?.key || 'unknown',
+    type: resolvedType,
+    sourcebook: item.document?.key || 'srd-2024',
     description,
     category,
     rarity: mapDndRarity(item.rarity?.key),
@@ -225,6 +286,9 @@ function transformMasterItem(item: MasterItem): Omit<Item, 'id'> {
     valueUnit: parsedCost.valueUnit,
     valueUnknown: parsedCost.valueUnknown,
     attunement: Boolean(item.requires_attunement),
+    armorClass: armorStats.armorClass,
+    strengthRequirement: armorStats.strengthRequirement,
+    stealth: armorStats.stealth,
   };
 }
 
@@ -251,7 +315,7 @@ function TemplateItemPicker({
         name: item.name,
         type: item.is_magic_item ? 'magic' : 'equipment',
         rarity: item.rarity?.key || 'none',
-        editionKey: item.document?.key || 'unknown',
+        editionKey: item.document?.key || 'srd-2024',
         category: mapDndCategory(item),
         searchText: item.name.toLowerCase(),
       }));
@@ -1140,6 +1204,7 @@ function CustomItemForm({
   const [descriptionThumbTop, setDescriptionThumbTop] = useState(0);
   const [descriptionThumbHeight, setDescriptionThumbHeight] = useState(0);
   const descriptionTrackRef = useRef<HTMLDivElement | null>(null);
+  const propertyPickerRef = useRef<HTMLDivElement | null>(null);
   const isDescriptionDragging = useRef(false);
   const descriptionDragStartY = useRef(0);
   const descriptionDragStartTop = useRef(0);
@@ -1242,11 +1307,36 @@ function CustomItemForm({
     return { value: Number(value.toFixed(2)), valueUnit: 'gp' };
   };
 
+  const splitChoiceList = (value: string) =>
+    value
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+  const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  const extractPropertyOptionsFromText = (value: string) => {
+    const normalized = value.trim();
+    if (!normalized) return [] as string[];
+
+    return propertyOptions.filter((option) => {
+      const pattern = new RegExp(`(^|[^a-z])${escapeRegExp(option.toLowerCase())}(?=[^a-z]|$)`, 'i');
+      return pattern.test(normalized.toLowerCase());
+    });
+  };
+
   const initialFormData = {
     name: '',
     description: '',
     category: 'adventuring-gear' as Category,
     weaponType: '',
+    armorType: '',
+    damage: '',
+    properties: '',
+    mastery: '',
+    armorClass: '',
+    strengthRequirement: '',
+    stealth: '',
     rarity: 'common' as Rarity,
     quantity: 1,
     weight: '',
@@ -1255,6 +1345,41 @@ function CustomItemForm({
   };
 
   const [formData, setFormData] = useState(initialFormData);
+  const [isPropertyPickerOpen, setIsPropertyPickerOpen] = useState(false);
+  const selectedPropertyOptions = useMemo(
+    () => splitChoiceList(formData.properties).filter((value) => propertyOptions.includes(value)),
+    [formData.properties],
+  );
+
+  const togglePropertyOption = (option: string) => {
+    setFormData((prev) => {
+      const current = splitChoiceList(prev.properties).filter((value) => propertyOptions.includes(value));
+      const next = current.includes(option)
+        ? current.filter((value) => value !== option)
+        : [...current, option];
+
+      return {
+        ...prev,
+        properties: next.join(', '),
+      };
+    });
+  };
+
+  useEffect(() => {
+    if (!isPropertyPickerOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!propertyPickerRef.current) return;
+      if (!propertyPickerRef.current.contains(event.target as Node)) {
+        setIsPropertyPickerOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [isPropertyPickerOpen]);
 
   // Update scrollbar whenever description changes (after React re-renders)
   useEffect(() => {
@@ -1264,6 +1389,7 @@ function CustomItemForm({
   const [errors, setErrors] = useState<{
     name?: string;
     weaponType?: string;
+    armorType?: string;
     quantity?: string;
     weight?: string;
     value?: string;
@@ -1281,6 +1407,7 @@ function CustomItemForm({
     const nextErrors: {
       name?: string;
       weaponType?: string;
+      armorType?: string;
       quantity?: string;
       weight?: string;
       value?: string;
@@ -1292,6 +1419,10 @@ function CustomItemForm({
 
     if (formData.category === 'weapons' && !formData.weaponType.trim()) {
       nextErrors.weaponType = 'Weapon type is required';
+    }
+
+    if (formData.category === 'armor' && !formData.armorType.trim()) {
+      nextErrors.armorType = 'Armor type is required';
     }
 
     if (!Number.isFinite(formData.quantity) || formData.quantity < 1) {
@@ -1323,7 +1454,11 @@ function CustomItemForm({
 
     const item: Omit<Item, 'id'> = {
       name: formData.name.trim(),
-      type: formData.category === 'weapons' ? formData.weaponType.trim() : formData.name.trim(),
+      type: formData.category === 'weapons'
+        ? formData.weaponType.trim()
+        : formData.category === 'armor'
+          ? formData.armorType.trim()
+          : formData.name.trim(),
       sourcebook: isGM ? 'homebrew' : 'PLAYER CUSTOM',
       category: formData.category,
       rarity: isGM ? formData.rarity : 'common',
@@ -1336,6 +1471,24 @@ function CustomItemForm({
     // Only add optional fields if they have values
     if (formData.description.trim()) {
       item.description = formData.description;
+    }
+    if (formData.damage.trim()) {
+      item.damage = formData.damage.trim();
+    }
+    if (formData.properties.trim()) {
+      item.properties = formData.properties.trim();
+    }
+    if (formData.mastery.trim()) {
+      item.mastery = formData.mastery.trim();
+    }
+    if (formData.armorClass.trim()) {
+      item.armorClass = formData.armorClass.trim();
+    }
+    if (formData.strengthRequirement.trim()) {
+      item.strengthRequirement = formData.strengthRequirement.trim();
+    }
+    if (formData.stealth.trim()) {
+      item.stealth = formData.stealth.trim();
     }
     const parsedValue = formData.value === '' ? 0 : Number(formData.value);
     if (Number.isFinite(parsedValue) && parsedValue > 0) {
@@ -1439,8 +1592,8 @@ function CustomItemForm({
         </div>
 
         {/* Category + Rarity + Attunement + Stats */}
-        <div className="grid grid-cols-2 gap-2 shrink-0">
-          <div className="order-1">
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <div className="min-w-[220px] flex-1">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Category <span className="text-[#8B3A3A]">*</span>
             </label>
@@ -1452,8 +1605,19 @@ function CustomItemForm({
                   ...prev,
                   category: nextCategory,
                   weaponType: nextCategory === 'weapons' ? prev.weaponType : '',
+                  armorType: nextCategory === 'armor' ? prev.armorType : '',
+                  damage: nextCategory === 'weapons' ? prev.damage : '',
+                  properties: nextCategory === 'weapons' ? prev.properties : '',
+                  mastery: nextCategory === 'weapons' ? prev.mastery : '',
+                  armorClass: nextCategory === 'armor' ? prev.armorClass : '',
+                  strengthRequirement: nextCategory === 'armor' ? prev.strengthRequirement : '',
+                  stealth: nextCategory === 'armor' ? prev.stealth : '',
                 }));
+                if (nextCategory !== 'weapons') {
+                  setIsPropertyPickerOpen(false);
+                }
                 if (errors.weaponType) setErrors((prev) => ({ ...prev, weaponType: undefined }));
+                if (errors.armorType) setErrors((prev) => ({ ...prev, armorType: undefined }));
               }}
               className="w-full px-3 py-2 bg-white/70 border-3 border-[#8B6F47] rounded-xl text-[#3D1409] focus:outline-none focus:border-[#5C1A1A] focus:ring-2 focus:ring-[#5C1A1A]/20 transition-all duration-300 capitalize"
             >
@@ -1464,14 +1628,26 @@ function CustomItemForm({
           </div>
 
           {formData.category === 'weapons' && (
-            <div className="col-span-2 order-2">
+            <div className="min-w-[220px] flex-1">
               <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
                 Weapon Type <span className="text-[#8B3A3A]">*</span>
               </label>
               <select
                 value={formData.weaponType}
                 onChange={(e) => {
-                  setFormData({ ...formData, weaponType: e.target.value });
+                  const selectedWeaponType = e.target.value;
+                  const matchedWeapon = weaponTypeMap.get(selectedWeaponType.trim().toLowerCase());
+                  const mappedProperties = matchedWeapon?.Properties
+                    ? extractPropertyOptionsFromText(matchedWeapon.Properties).join(', ')
+                    : '';
+
+                  setFormData((prev) => ({
+                    ...prev,
+                    weaponType: selectedWeaponType,
+                    damage: matchedWeapon?.Damage ?? '',
+                    properties: mappedProperties,
+                    mastery: matchedWeapon?.Mastery ?? '',
+                  }));
                   if (errors.weaponType) setErrors((prev) => ({ ...prev, weaponType: undefined }));
                 }}
                 className={inputClass(!!errors.weaponType)}
@@ -1486,7 +1662,138 @@ function CustomItemForm({
             </div>
           )}
 
-          <div className="order-2">
+          {formData.category === 'armor' && (
+            <div className="min-w-[220px] flex-1">
+              <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
+                Armor Type <span className="text-[#8B3A3A]">*</span>
+              </label>
+              <select
+                value={formData.armorType}
+                onChange={(e) => {
+                  const selectedArmorType = e.target.value;
+                  const matchedArmor = armorTypeMap.get(selectedArmorType.trim().toLowerCase());
+
+                  setFormData((prev) => ({
+                    ...prev,
+                    armorType: selectedArmorType,
+                    armorClass: matchedArmor?.['Armor Class (AC)'] ?? '',
+                    strengthRequirement: matchedArmor?.Strength ?? '',
+                    stealth: matchedArmor?.Stealth ?? '',
+                  }));
+                  if (errors.armorType) setErrors((prev) => ({ ...prev, armorType: undefined }));
+                }}
+                className={inputClass(!!errors.armorType)}
+                aria-invalid={!!errors.armorType}
+              >
+                <option value="">Select an armor type</option>
+                {armorTypes.map((armorType) => (
+                  <option key={armorType} value={armorType}>{armorType}</option>
+                ))}
+              </select>
+              {errors.armorType && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.armorType}</p>}
+            </div>
+          )}
+
+          {formData.category === 'weapons' && (
+            <div className="basis-full flex flex-wrap gap-2">
+              <div className="min-w-[180px] flex-1">
+                <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Damage</label>
+                <input
+                  type="text"
+                  value={formData.damage}
+                  onChange={(e) => setFormData({ ...formData, damage: e.target.value })}
+                  className={inputClass(false)}
+                  placeholder="e.g., 1d8 Slashing"
+                />
+              </div>
+
+              <div className="min-w-[180px] flex-1">
+                <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Properties</label>
+                <div className="relative" ref={propertyPickerRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsPropertyPickerOpen((prev) => !prev)}
+                    className={inputClass(false) + ' flex items-center justify-between text-left'}
+                  >
+                    <span>{selectedPropertyOptions.length > 0 ? `${selectedPropertyOptions.length} selected` : 'Select properties'}</span>
+                    <span className="text-xs text-[#8B6F47]">{isPropertyPickerOpen ? 'Close' : 'Open'}</span>
+                  </button>
+
+                  {isPropertyPickerOpen && (
+                    <div className="absolute left-0 right-0 z-20 mt-1 rounded-xl border-3 border-[#8B6F47] bg-[#F5EFE0] p-2 shadow-lg max-h-[180px] overflow-y-auto custom-scrollbar space-y-1.5">
+                      {propertyOptions.map((option) => (
+                        <label key={option} className="flex items-center gap-2 text-xs text-[#3D1409] cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={selectedPropertyOptions.includes(option)}
+                            onChange={() => togglePropertyOption(option)}
+                            className="h-3.5 w-3.5 rounded border-[#8B6F47] text-[#5C1A1A] focus:ring-[#5C1A1A]/30"
+                          />
+                          <span>{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {selectedPropertyOptions.length > 0 && (
+                  <p className="mt-1 text-[10px] text-[#5C4A2F] leading-relaxed">{selectedPropertyOptions.join(', ')}</p>
+                )}
+              </div>
+
+              <div className="min-w-[180px] flex-1">
+                <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Mastery</label>
+                <select
+                  value={formData.mastery}
+                  onChange={(e) => setFormData({ ...formData, mastery: e.target.value })}
+                  className={inputClass(false)}
+                >
+                  <option value="">Select mastery</option>
+                  {masteryOptions.map((mastery) => (
+                    <option key={mastery} value={mastery}>{mastery}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {formData.category === 'armor' && (
+            <div className="basis-full flex flex-wrap gap-2">
+              <div className="min-w-[180px] flex-1">
+                <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Armor Class</label>
+                <input
+                  type="text"
+                  value={formData.armorClass}
+                  onChange={(e) => setFormData({ ...formData, armorClass: e.target.value })}
+                  className={inputClass(false)}
+                  placeholder="e.g., 16"
+                />
+              </div>
+
+              <div className="min-w-[180px] flex-1">
+                <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Strength</label>
+                <input
+                  type="text"
+                  value={formData.strengthRequirement}
+                  onChange={(e) => setFormData({ ...formData, strengthRequirement: e.target.value })}
+                  className={inputClass(false)}
+                  placeholder="e.g., 15 or -"
+                />
+              </div>
+
+              <div className="min-w-[180px] flex-1">
+                <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Stealth</label>
+                <input
+                  type="text"
+                  value={formData.stealth}
+                  onChange={(e) => setFormData({ ...formData, stealth: e.target.value })}
+                  className={inputClass(false)}
+                  placeholder="e.g., Disadvantage or -"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="min-w-[220px] flex-1">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Rarity <span className="text-[#8B3A3A]">*</span>
             </label>
@@ -1507,7 +1814,7 @@ function CustomItemForm({
             )}
           </div>
 
-          <div className="order-3">
+          <div className="min-w-[220px] flex-1">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Attunement</label>
             <select
               value={formData.attunement ? 'requires' : 'does-not-require'}
@@ -1522,7 +1829,7 @@ function CustomItemForm({
             </select>
           </div>
 
-          <div className="order-4">
+          <div className="min-w-[220px] flex-1">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">
               Quantity <span className="text-[#8B3A3A]">*</span>
             </label>
@@ -1541,7 +1848,7 @@ function CustomItemForm({
             {errors.quantity && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.quantity}</p>}
           </div>
 
-          <div className="order-5">
+          <div className="min-w-[220px] flex-1">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Weight (lbs)</label>
             <input
               type="number"
@@ -1559,7 +1866,7 @@ function CustomItemForm({
             {errors.weight && <p className="mt-1 text-xs text-[#8B3A3A]">{errors.weight}</p>}
           </div>
 
-          <div className="order-6">
+          <div className="min-w-[220px] flex-1">
             <label className="block text-[#3D1409] font-semibold text-sm mb-0.5">Value (gp)</label>
               <input
                 type="number"

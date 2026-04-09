@@ -812,8 +812,20 @@ export async function updatePlayerProfileInCampaign(
 
 export async function updateSharedLoot(campaignId: string, sharedLoot: Item[]): Promise<void> {
   const docRef = doc(db, 'campaigns', campaignId);
+  let sharedLootForWrite = sharedLoot;
+
+  try {
+    const campaignSnap = await getDoc(doc(db, 'campaigns', campaignId));
+    if (campaignSnap.exists()) {
+      const campaign = hydrateCampaign(campaignSnap.data() as CampaignDoc);
+      sharedLootForWrite = dehydrateInventoryItemsToCustomItemPool(sharedLoot, campaign.customItemPool ?? []);
+    }
+  } catch {
+    // Keep write path resilient if campaign read fails.
+  }
+
   await updateDoc(docRef, {
-    sharedLoot: cleanItems(sharedLoot),
+    sharedLoot: cleanItems(sharedLootForWrite),
     updatedAt: serverTimestamp(),
   });
 }

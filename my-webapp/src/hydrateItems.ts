@@ -439,10 +439,14 @@ export function dehydrateInventoryItemsToCustomItemPool(items: Item[], customIte
 }
 
 export function hydrateCampaign(doc: CampaignDoc): CampaignDoc {
+  const hydratedCustomItemPool = doc.customItemPool ? doc.customItemPool.map(hydrateItem) : doc.customItemPool;
+
   return {
     ...doc,
-    sharedLoot: (doc.sharedLoot || []).map(hydrateItem),
-    customItemPool: doc.customItemPool ? doc.customItemPool.map(hydrateItem) : doc.customItemPool,
+    sharedLoot: (doc.sharedLoot || []).map((item) =>
+      hydrateItemFromCustomItemPool(hydrateItem(item), hydratedCustomItemPool ?? [])
+    ),
+    customItemPool: hydratedCustomItemPool,
   };
 }
 

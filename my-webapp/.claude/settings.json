@@ -10,7 +10,10 @@
       "Bash(grep -n \"const players\\\\|const isGM\\\\|const isShared\\\\|const selectedPlayer\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx)",
       "Bash(grep -n \"deletePlayerInventoryDoc\" /c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projekt/my-webapp/app/vaults/[id]/page.tsx -B 5 -A 10)",
       "Bash(npx tsc:*)",
-      "Read(//c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projet/my-webapp/app/components/**)"
+      "Read(//c/Users/Pjero/Desktop/HCI/korisnicka-sucelja-projet/my-webapp/app/components/**)",
+      "Bash(node -e \"const d = require\\('./2024companion.json'\\); console.log\\('propertyDefs count:', Object.keys\\(d.propertyDefinitions || {}\\).length\\); console.log\\('masteryDefs count:', Object.keys\\(d.masteryDefinitions || {}\\).length\\); const props = Object.entries\\(d.propertyDefinitions || {}\\); console.log\\('first 3 props:', JSON.stringify\\(props.slice\\(0,3\\), null, 2\\)\\);\")",
+      "Bash(node -e \"const d = require\\('./2024companion.json'\\); console.log\\('All property keys:', JSON.stringify\\(Object.keys\\(d.propertyDefinitions\\)\\)\\); console.log\\('All mastery keys:', JSON.stringify\\(Object.keys\\(d.masteryDefinitions\\)\\)\\);\")",
+      "Bash(node -e ':*)"
     ]
   }
 }

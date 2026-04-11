@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote, Sword, Shield, Droplet, Backpack, Gem, EyeOff, Eye, ScrollText } from 'lucide-react';
+import { X, Trash2, Save, Edit2, Coins, Weight, Package, Sparkles, Star, StickyNote, Sword, Shield, Droplet, Backpack, Gem, EyeOff, Eye, ScrollText, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { normalizeCategory, type Item, type Category, type Rarity, type ValueUnit } from '../types';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { useCustomScrollbar } from '../hooks/useCustomScrollbar';
 import companionDataJson from '@/2024companion.json';
+import { weaponClassificationMap } from '@/src/hydrateItems';
 
 interface ItemDetailsModalProps {
   item: Item;
@@ -169,8 +170,72 @@ function extractPropertyOptionsFromText(value: string): string[] {
   });
 }
 
+/**
+ * Strips the leading **Metadata Line**\n\n prefix added by hydrateItems.
+ * If the meta line contains attunement info it is kept, since that restriction is meaningful.
+ */
+function stripDescriptionMetaLine(description: string | undefined): string | null {
+  if (!description) return null;
+  const match = description.match(/^\*\*([^*]+)\*\*\n\n([\s\S]*)$/);
+  if (match) {
+    if (match[1].toLowerCase().includes('attunement')) return description.trim();
+    return match[2].trim() || null;
+  }
+  return description.trim() || null;
+}
+
+/** Returns property tokens paired with their full definitions from 2024companion.json. */
+function getPropertyDefinitions(properties: string): Array<{ token: string; definition: string }> {
+  const tokens = splitChoiceList(properties);
+  const result: Array<{ token: string; definition: string }> = [];
+  const seen = new Set<string>();
+  for (const token of tokens) {
+    const matchedKey = propertyOptions.find((opt) => matchesChoiceToken(token, opt));
+    if (matchedKey && !seen.has(matchedKey)) {
+      const definition = companionDefinitions.propertyDefinitions?.[matchedKey];
+      if (definition) {
+        seen.add(matchedKey);
+        result.push({ token, definition });
+      }
+    }
+  }
+  return result;
+}
+
+/** Returns the mastery name + definition, or null if not found. */
+function getMasteryDefinition(mastery: string): { name: string; definition: string } | null {
+  const tokens = splitChoiceList(mastery);
+  for (const token of tokens) {
+    const matchedKey = masteryOptions.find((opt) => matchesChoiceToken(token, opt));
+    if (matchedKey) {
+      const definition = companionDefinitions.masteryDefinitions?.[matchedKey];
+      if (definition) return { name: matchedKey, definition };
+    }
+  }
+  return null;
+}
+
+/** Returns a label like "Martial Ranged Weapon" or "Simple Melee Weapon", or null if unknown. */
+function getWeaponClassificationLabel(item: Item): string | null {
+  const typeKey = (item.type || item.name || '').trim().toLowerCase();
+  const classification = weaponClassificationMap.get(typeKey);
+  if (!classification) return null;
+  const tier = classification.martial ? 'Martial' : classification.simple ? 'Simple' : null;
+  const isRanged = item.properties
+    ? splitChoiceList(item.properties).some((t) => matchesChoiceToken(t, 'Ammunition'))
+    : false;
+  const range = isRanged ? 'Ranged' : 'Melee';
+  return tier ? `${tier} ${range} Weapon` : `${range} Weapon`;
+}
+
 export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDeleteAction = true, deleteLabel = 'Remove', confirmOnDelete = false, canEdit = true, canToggleHidden = false, canToggleAttunement = false, showQuantity = true }: ItemDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [expandedDefs, setExpandedDefs] = useState<Set<string>>(new Set());
+  const toggleDef = (key: string) => setExpandedDefs((prev) => {
+    const next = new Set(prev);
+    next.has(key) ? next.delete(key) : next.add(key);
+    return next;
+  });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isPropertyPickerOpen, setIsPropertyPickerOpen] = useState(false);
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
@@ -877,41 +942,117 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                 </div>
               )}
 
-              {/* Description */}
-              {item.description && (
-                <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
-                  <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-2">
-                    <StickyNote className="w-3.5 h-3.5" />
-                    <span>Description</span>
+              {/* Description: magic text first, then weapon classification + property/mastery defs */}
+              {(() => {
+                const viewCategory = normalizeCategory(item.category);
+                const bodyText = stripDescriptionMetaLine(item.description);
+                const isMagic = item.rarity !== 'common' || Boolean(item.attunement);
+                const displayBodyText = isMagic ? bodyText : null;
+                const classificationLabel = viewCategory === 'weapons' ? getWeaponClassificationLabel(item) : null;
+                const propertyDefs = viewCategory === 'weapons' && item.properties
+                  ? getPropertyDefinitions(item.properties) : [];
+                const masteryDef = viewCategory === 'weapons' && item.mastery
+                  ? getMasteryDefinition(item.mastery) : null;
+                const hasDefs = propertyDefs.length > 0 || masteryDef !== null;
+                const nonWeaponBodyText = viewCategory !== 'weapons' && !displayBodyText ? bodyText : null;
+                if (!displayBodyText && !classificationLabel && !hasDefs && !nonWeaponBodyText) return null;
+
+                const mdComponents = {
+                  p: ({ children }: { children?: React.ReactNode }) => <p className="leading-relaxed">{children}</p>,
+                  ul: ({ children }: { children?: React.ReactNode }) => <ul className="list-disc pl-5 space-y-1">{children}</ul>,
+                  ol: ({ children }: { children?: React.ReactNode }) => <ol className="list-decimal pl-5 space-y-1">{children}</ol>,
+                  li: ({ children }: { children?: React.ReactNode }) => <li>{children}</li>,
+                  strong: ({ children }: { children?: React.ReactNode }) => <strong className="font-semibold text-[#2D0F06]">{children}</strong>,
+                  em: ({ children }: { children?: React.ReactNode }) => <em className="italic">{children}</em>,
+                  code: ({ children }: { children?: React.ReactNode }) => <code className="font-mono text-[0.85em] bg-[#F5EFE0] px-1 py-0.5 rounded">{children}</code>,
+                  table: ({ children }: { children?: React.ReactNode }) => (
+                    <div className="overflow-x-auto rounded-lg border border-[#DCC8A8] bg-[#F8F2E6]">
+                      <table className="min-w-full border-collapse">{children}</table>
+                    </div>
+                  ),
+                  thead: ({ children }: { children?: React.ReactNode }) => <thead className="bg-[#E8D5B7]">{children}</thead>,
+                  tbody: ({ children }: { children?: React.ReactNode }) => <tbody>{children}</tbody>,
+                  tr: ({ children }: { children?: React.ReactNode }) => <tr className="border-b border-[#DCC8A8] last:border-0">{children}</tr>,
+                  th: ({ children }: { children?: React.ReactNode }) => <th className="px-3 py-2 text-left font-semibold text-[#3D1409]">{children}</th>,
+                  td: ({ children }: { children?: React.ReactNode }) => <td className="px-3 py-2 text-[#3D1409] align-top">{children}</td>,
+                };
+
+                return (
+                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5 space-y-3">
+                    <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider">
+                      <StickyNote className="w-3.5 h-3.5" />
+                      <span>Description</span>
+                    </div>
+
+                    {/* Magic item description shown first */}
+                    {displayBodyText && (
+                      <div className="text-[#3D1409] text-sm leading-relaxed space-y-2">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                          {displayBodyText}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+
+                    {/* Non-weapon item descriptions (potions, gear, etc.) */}
+                    {nonWeaponBodyText && (
+                      <div className="text-[#3D1409] text-sm leading-relaxed space-y-2">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                          {nonWeaponBodyText}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+
+                    {/* Weapon classification + property/mastery definitions */}
+                    {(classificationLabel || hasDefs) && (
+                      <div className="space-y-2.5">
+                        {(displayBodyText || nonWeaponBodyText) && <div className="border-t border-[#DCC8A8]" />}
+                        {classificationLabel && (
+                          <p className="text-[#5C4A2F] text-xs font-semibold uppercase tracking-wide italic">
+                            {classificationLabel}
+                          </p>
+                        )}
+                        {propertyDefs.map(({ token, definition }) => {
+                          const isOpen = expandedDefs.has(token);
+                          return (
+                            <div key={token}>
+                              <button
+                                type="button"
+                                onClick={() => toggleDef(token)}
+                                className="flex items-center gap-1 text-left group"
+                              >
+                                <span className="font-bold text-[#2D0F06] text-sm">{token}.</span>
+                                <ChevronDown className={`w-3.5 h-3.5 text-[#8B6F47] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                              </button>
+                              {isOpen && (
+                                <p className="mt-1 text-[#3D1409] text-sm leading-relaxed">{definition}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {masteryDef && (() => {
+                          const masteryKey = `mastery:${masteryDef.name}`;
+                          const isOpen = expandedDefs.has(masteryKey);
+                          return (
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => toggleDef(masteryKey)}
+                                className="flex items-center gap-1 text-left group"
+                              >
+                                <span className="font-bold text-[#2D0F06] text-sm">Mastery: {masteryDef.name}.</span>
+                                <ChevronDown className={`w-3.5 h-3.5 text-[#8B6F47] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                              </button>
+                              {isOpen && (
+                                <p className="mt-1 text-[#3D1409] text-sm leading-relaxed">{masteryDef.definition}</p>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
-                  <div className="text-[#3D1409] text-sm leading-relaxed space-y-2">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        p: ({ children }) => <p className="leading-relaxed">{children}</p>,
-                        ul: ({ children }) => <ul className="list-disc pl-5 space-y-1">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1">{children}</ol>,
-                        li: ({ children }) => <li>{children}</li>,
-                        strong: ({ children }) => <strong className="font-semibold text-[#2D0F06]">{children}</strong>,
-                        em: ({ children }) => <em className="italic">{children}</em>,
-                        code: ({ children }) => <code className="font-mono text-[0.85em] bg-[#F5EFE0] px-1 py-0.5 rounded">{children}</code>,
-                        table: ({ children }) => (
-                          <div className="overflow-x-auto rounded-lg border border-[#DCC8A8] bg-[#F8F2E6]">
-                            <table className="min-w-full border-collapse">{children}</table>
-                          </div>
-                        ),
-                        thead: ({ children }) => <thead className="bg-[#E8D5B7]">{children}</thead>,
-                        tbody: ({ children }) => <tbody>{children}</tbody>,
-                        tr: ({ children }) => <tr className="border-b border-[#DCC8A8] last:border-0">{children}</tr>,
-                        th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-[#3D1409]">{children}</th>,
-                        td: ({ children }) => <td className="px-3 py-2 text-[#3D1409] align-top">{children}</td>,
-                      }}
-                    >
-                      {item.description}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Stats row */}
               <div className={`grid gap-3 ${showQuantity ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>

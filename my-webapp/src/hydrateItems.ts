@@ -9,7 +9,7 @@ interface MasterItem {
   name: string;
   desc?: string;
   category?: { name?: string; key?: string };
-  weapon?: { name?: string; key?: string } | null;
+  weapon?: { name?: string; key?: string; is_simple?: boolean; is_martial?: boolean } | null;
   armor?: { name?: string; key?: string } | null;
   rarity?: { key?: string } | null;
   is_magic_item?: boolean;
@@ -473,4 +473,21 @@ export function hydrateTransferRequest(doc: TransferRequest): TransferRequest {
     ...doc,
     itemData: hydrateItem(doc.itemData),
   };
+}
+
+/**
+ * Maps weapon name (lowercase) → { simple, martial } classification.
+ * Keyed by weapon.name (e.g. "hand crossbow") which matches item.type on hydrated items.
+ */
+export const weaponClassificationMap = new Map<string, { simple: boolean; martial: boolean }>();
+for (const masterItem of masterItems) {
+  const w = masterItem.weapon;
+  if (!w || (w.is_simple === undefined && w.is_martial === undefined)) continue;
+  const key = w.name?.trim().toLowerCase();
+  if (key && !weaponClassificationMap.has(key)) {
+    weaponClassificationMap.set(key, {
+      simple: Boolean(w.is_simple),
+      martial: Boolean(w.is_martial),
+    });
+  }
 }

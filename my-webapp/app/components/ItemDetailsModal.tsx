@@ -914,48 +914,25 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
             </>
           ) : (
             <>
-              {normalizeCategory(item.category) === 'weapons' && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
-                    <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
-                      <Sword className="w-3.5 h-3.5" />
-                      <span>Damage</span>
-                    </div>
-                    <p className="text-[#3D1409] font-bold text-sm">{item.damage || '-'}</p>
+              {normalizeCategory(item.category) === 'weapons' && item.damage && (
+                <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
+                  <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
+                    <Sword className="w-3.5 h-3.5" />
+                    <span>Damage</span>
                   </div>
-
-                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
-                    <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
-                      <ScrollText className="w-3.5 h-3.5" />
-                      <span>Properties</span>
-                    </div>
-                    <p className="text-[#3D1409] font-bold text-sm">{item.properties || '-'}</p>
-                  </div>
-
-                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5">
-                    <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider mb-1.5">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Mastery</span>
-                    </div>
-                    <p className="text-[#3D1409] font-bold text-sm">{item.mastery || '-'}</p>
-                  </div>
+                  <p className="text-[#3D1409] font-bold text-sm">{item.damage}</p>
                 </div>
               )}
 
-              {/* Description: magic text first, then weapon classification + property/mastery defs */}
+              {/* Description bubble — body text only */}
               {(() => {
                 const viewCategory = normalizeCategory(item.category);
                 const bodyText = stripDescriptionMetaLine(item.description);
                 const isMagic = item.rarity !== 'common' || Boolean(item.attunement);
                 const displayBodyText = isMagic ? bodyText : null;
-                const classificationLabel = viewCategory === 'weapons' ? getWeaponClassificationLabel(item) : null;
-                const propertyDefs = viewCategory === 'weapons' && item.properties
-                  ? getPropertyDefinitions(item.properties) : [];
-                const masteryDef = viewCategory === 'weapons' && item.mastery
-                  ? getMasteryDefinition(item.mastery) : null;
-                const hasDefs = propertyDefs.length > 0 || masteryDef !== null;
                 const nonWeaponBodyText = viewCategory !== 'weapons' && !displayBodyText ? bodyText : null;
-                if (!displayBodyText && !classificationLabel && !hasDefs && !nonWeaponBodyText) return null;
+                const shownText = displayBodyText || nonWeaponBodyText;
+                if (!shownText) return null;
 
                 const mdComponents = {
                   p: ({ children }: { children?: React.ReactNode }) => <p className="leading-relaxed">{children}</p>,
@@ -978,79 +955,84 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
                 };
 
                 return (
-                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5 space-y-3">
+                  <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl p-3.5 space-y-2">
                     <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider">
                       <StickyNote className="w-3.5 h-3.5" />
                       <span>Description</span>
                     </div>
-
-                    {/* Magic item description shown first */}
-                    {displayBodyText && (
-                      <div className="text-[#3D1409] text-sm leading-relaxed space-y-2">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-                          {displayBodyText}
-                        </ReactMarkdown>
-                      </div>
-                    )}
-
-                    {/* Non-weapon item descriptions (potions, gear, etc.) */}
-                    {nonWeaponBodyText && (
-                      <div className="text-[#3D1409] text-sm leading-relaxed space-y-2">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-                          {nonWeaponBodyText}
-                        </ReactMarkdown>
-                      </div>
-                    )}
-
-                    {/* Weapon classification + property/mastery definitions */}
-                    {(classificationLabel || hasDefs) && (
-                      <div className="space-y-2.5">
-                        {(displayBodyText || nonWeaponBodyText) && <div className="border-t border-[#DCC8A8]" />}
-                        {classificationLabel && (
-                          <p className="text-[#5C4A2F] text-xs font-semibold uppercase tracking-wide italic">
-                            {classificationLabel}
-                          </p>
-                        )}
-                        {propertyDefs.map(({ token, definition }) => {
-                          const isOpen = expandedDefs.has(token);
-                          return (
-                            <div key={token}>
-                              <button
-                                type="button"
-                                onClick={() => toggleDef(token)}
-                                className="flex items-center gap-1 text-left group"
-                              >
-                                <span className="font-bold text-[#2D0F06] text-sm">{token}.</span>
-                                <ChevronDown className={`w-3.5 h-3.5 text-[#8B6F47] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                              </button>
-                              {isOpen && (
-                                <p className="mt-1 text-[#3D1409] text-sm leading-relaxed">{definition}</p>
-                              )}
-                            </div>
-                          );
-                        })}
-                        {masteryDef && (() => {
-                          const masteryKey = `mastery:${masteryDef.name}`;
-                          const isOpen = expandedDefs.has(masteryKey);
-                          return (
-                            <div>
-                              <button
-                                type="button"
-                                onClick={() => toggleDef(masteryKey)}
-                                className="flex items-center gap-1 text-left group"
-                              >
-                                <span className="font-bold text-[#2D0F06] text-sm">Mastery: {masteryDef.name}.</span>
-                                <ChevronDown className={`w-3.5 h-3.5 text-[#8B6F47] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                              </button>
-                              {isOpen && (
-                                <p className="mt-1 text-[#3D1409] text-sm leading-relaxed">{masteryDef.definition}</p>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
+                    <div className="text-[#3D1409] text-sm leading-relaxed space-y-2">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                        {shownText}
+                      </ReactMarkdown>
+                    </div>
                   </div>
+                );
+              })()}
+
+              {/* Property & mastery bubbles — one card each, expandable */}
+              {(() => {
+                const viewCategory = normalizeCategory(item.category);
+                if (viewCategory !== 'weapons') return null;
+                const classificationLabel = getWeaponClassificationLabel(item);
+                const propertyDefs = item.properties ? getPropertyDefinitions(item.properties) : [];
+                const masteryDef = item.mastery ? getMasteryDefinition(item.mastery) : null;
+                if (!classificationLabel && propertyDefs.length === 0 && !masteryDef) return null;
+
+                return (
+                  <>
+                    {classificationLabel && (
+                      <p className="text-[#5C4A2F] text-xs font-semibold uppercase tracking-wide italic px-0.5">
+                        {classificationLabel}
+                      </p>
+                    )}
+                    {propertyDefs.map(({ token, definition }) => {
+                      const isOpen = expandedDefs.has(token);
+                      return (
+                        <div key={token} className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => toggleDef(token)}
+                            className="w-full flex items-center justify-between px-3.5 py-2.5 text-left"
+                          >
+                            <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider">
+                              <ScrollText className="w-3.5 h-3.5 shrink-0" />
+                              <span>{token}</span>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-[#8B6F47] shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                          {isOpen && (
+                            <div className="px-3.5 pb-3 border-t border-[#DCC8A8]">
+                              <p className="pt-2.5 text-[#3D1409] text-sm leading-relaxed">{definition}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {masteryDef && (() => {
+                      const masteryKey = `mastery:${masteryDef.name}`;
+                      const isOpen = expandedDefs.has(masteryKey);
+                      return (
+                        <div className="bg-white/50 border-2 border-[#DCC8A8] rounded-xl overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => toggleDef(masteryKey)}
+                            className="w-full flex items-center justify-between px-3.5 py-2.5 text-left"
+                          >
+                            <div className="flex items-center gap-2 text-[#5C4A2F] text-xs font-semibold uppercase tracking-wider">
+                              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                              <span>Mastery: {masteryDef.name}</span>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-[#8B6F47] shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                          {isOpen && (
+                            <div className="px-3.5 pb-3 border-t border-[#DCC8A8]">
+                              <p className="pt-2.5 text-[#3D1409] text-sm leading-relaxed">{masteryDef.definition}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </>
                 );
               })()}
 

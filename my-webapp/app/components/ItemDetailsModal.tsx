@@ -928,10 +928,7 @@ export function ItemDetailsModal({ item, onClose, onUpdate, onDelete, showDelete
               {(() => {
                 const viewCategory = normalizeCategory(item.category);
                 const bodyText = stripDescriptionMetaLine(item.description);
-                const isMagic = item.rarity !== 'common' || Boolean(item.attunement);
-                const displayBodyText = isMagic ? bodyText : null;
-                const nonWeaponBodyText = viewCategory !== 'weapons' && !displayBodyText ? bodyText : null;
-                const shownText = displayBodyText || nonWeaponBodyText;
+                const shownText = bodyText;
                 if (!shownText) return null;
 
                 const mdComponents = {

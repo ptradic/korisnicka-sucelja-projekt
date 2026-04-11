@@ -1,6 +1,6 @@
 # Campaign Detail Page (`app/vaults/[id]/page.tsx`)
 
-The main app screen. One large file (~1200 lines). **Read it in targeted sections using offset/limit — never read the whole file at once.**
+The main app screen. One large file (~1374 lines). **Read it in targeted sections using offset/limit — never read the whole file at once.**
 
 ## File Layout (approximate line ranges)
 - 1–53: Imports
@@ -56,7 +56,7 @@ sharedLootEnabled = currentCampaign?.sharedLootEnabled !== false   // undefined/
 - `handleCurrencyChange(playerId, currency)`
 - `handleSharedCoinTransfer(amounts)` — deposit/withdraw from shared loot
 - `handleMaxWeightChange(playerId, newMax)`
-- `handleAddItem(item)` — stacks if same signature
+- `handleAddItem(item)` — resolves weapon stats (`damage`, `properties`, `mastery`) and armor stats (`armorClass`, `strengthRequirement`, `stealth`) from `2024companion.json` before saving; stacks if same signature
 - `handleCreateHomebrew` / `handleImportHomebrew` / `handleSaveCustomItemPool` / `handleUpdateHomebrewItem` / `handleDeleteHomebrewItem`
 - `handleRenameSharedLoot(name)`
 - `handleUpdateSelectedItem(baseItem, updates)` — players can only edit PLAYER CUSTOM items

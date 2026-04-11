@@ -5,8 +5,30 @@ All Firebase logic lives here. Components must never import from `firebase` dire
 ## `firebase.ts`
 Initializes Firebase app, exports: `auth`, `db` (Firestore), `googleProvider`.
 
+## `hydrateItems.ts`
+Item hydration/dehydration layer. Sits between Firestore and the rest of the app.
+
+**Core concept:** Items in Firestore are stored **dehydrated** — only the `source_key` + fields that differ from the base item (quantity, player-specific overrides like `attuned`, `hiddenFromOthers`, `notes`). On read, items are **hydrated** — base stats are merged back in from `2024master.json` + `2024companion.json`. Components always receive fully-hydrated items.
+
+**Exported functions:**
+- `hydrateItem(item)` — merges base stats from 2024master catalog using `source_key` (or `source_index` legacy, or name lookup for SRD items)
+- `dehydrateItem(item)` — strips fields that match the base catalog, keeps only diffs
+- `hydrateItemFromCustomItemPool(item, pool)` — merges homebrew item against campaign's `customItemPool` (matched by name, `sourcebook:'homebrew'`)
+- `hydrateCampaign(doc)` — hydrates `sharedLoot[]` and `customItemPool[]` in a CampaignDoc
+- `hydratePlayerInventory(doc)` — hydrates `inventory[]` in a PlayerInventoryDoc
+- `hydratePlayerInventoryWithCustomItemPool(doc, pool)` — hydrates using both master catalog + custom pool (homebrew aware)
+- `hydrateUserDoc(doc)` — hydrates `userHomebrew[]` in a UserDoc
+- `hydrateTransferRequest(doc)` — hydrates `itemData` in a TransferRequest
+- `dehydrateItemToCustomItemPool(item, pool)` — strips homebrew fields that match pool template
+- `dehydratePlayerInventoryToCustomItemPool(doc, pool)` — dehydrates full player inventory for homebrew
+- `dehydrateInventoryItemsToCustomItemPool(items, pool)` — dehydrates item array for homebrew
+
+**Do not call these directly from components** — `firebaseService.ts` handles hydration automatically on all reads/writes.
+
 ## `firebaseService.ts`
 All Firestore read/write operations. **~1450 lines — read targeted sections, never the whole file.**
+
+**Hydration is automatic:** `getUserDoc`, `getCampaign`, `getPlayerInventory`, and real-time subscriptions all hydrate on read. `cleanItem`/`updatePlayerInventory` dehydrate on write. Components always work with fully-hydrated items.
 
 ### Types / Interfaces
 - `UserDoc` — uid, email, name, role ('gm'|'player'), createdAt, updatedAt
@@ -92,9 +114,9 @@ Stored in `campaigns/{id}/transferRequests/` with `type: 'coin'`
 - `subscribeToRejectedOrExpiredCoinTransfers(campaignId, playerId, callback)` — rejected/expired coin sends
 
 ### Homebrew Items
-- `createUserHomebrewItem(userId, item)` → Item
-- `bulkImportHomebrewItems(userId, items)` → Item[]
-- `updateUserHomebrewItem(userId, item)`
+- `createUserHomebrewItem(userId, item)` → Item — throws if name already exists (case-insensitive)
+- `bulkImportHomebrewItems(userId, items)` → Item[] — skips items with duplicate names (within batch AND against existing); deduplicates within import batch itself
+- `updateUserHomebrewItem(userId, item)` — throws if new name conflicts with another homebrew item; also syncs updated item into all campaign `customItemPool`s where it appears
 - `deleteUserHomebrewItem(userId, itemId)`
 - `updateCampaignCustomItemPool(campaignId, gmId, items)`
 

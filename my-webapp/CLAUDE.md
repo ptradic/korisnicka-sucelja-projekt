@@ -13,6 +13,10 @@ D&D 5.5e (2024 SRD) campaign inventory manager. GMs manage player inventories an
 
 ## Key Types (`app/types.ts`)
 - `Item` — id, name, category, rarity, quantity, weight, description?, value?, valueUnit?, valueUnknown?, notes?, attunement?, attuned?, hiddenFromOthers?, createdAt?, sourcebook?
+  - Weapon stats (populated from `2024companion.json`): `type?`, `damage?`, `properties?`, `mastery?`
+  - Armor stats (populated from `2024companion.json`): `armorClass?`, `strengthRequirement?`, `stealth?`
+  - Optimized DB storage: `source_key?` (key into 2024master.json), `source_index?` (legacy — numeric index, kept for backward compat)
+  - Items stored in Firestore are **dehydrated** (only diffs from base stored). On read, they are **hydrated** by `hydrateItems.ts`. Never manually strip or merge these fields — use the service layer.
 - `Player` — id, name, color, avatar, maxWeight, inventory: Item[], currency: Currency
 - `Currency` — pp, gp, sp, cp (all numbers, never undefined — default to 0)
 - `ValueUnit` — 'gp' | 'sp' | 'cp'
@@ -113,12 +117,14 @@ Background: flat `#5C1A1A` (not a gradient).
 - Firebase writes go through `firebaseService.ts` only — never write to Firestore directly from components
 - All Firestore writes wrapped in `trackWrite()` from `useVaultAuth()` — tracks pending count for sync indicator
 - Errors shown via `showActionError(title, error, onRetry?)` from `useVaultAuth()`
-- Items must be cleaned with `cleanItem()` before Firestore writes (removes undefined)
+- Items are **dehydrated** before Firestore writes (base stats stripped, only diffs stored) and **hydrated** on read — this happens automatically inside `firebaseService.ts` via `hydrateItems.ts`; components always work with fully-hydrated items
 - Item stacking uses `getItemStackSignature()` for dedup
 - New Firestore subcollections require security rule updates in Firebase console (no local rules file)
+- Homebrew items use `sourcebook: 'homebrew'`. Name conflicts are checked and rejected by `firebaseService.ts` on create/update.
 
 ## Large Data Files (do NOT read — use description only)
-- `2024master.json` — Full D&D 2024 SRD item database. Array of objects with: key, name, desc, category, rarity, weight, value, valueUnit, attunement, sourcebook. Used as the searchable item catalog in AddItemModal.
+- `2024master.json` — Full D&D 2024 SRD item database (thinned). Array of objects with: key, name, desc, category, rarity, weight, cost, requires_attunement, document. Used as the searchable item catalog in AddItemModal and as the base for item hydration.
+- `2024companion.json` — Weapon and armor stat tables. Object with `weapons[]` (Name, Damage, Properties, Mastery), `armors[]` (Armor, Armor Class (AC), Strength, Stealth), `propertyDefinitions{}`, `masteryDefinitions{}`. Replaces the old `2024weapons.json`.
 - `itemstorage-cd026-firebase-adminsdk-fbsvc-*.json` — Firebase Admin SDK service account credentials. Do not read or modify.
 
 ## Subdirectory Guides
